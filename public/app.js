@@ -4,6 +4,12 @@ const sendBtn = document.getElementById("sendBtn");
 const micBtn = document.getElementById("micBtn");
 const photoBtn = document.getElementById("photoBtn");
 const photoInput = document.getElementById("photoInput");
+const drawBtn = document.getElementById("drawBtn");
+const drawModal = document.getElementById("drawModal");
+const drawCanvas = document.getElementById("drawCanvas");
+const clearBtn = document.getElementById("clearBtn");
+const cancelDrawBtn = document.getElementById("cancelDrawBtn");
+const sendDrawBtn = document.getElementById("sendDrawBtn");
 const startBtn = document.getElementById("startBtn");
 const ttsToggle = document.getElementById("ttsToggle");
 
@@ -142,7 +148,70 @@ function setControls(enabled) {
   sendBtn.disabled = !enabled;
   micBtn.disabled = !enabled;
   photoBtn.disabled = !enabled;
+  drawBtn.disabled = !enabled;
 }
+
+// --- Canvas drawing ---
+const ctx = drawCanvas.getContext("2d");
+let drawing = false;
+
+function resizeCanvas() {
+  const w = drawCanvas.offsetWidth;
+  const h = drawCanvas.offsetHeight;
+  const imageData = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+  drawCanvas.width = w;
+  drawCanvas.height = h;
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, w, h);
+  ctx.putImageData(imageData, 0, 0);
+  ctx.strokeStyle = "#222";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+}
+
+function getPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+}
+
+drawCanvas.addEventListener("mousedown", (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+drawCanvas.addEventListener("mousemove", (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+drawCanvas.addEventListener("mouseup", () => drawing = false);
+drawCanvas.addEventListener("mouseleave", () => drawing = false);
+drawCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+drawCanvas.addEventListener("touchmove", (e) => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+drawCanvas.addEventListener("touchend", () => drawing = false);
+
+drawBtn.addEventListener("click", () => {
+  drawModal.classList.remove("hidden");
+  resizeCanvas();
+});
+
+clearBtn.addEventListener("click", () => {
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+});
+
+cancelDrawBtn.addEventListener("click", () => drawModal.classList.add("hidden"));
+
+sendDrawBtn.addEventListener("click", () => {
+  const base64 = drawCanvas.toDataURL("image/png").split(",")[1];
+  drawModal.classList.add("hidden");
+
+  const drawMessage = {
+    role: "user",
+    content: [
+      { type: "image", source: { type: "base64", media_type: "image/png", data: base64 } },
+      { type: "text", text: "Я нарисовал свой ответ. Посмотри на рисунок и продолжай разговор как обычно." }
+    ]
+  };
+
+  messages.push(drawMessage);
+  addMessage("user", "✏️ Отправил рисунок с ответом");
+  sendToAPI();
+});
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
