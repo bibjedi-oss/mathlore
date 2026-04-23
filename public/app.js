@@ -1,7 +1,10 @@
 // --- DOM ---
-const appDiv       = document.querySelector(".app");
-const lobbyScreen  = document.getElementById("lobbyScreen");
-const chatScreen   = document.getElementById("chatScreen");
+const appDiv        = document.querySelector(".app");
+const welcomeScreen = document.getElementById("welcomeScreen");
+const welcomeChat   = document.getElementById("welcomeChat");
+const welcomeActions= document.getElementById("welcomeActions");
+const lobbyScreen   = document.getElementById("lobbyScreen");
+const chatScreen    = document.getElementById("chatScreen");
 const chat         = document.getElementById("chat");
 const input        = document.getElementById("input");
 const sendBtn      = document.getElementById("sendBtn");
@@ -36,8 +39,45 @@ function markCompleted(id) {
 }
 function isCompleted(id) { return getProgress().has(id); }
 
+// --- Welcome screen ---
+const ARCHI_INTRO = "Я Архи — твой гид по математике! Здесь мы не учим по учебнику. Ты выбираешь тему, а я рассказываю историю о том, как её открыли — в Древней Греции, Средневековье или на заводе двести лет назад. Потом разбираемся вместе, и математика становится понятной сама собой.";
+
+function addWelcomeMessage(role, text) {
+  const div = document.createElement("div");
+  div.className = `message ${role === "user" ? "user" : "bot"}`;
+  div.textContent = text;
+  welcomeChat.appendChild(div);
+  welcomeChat.scrollTop = welcomeChat.scrollHeight;
+}
+
+document.getElementById("hiBtn").addEventListener("click", async () => {
+  welcomeActions.innerHTML = "";
+  addWelcomeMessage("user", "Привет 👋");
+
+  const typing = document.createElement("div");
+  typing.className = "message typing";
+  typing.textContent = "Архи думает...";
+  welcomeChat.appendChild(typing);
+  welcomeChat.scrollTop = welcomeChat.scrollHeight;
+
+  await new Promise(r => setTimeout(r, 1000));
+  typing.remove();
+
+  addWelcomeMessage("bot", ARCHI_INTRO);
+  speak(ARCHI_INTRO);
+
+  await new Promise(r => setTimeout(r, 400));
+  welcomeActions.innerHTML = `<button class="welcome-btn primary" id="goBtn">Поехали! 🚀</button>`;
+  document.getElementById("goBtn").addEventListener("click", () => {
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    welcomeScreen.classList.add("hidden");
+    showLobby();
+  });
+});
+
 // --- Screen switching ---
 function showLobby() {
+  welcomeScreen.classList.add("hidden");
   chatScreen.classList.add("hidden");
   lobbyScreen.classList.remove("hidden");
   backBtn.classList.add("hidden");
@@ -356,4 +396,5 @@ sendBtn.addEventListener("click", () => { const t = input.value.trim(); if (t) s
 input.addEventListener("keydown", (e) => { if (e.key === "Enter") { const t = input.value.trim(); if (t) sendMessage(t); } });
 
 // --- Init ---
-showLobby();
+backBtn.classList.add("hidden");
+doneBtn.classList.add("hidden");

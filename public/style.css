@@ -335,6 +335,34 @@ header {
   color: #2a7a4f;
 }
 
+/* --- Welcome screen --- */
+.welcome-actions {
+  padding: 14px 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.welcome-btn {
+  background: #f0f4ff;
+  color: #2d3a8c;
+  border: 1.5px solid #dde3ff;
+  border-radius: 24px;
+  padding: 12px 32px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.welcome-btn:hover { background: #dde3ff; border-color: #2d3a8c; }
+.welcome-btn.primary {
+  background: #2d3a8c;
+  color: white;
+  border-color: #2d3a8c;
+}
+.welcome-btn.primary:hover { background: #3d4da0; }
+
 /* --- Topic banner --- */
 .topic-banner {
   padding: 8px 20px;
