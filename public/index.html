@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MathLore</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-left">
+        <div class="logo">🔭 MathLore</div>
+        <div class="subtitle">Математика через историю</div>
+      </div>
+      <button id="ttsToggle" class="tts-btn" title="Включить голос">🔇</button>
+    </header>
+
+    <div class="chat" id="chat">
+      <div class="welcome">
+        <p>Привет! Нажми кнопку ниже — и мы отправимся в древний город Сиракузы, где произошла одна странная история...</p>
+        <button id="startBtn" class="start-btn">Начать историю 🚀</button>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <input
+        type="text"
+        id="input"
+        placeholder="Напиши что-нибудь..."
+        disabled
+        autocomplete="off"
+      />
+      <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" />
+      <button id="photoBtn" disabled title="Отправить фото">📷</button>
+      <button id="micBtn" disabled title="Говори">🎤</button>
+      <button id="sendBtn" disabled>→</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
