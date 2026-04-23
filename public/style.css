@@ -147,25 +147,33 @@ header {
   transform: translate(-50%, -50%);
   background: rgba(255, 248, 220, 0.92);
   color: #3a2000;
-  border: 3px solid #c8860a;
+  border: 2.5px solid #c8860a;
   border-radius: 50%;
-  width: 80px;
-  height: 80px;
-  font-size: 13px;
+  width: 58px;
+  height: 58px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.45);
   transition: transform 0.15s, box-shadow 0.15s;
   line-height: 1.2;
   text-align: center;
 }
 .grade-btn:hover {
-  transform: translate(-50%, -50%) scale(1.12);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.55);
 }
-.grade-btn:nth-child(1) { top: 74%; left: 62%; }
-.grade-btn:nth-child(2) { top: 50%; left: 38%; }
-.grade-btn:nth-child(3) { top: 18%; left: 50%; }
+.grade-btn:nth-child(1)  { top: 91%; left: 46%; }
+.grade-btn:nth-child(2)  { top: 83%; left: 58%; }
+.grade-btn:nth-child(3)  { top: 74%; left: 64%; }
+.grade-btn:nth-child(4)  { top: 65%; left: 56%; }
+.grade-btn:nth-child(5)  { top: 56%; left: 42%; }
+.grade-btn:nth-child(6)  { top: 48%; left: 36%; }
+.grade-btn:nth-child(7)  { top: 40%; left: 44%; }
+.grade-btn:nth-child(8)  { top: 33%; left: 58%; }
+.grade-btn:nth-child(9)  { top: 25%; left: 62%; }
+.grade-btn:nth-child(10) { top: 17%; left: 52%; }
+.grade-btn:nth-child(11) { top: 9%;  left: 47%; }
 
 /* --- Lobby --- */
 .lobby {
