@@ -86,7 +86,14 @@ header {
   line-height: 1.6;
 }
 
-.welcome p {
+.welcome-greeting {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3a8c;
+  margin-bottom: 8px;
+}
+
+.welcome-sub {
   font-size: 16px;
   margin-bottom: 24px;
 }
