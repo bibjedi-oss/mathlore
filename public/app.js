@@ -245,7 +245,8 @@ startBtn.addEventListener("click", async () => {
   topic = topicInput?.value.trim() || "математика";
   chat.innerHTML = "";
   setControls(true);
-  await sendMessage("Привет! Давай начнём.");
+  messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
+  await sendToAPI();
 });
 
 // Отправка по кнопке
