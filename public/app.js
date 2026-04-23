@@ -261,15 +261,14 @@ function splitIntoChunks(text, maxChars = 150) {
 async function speak(text) {
   if (!ttsEnabled) return;
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-  const chunks = splitIntoChunks(text, 150);
-  let nextPromise = fetchAudio(chunks[0]);
+  const chunks = splitIntoChunks(text, 200);
+  let pendingFetch = fetchAudio(chunks[0]);
   for (let i = 0; i < chunks.length; i++) {
     if (!ttsEnabled) break;
-    const prefetch = i + 1 < chunks.length ? fetchAudio(chunks[i + 1]) : null;
-    const url = await nextPromise;
+    const url = await pendingFetch;
     if (!url || !ttsEnabled) break;
+    pendingFetch = i + 1 < chunks.length ? fetchAudio(chunks[i + 1]) : null;
     await playAudio(url);
-    nextPromise = prefetch;
   }
 }
 

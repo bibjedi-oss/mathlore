@@ -336,6 +336,13 @@ header {
 }
 
 /* --- Welcome screen --- */
+#welcomeScreen {
+  overflow: hidden;
+}
+#welcomeScreen .chat {
+  min-height: 0;
+}
+
 .welcome-actions {
   padding: 14px 20px;
   display: flex;
