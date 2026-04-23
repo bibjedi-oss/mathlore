@@ -14,6 +14,7 @@ const startBtn = document.getElementById("startBtn");
 const ttsToggle = document.getElementById("ttsToggle");
 
 let messages = [];
+let topic = "";
 let isWaiting = false;
 let ttsEnabled = false;
 let currentAudio = null;
@@ -254,7 +255,7 @@ async function sendToAPI() {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, topic }),
     });
 
     const data = await res.json();
@@ -308,12 +309,11 @@ async function sendMessage(userText) {
 
 // Старт истории
 startBtn.addEventListener("click", async () => {
-  // Убираем welcome-экран
+  const topicInput = document.getElementById("topicInput");
+  topic = topicInput?.value.trim() || "математика";
   chat.innerHTML = "";
   setControls(true);
-
-  // Первое сообщение от бота — запускаем историю
-  await sendMessage("Привет! Расскажи мне историю про Архимеда");
+  await sendMessage("Привет! Давай начнём.");
 });
 
 // Отправка по кнопке
