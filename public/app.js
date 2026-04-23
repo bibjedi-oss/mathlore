@@ -16,30 +16,43 @@ let isRecording = false;
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
 
+let transcript = "";
+
 if (recognition) {
   recognition.lang = "ru-RU";
   recognition.continuous = true;
   recognition.interimResults = false;
 
   recognition.onresult = (e) => {
-    const text = Array.from(e.results).map(r => r[0].transcript).join(" ");
-    if (text.trim()) {
-      stopRecording();
-      sendMessage(text.trim());
-    }
+    transcript = Array.from(e.results).map(r => r[0].transcript).join(" ");
   };
 
-  recognition.onerror = () => stopRecording();
+  recognition.onend = () => {
+    const text = transcript.trim();
+    transcript = "";
+    if (isRecording) {
+      // Chrome остановил сам — перезапускаем пока кнопка зажата
+      try { recognition.start(); } catch {}
+      return;
+    }
+    if (text) sendMessage(text);
+  };
+
+  recognition.onerror = () => {
+    transcript = "";
+    stopRecording();
+  };
 } else {
   micBtn.style.display = "none";
 }
 
 function startRecording() {
   if (!recognition || isWaiting || input.disabled) return;
+  transcript = "";
   isRecording = true;
   micBtn.classList.add("recording");
   micBtn.textContent = "🔴";
-  recognition.start();
+  try { recognition.start(); } catch {}
 }
 
 function stopRecording() {
