@@ -1,4 +1,5 @@
 // --- DOM ---
+const appDiv       = document.querySelector(".app");
 const lobbyScreen  = document.getElementById("lobbyScreen");
 const chatScreen   = document.getElementById("chatScreen");
 const chat         = document.getElementById("chat");
@@ -17,7 +18,7 @@ let messages = [];
 let topic = "";
 let currentTopicId = null;
 let isWaiting = false;
-let ttsEnabled = false;
+let ttsEnabled = true;
 let currentAudio = null;
 let isRecording = false;
 let transcript = "";
@@ -46,6 +47,7 @@ function showLobby() {
 }
 
 function showChat(topicLabel, topicId) {
+  appDiv.classList.remove("fullscreen-map");
   topic = topicLabel;
   currentTopicId = topicId;
   messages = [];
@@ -79,16 +81,18 @@ function renderLobby() {
 }
 
 function renderGradeSelect() {
+  appDiv.classList.add("fullscreen-map");
   lobbyScreen.innerHTML = `
     <div class="grade-screen">
       <div class="grade-screen-bg"></div>
       <div class="grade-screen-title">
-        <p class="welcome-greeting">Привет! Я Архи 👋</p>
-        <p class="welcome-sub">Выбери свой класс</p>
+        <div class="grade-title-box">
+          <p class="welcome-sub">Выбери свой класс</p>
+        </div>
       </div>
       <div class="grade-buttons">
         ${curriculum.map(g => `
-          <button class="grade-btn" data-grade="${g.grade}">${g.label}</button>
+          <button class="grade-btn" data-grade="${g.grade}">${g.grade}</button>
         `).join("")}
       </div>
     </div>
@@ -102,6 +106,7 @@ function renderGradeSelect() {
 }
 
 function renderTopicLobby(gradeNum) {
+  appDiv.classList.remove("fullscreen-map");
   const gradeData = curriculum.find(g => g.grade === gradeNum);
   const progress = getProgress();
 

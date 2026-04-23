@@ -99,6 +99,27 @@ header {
   flex-direction: column;
 }
 
+/* --- Fullscreen map mode (grade select) --- */
+.app.fullscreen-map > header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  background: transparent;
+  border-bottom: none;
+  z-index: 20;
+}
+.app.fullscreen-map > header .logo {
+  display: none;
+}
+.app.fullscreen-map > header .tts-btn {
+  background: rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
+}
+.app.fullscreen-map > header .tts-btn:hover {
+  background: rgba(0,0,0,0.6);
+  border-color: rgba(255,255,255,0.7);
+}
+
 /* --- Grade select --- */
 .grade-screen {
   position: relative;
@@ -110,8 +131,10 @@ header {
   position: absolute;
   inset: 0;
   background-image: url('map.jpg');
-  background-size: cover;
-  background-position: center top;
+  background-color: #12100a;
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
 
 .grade-screen-title {
@@ -122,18 +145,19 @@ header {
   z-index: 2;
 }
 
-.welcome-greeting {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+.grade-title-box {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 12px;
+  padding: 8px 20px;
+  backdrop-filter: blur(2px);
 }
 
 .welcome-sub {
-  font-size: 14px;
-  color: #ffe;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.7);
-  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
 }
 
 .grade-buttons {
@@ -149,14 +173,14 @@ header {
   color: #3a2000;
   border: 2.5px solid #c8860a;
   border-radius: 50%;
-  width: 58px;
-  height: 58px;
-  font-size: 11px;
+  width: 44px;
+  height: 44px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 3px 12px rgba(0,0,0,0.45);
   transition: transform 0.15s, box-shadow 0.15s;
-  line-height: 1.2;
+  line-height: 1;
   text-align: center;
 }
 .grade-btn:hover {
