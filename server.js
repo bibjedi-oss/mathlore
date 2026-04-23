@@ -39,7 +39,7 @@ function buildSystemPrompt(topic) {
 
 ЯЗЫК: русский, простой, без сложных слов. Если используешь термин — сразу объясняй.
 
-ФОРМАТИРОВАНИЕ: никогда не используй ** для выделения. Если нужно выделить слово или фразу — используй #. Например: #Архимед, #важно.`;
+ФОРМАТИРОВАНИЕ: пиши обычным текстом. Никаких markdown-символов: никаких **, __, ##, [], -, >. Математические символы (+, -, =, <, >, ², √ и т.д.) разрешены. Эмодзи разрешены, но редко.`;
 }
 
 app.post("/api/chat", async (req, res) => {
@@ -68,7 +68,6 @@ app.post("/api/chat", async (req, res) => {
 
 function cleanForTTS(text) {
   return text
-    .replace(/#/g, "")
     .replace(/\.{2,}/g, ".")
     .replace(/²/g, " в квадрате")
     .replace(/³/g, " в кубе")
@@ -81,14 +80,14 @@ function cleanForTTS(text) {
     .replace(/×/g, " умножить на ")
     .replace(/÷/g, " разделить на ")
     .replace(/\+/g, " плюс ")
-    .replace(/(?<!\d)-(?!\d)/g, " минус ")
     .replace(/\*/g, " умножить на ")
     .replace(/\//g, " разделить на ")
     .replace(/=/g, " равно ")
     .replace(/</g, " меньше ")
     .replace(/>/g, " больше ")
     .replace(/%/g, " процентов ")
-    .replace(/[^\p{L}\p{N}\s.,!?;:\-—]/gu, " ")
+    .replace(/\p{Emoji_Presentation}/gu, "")
+    .replace(/[^\p{L}\p{N}\s.,!?!?;:\-—]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
