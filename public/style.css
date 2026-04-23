@@ -1,8 +1,4 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -20,22 +16,34 @@ body {
   max-height: 800px;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
+/* --- Header --- */
 header {
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid #eee;
   background: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
-.header-left {}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 .logo {
   font-size: 20px;
@@ -43,11 +51,29 @@ header {
   color: #2d3a8c;
 }
 
-.subtitle {
-  font-size: 13px;
-  color: #888;
-  margin-top: 2px;
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #2d3a8c;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
 }
+.back-btn:hover { background: #f0f4ff; }
+
+.done-btn {
+  background: #2d3a8c;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.done-btn:hover { background: #3d4da0; }
 
 .tts-btn {
   background: none;
@@ -60,34 +86,27 @@ header {
   transition: border-color 0.2s, background 0.2s;
   flex-shrink: 0;
 }
+.tts-btn:hover { border-color: #2d3a8c; }
+.tts-btn.active { background: #f0f4ff; border-color: #2d3a8c; }
 
-.tts-btn:hover {
-  border-color: #2d3a8c;
-}
+.hidden { display: none !important; }
 
-.tts-btn.active {
-  background: #f0f4ff;
-  border-color: #2d3a8c;
-}
-
-.chat {
+/* --- Screens --- */
+.screen {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
-.welcome {
+/* --- Grade select --- */
+.grade-screen {
+  padding: 40px 24px;
   text-align: center;
-  padding: 40px 20px;
-  color: #555;
-  line-height: 1.6;
 }
 
 .welcome-greeting {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   color: #2d3a8c;
   margin-bottom: 8px;
@@ -95,37 +114,192 @@ header {
 
 .welcome-sub {
   font-size: 16px;
-  margin-bottom: 24px;
+  color: #666;
+  margin-bottom: 32px;
 }
 
-.topic-input {
-  width: 100%;
-  border: 1.5px solid #ddd;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 15px;
-  outline: none;
-  margin-bottom: 16px;
-  transition: border-color 0.2s;
+.grade-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.topic-input:focus {
-  border-color: #2d3a8c;
-}
-
-.start-btn {
+.grade-btn {
   background: #2d3a8c;
   color: white;
   border: none;
-  padding: 12px 28px;
-  border-radius: 24px;
-  font-size: 16px;
+  border-radius: 16px;
+  padding: 20px 32px;
+  font-size: 20px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
+  min-width: 120px;
+}
+.grade-btn:hover { background: #3d4da0; transform: translateY(-2px); }
+.grade-btn:active { transform: translateY(0); }
+
+/* --- Lobby --- */
+.lobby {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.start-btn:hover {
-  background: #3d4da0;
+.lobby-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.lobby-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2d3a8c;
+}
+
+.grade-back-btn {
+  background: none;
+  border: none;
+  color: #2d3a8c;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.grade-back-btn:hover { background: #f0f4ff; }
+
+.overall-progress {
+  background: #f0f4ff;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.progress-label {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.progress-bar, .quarter-bar {
+  background: #dde3ff;
+  border-radius: 10px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.progress-fill, .quarter-fill {
+  background: #2d3a8c;
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+
+/* --- Quarters --- */
+.quarters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quarter {
+  border: 1.5px solid #eee;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.quarter-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: #fafafa;
+  user-select: none;
+  transition: background 0.2s;
+}
+.quarter-header:hover { background: #f0f4ff; }
+
+.quarter-label {
+  font-weight: 600;
+  font-size: 15px;
+  color: #2d3a8c;
+  flex: 1;
+}
+
+.quarter-progress {
+  font-size: 13px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.quarter-bar {
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.quarter-arrow {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.quarter-topics {
+  display: none;
+  padding: 8px 12px 12px;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.quarter.open .quarter-topics {
+  display: flex;
+}
+
+.topic-btn {
+  background: white;
+  border: 1.5px solid #dde3ff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  color: #333;
+}
+.topic-btn:hover { background: #f0f4ff; border-color: #2d3a8c; }
+.topic-btn.done {
+  background: #edfff4;
+  border-color: #4caf7d;
+  color: #2a7a4f;
+}
+
+/* --- Topic banner --- */
+.topic-banner {
+  padding: 8px 20px;
+  background: #f0f4ff;
+  font-size: 13px;
+  color: #2d3a8c;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+/* --- Chat --- */
+#chatScreen {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .message {
@@ -163,14 +337,16 @@ header {
   font-style: italic;
 }
 
+/* --- Input area --- */
 .input-area {
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-top: 1px solid #eee;
   display: flex;
   gap: 10px;
+  flex-shrink: 0;
 }
 
-input {
+input[type="text"] {
   flex: 1;
   border: 1.5px solid #ddd;
   border-radius: 24px;
@@ -179,202 +355,55 @@ input {
   outline: none;
   transition: border-color 0.2s;
 }
-
-input:focus {
-  border-color: #2d3a8c;
-}
-
-input:disabled {
-  background: #f8f8f8;
-  color: #aaa;
-}
+input[type="text"]:focus { border-color: #2d3a8c; }
+input[type="text"]:disabled { background: #f8f8f8; color: #aaa; }
 
 #photoBtn {
   background: white;
   color: #2d3a8c;
   border: 1.5px solid #2d3a8c;
   border-radius: 50%;
-  width: 46px;
-  height: 46px;
+  width: 46px; height: 46px;
   font-size: 20px;
   cursor: pointer;
   transition: background 0.2s;
   flex-shrink: 0;
 }
-
-#photoBtn:hover:not(:disabled) {
-  background: #f0f4ff;
-}
-
-#photoBtn:disabled {
-  border-color: #ccc;
-  color: #ccc;
-  cursor: default;
-}
+#photoBtn:hover:not(:disabled) { background: #f0f4ff; }
+#photoBtn:disabled { border-color: #ccc; color: #ccc; cursor: default; }
 
 #micBtn {
   background: white;
   color: #2d3a8c;
   border: 1.5px solid #2d3a8c;
   border-radius: 50%;
-  width: 46px;
-  height: 46px;
+  width: 46px; height: 46px;
   font-size: 20px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
   flex-shrink: 0;
 }
-
-#micBtn:hover:not(:disabled) {
-  background: #f0f4ff;
-}
-
-#micBtn.recording {
-  background: #ff4444;
-  border-color: #ff4444;
-}
-
-#micBtn:disabled {
-  border-color: #ccc;
-  color: #ccc;
-  cursor: default;
-}
+#micBtn:hover:not(:disabled) { background: #f0f4ff; }
+#micBtn.recording { background: #ff4444; border-color: #ff4444; }
+#micBtn:disabled { border-color: #ccc; color: #ccc; cursor: default; }
 
 #sendBtn {
   background: #2d3a8c;
   color: white;
   border: none;
   border-radius: 50%;
-  width: 46px;
-  height: 46px;
+  width: 46px; height: 46px;
   font-size: 20px;
   cursor: pointer;
   transition: background 0.2s;
   flex-shrink: 0;
 }
-
-#sendBtn:hover:not(:disabled) {
-  background: #3d4da0;
-}
-
-#sendBtn:disabled {
-  background: #ccc;
-  cursor: default;
-}
-
-.draw-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.draw-modal.hidden {
-  display: none;
-}
-
-.draw-panel {
-  background: white;
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 90vw;
-  max-width: 500px;
-}
-
-.draw-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  color: #2d3a8c;
-}
-
-.draw-header button {
-  background: none;
-  border: 1.5px solid #ddd;
-  border-radius: 8px;
-  padding: 4px 12px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-#drawCanvas {
-  width: 100%;
-  aspect-ratio: 4/3;
-  border: 1.5px solid #ddd;
-  border-radius: 8px;
-  cursor: crosshair;
-  touch-action: none;
-  background: white;
-}
-
-.draw-footer {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.draw-footer button {
-  padding: 10px 20px;
-  border-radius: 24px;
-  border: none;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-#cancelDrawBtn {
-  background: #f0f0f0;
-  color: #555;
-}
-
-#sendDrawBtn {
-  background: #2d3a8c;
-  color: white;
-}
-
-#drawBtn {
-  background: white;
-  color: #2d3a8c;
-  border: 1.5px solid #2d3a8c;
-  border-radius: 50%;
-  width: 46px;
-  height: 46px;
-  font-size: 20px;
-  cursor: pointer;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-
-#drawBtn:hover:not(:disabled) {
-  background: #f0f4ff;
-}
-
-#drawBtn:disabled {
-  border-color: #ccc;
-  color: #ccc;
-  cursor: default;
-}
+#sendBtn:hover:not(:disabled) { background: #3d4da0; }
+#sendBtn:disabled { background: #ccc; cursor: default; }
 
 @media (max-width: 480px) {
-  .input-area {
-    padding: 10px 12px;
-    gap: 6px;
-  }
-
-  #photoBtn, #drawBtn, #micBtn, #sendBtn {
-    width: 38px;
-    height: 38px;
-    font-size: 16px;
-  }
-
-  input {
-    padding: 10px 14px;
-    font-size: 14px;
-  }
+  .input-area { padding: 10px 12px; gap: 6px; }
+  #photoBtn, #micBtn, #sendBtn { width: 38px; height: 38px; font-size: 16px; }
+  input[type="text"] { padding: 10px 14px; font-size: 14px; }
+  .grade-btn { padding: 16px 24px; font-size: 18px; }
 }

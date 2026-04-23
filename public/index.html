@@ -10,42 +10,33 @@
   <div class="app">
     <header>
       <div class="header-left">
+        <button id="backBtn" class="back-btn hidden">←</button>
         <div class="logo">🔭 MathLore</div>
-        <div class="subtitle">Математика через историю</div>
       </div>
-      <button id="ttsToggle" class="tts-btn" title="Включить голос">🔇</button>
+      <div class="header-right">
+        <button id="doneBtn" class="done-btn hidden" title="Тему изучил">✓ Готово</button>
+        <button id="ttsToggle" class="tts-btn" title="Включить голос">🔇</button>
+      </div>
     </header>
 
-    <div class="chat" id="chat">
-      <div class="welcome">
-        <p class="welcome-greeting">Привет! Я Архи 👋</p>
-        <p class="welcome-sub">Выбери тему — и начнём историю</p>
-        <input
-          type="text"
-          id="topicInput"
-          class="topic-input"
-          placeholder="Например: дроби, теорема Пифагора, объём тела..."
-          autocomplete="off"
-        />
-        <button id="startBtn" class="start-btn">Начать 🚀</button>
-      </div>
-    </div>
+    <!-- Лобби -->
+    <div id="lobbyScreen" class="screen"></div>
 
-    <div class="input-area">
-      <input
-        type="text"
-        id="input"
-        placeholder="Напиши что-нибудь..."
-        disabled
-        autocomplete="off"
-      />
-      <input type="file" id="photoInput" accept="image/*" style="display:none" />
-      <button id="photoBtn" disabled title="Отправить фото">📷</button>
-      <button id="micBtn" disabled title="Говори">🎤</button>
-      <button id="sendBtn" disabled>→</button>
+    <!-- Чат -->
+    <div id="chatScreen" class="screen hidden">
+      <div class="topic-banner" id="topicBanner"></div>
+      <div class="chat" id="chat"></div>
+      <div class="input-area">
+        <input type="text" id="input" placeholder="Напиши что-нибудь..." disabled autocomplete="off" />
+        <input type="file" id="photoInput" accept="image/*" style="display:none" />
+        <button id="photoBtn" disabled title="Отправить фото">📷</button>
+        <button id="micBtn" disabled title="Говори">🎤</button>
+        <button id="sendBtn" disabled>→</button>
+      </div>
     </div>
   </div>
 
+  <script src="curriculum.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
