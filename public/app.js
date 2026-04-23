@@ -81,8 +81,11 @@ function renderLobby() {
 function renderGradeSelect() {
   lobbyScreen.innerHTML = `
     <div class="grade-screen">
-      <p class="welcome-greeting">Привет! Я Архи 👋</p>
-      <p class="welcome-sub">Выбери свой класс</p>
+      <div class="grade-screen-bg"></div>
+      <div class="grade-screen-title">
+        <p class="welcome-greeting">Привет! Я Архи 👋</p>
+        <p class="welcome-sub">Выбери свой класс</p>
+      </div>
       <div class="grade-buttons">
         ${curriculum.map(g => `
           <button class="grade-btn" data-grade="${g.grade}">${g.label}</button>
