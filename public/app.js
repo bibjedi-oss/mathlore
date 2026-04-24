@@ -338,7 +338,7 @@ async function loadChildProgress(childId, childName) {
     const sessions = await res.json();
 
     if (!sessions.length) {
-      detail.innerHTML = `<div class="dash-detail-title">${childName}</div><div class="dash-empty">Тем ещё не проходили</div>`;
+      detail.innerHTML = `<div class="dash-detail-title">${childName}</div><div class="dash-empty">Пока не начато</div>`;
       return;
     }
 
