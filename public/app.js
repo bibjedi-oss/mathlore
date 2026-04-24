@@ -617,7 +617,7 @@ function showQuarterTopics(gradeData, progress, qi) {
       </div>
     </div>`;
 
-  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => renderQuarterMap(gradeData, progress));
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => renderTopicLobby(gradeData.grade));
   lobbyScreen.querySelectorAll(".topic-btn").forEach(btn => {
     btn.addEventListener("click", () => showChat(btn.dataset.topicLabel, btn.dataset.topicId));
   });
