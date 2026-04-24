@@ -790,22 +790,6 @@ input[type="text"]:disabled { background: #f8f8f8; color: #aaa; }
 .phase-bar.phase-done     { background: #edfff4; color: #2a7a4f; }
 
 /* --- Logout icon in main header --- */
-.understood-btn {
-  align-self: center;
-  background: #4caf7d;
-  color: white;
-  border: none;
-  border-radius: 24px;
-  padding: 12px 28px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-  animation: fadeIn 0.3s ease;
-  margin: 4px 0;
-}
-.understood-btn:hover { background: #3a9669; }
-
 .logout-icon {
   background: none;
   border: 1.5px solid #ddd;

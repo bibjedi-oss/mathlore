@@ -295,7 +295,7 @@ ${base}
 
 ЕСЛИ РЕБЁНОК УХОДИТ ОТ ТЕМЫ: коротко ответь и мягко возвращай к теме.
 
-МАРКЕР ПОНИМАНИЯ: Если ребёнок явно и уверенно продемонстрировал понимание темы (правильно ответил на вопрос, решил задачу, объяснил суть своими словами) — добавь в самый конец своего ответа маркер [ПОНЯЛ]. Только один раз, только когда действительно уверен. Не добавляй его просто за попытку или частичный ответ.`;
+`;
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
@@ -310,10 +310,8 @@ app.post("/api/chat", async (req, res) => {
       system: buildSystemPrompt(topic || "математика", phase || "theory"),
       messages,
     });
-    let text = response.content.find(b => b.type === "text")?.text ?? "";
-    const understood = text.includes("[ПОНЯЛ]");
-    text = text.replace(/\[ПОНЯЛ\]/g, "").trim();
-    res.json({ reply: text, understood });
+    const text = response.content.find(b => b.type === "text")?.text ?? "";
+    res.json({ reply: text });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "API error" });
