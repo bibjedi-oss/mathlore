@@ -142,12 +142,18 @@ function positionGradeButtons() {
 
   const cW = screen.offsetWidth;
   const cH = screen.offsetHeight;
+  if (!cW || !cH) return;
+
   const imgRatio = img.naturalWidth / img.naturalHeight;
   const cRatio   = cW / cH;
 
   let rW, rH;
   if (imgRatio <= cRatio) { rH = cH; rW = cH * imgRatio; }
   else                    { rW = cW; rH = cW / imgRatio; }
+
+  // Explicitly size the image so it matches the calculated render size
+  img.style.width  = rW + "px";
+  img.style.height = rH + "px";
 
   const oX = (cW - rW) / 2;
   const oY = (cH - rH) / 2;
@@ -176,10 +182,11 @@ function renderGradeSelect() {
   `;
 
   const img = lobbyScreen.querySelector(".grade-map");
+  const schedulePosition = () => requestAnimationFrame(positionGradeButtons);
   if (img.complete && img.naturalWidth) {
-    positionGradeButtons();
+    schedulePosition();
   } else {
-    img.onload = positionGradeButtons;
+    img.onload = schedulePosition;
   }
 
   lobbyScreen.querySelectorAll(".grade-btn").forEach(btn => {
@@ -439,7 +446,7 @@ async function sendMessage(userText) {
 sendBtn.addEventListener("click", () => { const t = input.value.trim(); if (t) sendMessage(t); });
 input.addEventListener("keydown", (e) => { if (e.key === "Enter") { const t = input.value.trim(); if (t) sendMessage(t); } });
 
-window.addEventListener("resize", positionGradeButtons);
+window.addEventListener("resize", () => requestAnimationFrame(positionGradeButtons));
 
 // --- Init ---
 backBtn.classList.add("hidden");

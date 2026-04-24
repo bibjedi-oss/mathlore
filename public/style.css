@@ -339,8 +339,9 @@ header {
 }
 #welcomeChat {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 16px 20px 90px; /* bottom pad so last message isn't hidden behind button */
+  padding: 16px 20px 90px;
   display: flex;
   flex-direction: column;
   gap: 12px;
