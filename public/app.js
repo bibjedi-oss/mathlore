@@ -120,23 +120,68 @@ function renderLobby() {
   }
 }
 
+// Road positions as [x%, y%] fraction of the original image (941x1672)
+const ROAD_POSITIONS = [
+  [0.43, 0.91], // 1 — выход из пещеры
+  [0.57, 0.85], // 2 — первый изгиб вправо
+  [0.65, 0.79], // 3 — правый пик, греческая зона
+  [0.54, 0.72], // 4 — возврат влево
+  [0.40, 0.65], // 5 — левая сторона
+  [0.46, 0.57], // 6 — центр, подъём
+  [0.56, 0.50], // 7 — вправо, замок
+  [0.49, 0.43], // 8 — промышленная зона
+  [0.43, 0.35], // 9 — изгиб влево
+  [0.49, 0.27], // 10 — верхний участок
+  [0.51, 0.18], // 11 — у города
+];
+
+function positionGradeButtons() {
+  const screen = lobbyScreen.querySelector(".grade-screen");
+  const img    = screen?.querySelector(".grade-map");
+  if (!screen || !img || !img.naturalWidth) return;
+
+  const cW = screen.offsetWidth;
+  const cH = screen.offsetHeight;
+  const imgRatio = img.naturalWidth / img.naturalHeight;
+  const cRatio   = cW / cH;
+
+  let rW, rH;
+  if (imgRatio <= cRatio) { rH = cH; rW = cH * imgRatio; }
+  else                    { rW = cW; rH = cW / imgRatio; }
+
+  const oX = (cW - rW) / 2;
+  const oY = (cH - rH) / 2;
+
+  screen.querySelectorAll(".grade-btn").forEach((btn, i) => {
+    const [px, py] = ROAD_POSITIONS[i] ?? [0.5, 0.5];
+    btn.style.left = (oX + px * rW) + "px";
+    btn.style.top  = (oY + py * rH) + "px";
+  });
+}
+
 function renderGradeSelect() {
   appDiv.classList.add("fullscreen-map");
   lobbyScreen.innerHTML = `
     <div class="grade-screen">
-      <div class="grade-screen-bg"></div>
+      <img class="grade-map" src="map.jpg" alt="" />
       <div class="grade-screen-title">
         <div class="grade-title-box">
           <p class="welcome-sub">Выбери свой класс</p>
         </div>
       </div>
-      <div class="grade-buttons">
-        ${curriculum.map(g => `
-          <button class="grade-btn" data-grade="${g.grade}">${g.grade}</button>
-        `).join("")}
-      </div>
+      ${curriculum.map(g => `
+        <button class="grade-btn" data-grade="${g.grade}">${g.grade}</button>
+      `).join("")}
     </div>
   `;
+
+  const img = lobbyScreen.querySelector(".grade-map");
+  if (img.complete && img.naturalWidth) {
+    positionGradeButtons();
+  } else {
+    img.onload = positionGradeButtons;
+  }
+
   lobbyScreen.querySelectorAll(".grade-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       selectedGrade = parseInt(btn.dataset.grade);
@@ -393,6 +438,8 @@ async function sendMessage(userText) {
 
 sendBtn.addEventListener("click", () => { const t = input.value.trim(); if (t) sendMessage(t); });
 input.addEventListener("keydown", (e) => { if (e.key === "Enter") { const t = input.value.trim(); if (t) sendMessage(t); } });
+
+window.addEventListener("resize", positionGradeButtons);
 
 // --- Init ---
 backBtn.classList.add("hidden");

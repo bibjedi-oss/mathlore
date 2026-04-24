@@ -124,22 +124,27 @@ header {
 .grade-screen {
   position: relative;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
+  background: #12100a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.grade-screen-bg {
-  position: absolute;
-  inset: 0;
-  background-image: url('map.jpg');
-  background-color: #12100a;
-  background-size: contain;
-  background-position: center center;
-  background-repeat: no-repeat;
+.grade-map {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
 }
 
 .grade-screen-title {
   position: absolute;
-  top: 16px;
+  top: 12px;
   left: 0; right: 0;
   text-align: center;
   z-index: 2;
@@ -187,17 +192,7 @@ header {
   transform: translate(-50%, -50%) scale(1.15);
   box-shadow: 0 5px 18px rgba(0,0,0,0.55);
 }
-.grade-btn:nth-child(1)  { top: 91%; left: 46%; }
-.grade-btn:nth-child(2)  { top: 83%; left: 58%; }
-.grade-btn:nth-child(3)  { top: 74%; left: 64%; }
-.grade-btn:nth-child(4)  { top: 65%; left: 56%; }
-.grade-btn:nth-child(5)  { top: 56%; left: 42%; }
-.grade-btn:nth-child(6)  { top: 48%; left: 36%; }
-.grade-btn:nth-child(7)  { top: 40%; left: 44%; }
-.grade-btn:nth-child(8)  { top: 33%; left: 58%; }
-.grade-btn:nth-child(9)  { top: 25%; left: 62%; }
-.grade-btn:nth-child(10) { top: 17%; left: 52%; }
-.grade-btn:nth-child(11) { top: 9%;  left: 47%; }
+/* Positions set dynamically by positionGradeButtons() in app.js */
 
 /* --- Lobby --- */
 .lobby {
