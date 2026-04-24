@@ -34,6 +34,7 @@ let isRecording = false;
 let transcript = "";
 let currentUser = null; // { role, id, name, grade, ... }
 let authToken = null;
+let selectedGrade = null;
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 function saveToken(token) {
@@ -443,8 +444,6 @@ document.getElementById("hiBtn").addEventListener("click", async () => {
 });
 
 // ── Lobby ─────────────────────────────────────────────────────────────────────
-let selectedGrade = null;
-
 function renderLobby() {
   if (!selectedGrade) renderGradeSelect();
   else renderTopicLobby(selectedGrade);
