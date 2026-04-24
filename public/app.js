@@ -3,9 +3,6 @@ const appDiv        = document.querySelector(".app");
 const authScreen    = document.getElementById("authScreen");
 const dashboardScreen = document.getElementById("dashboardScreen");
 const mainHeader    = document.getElementById("mainHeader");
-const welcomeScreen = document.getElementById("welcomeScreen");
-const welcomeChat   = document.getElementById("welcomeChat");
-const welcomeActions= document.getElementById("welcomeActions");
 const lobbyScreen   = document.getElementById("lobbyScreen");
 const chatScreen    = document.getElementById("chatScreen");
 const chat          = document.getElementById("chat");
@@ -124,8 +121,6 @@ function hideAll() {
   authScreen.classList.add("hidden");
   dashboardScreen.classList.add("hidden");
   mainHeader.classList.add("hidden");
-  welcomeScreen.classList.add("hidden");
-  welcomeActions.classList.add("hidden");
   lobbyScreen.classList.add("hidden");
   chatScreen.classList.add("hidden");
   appDiv.classList.remove("fullscreen-map");
@@ -142,21 +137,11 @@ function showDashboard() {
   renderDashboard();
 }
 
-function showWelcome() {
-  hideAll();
-  mainHeader.classList.remove("hidden");
-  backBtn.classList.add("hidden");
-  doneBtn.classList.add("hidden");
-  welcomeScreen.classList.remove("hidden");
-  welcomeActions.classList.remove("hidden");
-}
-
 function showLobby() {
   hideAll();
   mainHeader.classList.remove("hidden");
   backBtn.classList.add("hidden");
   doneBtn.classList.add("hidden");
-  welcomeActions.classList.add("hidden");
   lobbyScreen.classList.remove("hidden");
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   renderLobby();
@@ -411,37 +396,6 @@ async function loadChildProgress(childId, childName) {
     detail.innerHTML = `<div class="dash-error">Ошибка загрузки</div>`;
   }
 }
-
-// ── Welcome screen ─────────────────────────────────────────────────────────────
-const ARCHI_INTRO = "Я Архи — твой гид по математике! Здесь мы не учим по учебнику. Ты выбираешь тему, а я рассказываю историю о том, как её открыли — в Древней Греции, Средневековье или на заводе двести лет назад. Потом разбираемся вместе, и математика становится понятной сама собой.";
-
-function addWelcomeMessage(role, text) {
-  const div = document.createElement("div");
-  div.className = `message ${role === "user" ? "user" : "bot"}`;
-  div.textContent = text;
-  welcomeChat.appendChild(div);
-  welcomeChat.scrollTop = welcomeChat.scrollHeight;
-}
-
-document.getElementById("hiBtn").addEventListener("click", async () => {
-  welcomeActions.innerHTML = "";
-  addWelcomeMessage("user", "Привет 👋");
-  const typing = document.createElement("div");
-  typing.className = "message typing";
-  typing.textContent = "Архи думает...";
-  welcomeChat.appendChild(typing);
-  welcomeChat.scrollTop = welcomeChat.scrollHeight;
-  await new Promise(r => setTimeout(r, 1000));
-  typing.remove();
-  addWelcomeMessage("bot", ARCHI_INTRO);
-  speak(ARCHI_INTRO);
-  await new Promise(r => setTimeout(r, 400));
-  welcomeActions.innerHTML = `<button class="welcome-btn primary" id="goBtn">Поехали! 🚀</button>`;
-  document.getElementById("goBtn").addEventListener("click", () => {
-    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-    showLobby();
-  });
-});
 
 // ── Lobby ─────────────────────────────────────────────────────────────────────
 function renderLobby() {
