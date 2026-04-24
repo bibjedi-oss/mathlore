@@ -189,7 +189,7 @@ function updatePhaseUI() {
       authToken = stored;
       currentUser = payload;
       if (payload.role === "parent") { showDashboard(); return; }
-      if (payload.role === "child") { showWelcome(); return; }
+      if (payload.role === "child") { showLobby(); return; }
     } else {
       clearToken();
     }
@@ -261,7 +261,7 @@ document.getElementById("childAuthBtn").addEventListener("click", async () => {
     if (!res.ok) { errEl.textContent = data.error || "Ошибка"; errEl.classList.remove("hidden"); return; }
     saveToken(data.token);
     currentUser = parseToken(data.token);
-    showWelcome();
+    showLobby();
   } catch {
     errEl.textContent = "Нет связи с сервером"; errEl.classList.remove("hidden");
   }
