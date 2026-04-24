@@ -155,11 +155,16 @@ function showChat(topicLabelArg, topicIdArg) {
 
 function updatePhaseUI() {
   const labels = { theory: "Теория", exercises: "Задания из учебника", test: "Финальный тест", done: "Завершено" };
-  const btnLabels = { theory: "→ Задания", exercises: "→ Финальный тест", test: "✓ Завершить тему", done: "✓ Завершить тему" };
+  const btnLabels = { theory: "→ Задания", exercises: "→ Финальный тест" };
   phaseLabel.textContent = labels[currentPhase] || "";
   phaseBar.classList.remove("hidden");
   phaseBar.className = `phase-bar phase-${currentPhase}`;
-  doneBtn.textContent = btnLabels[currentPhase] || "✓ Готово";
+  if (currentPhase === "test" || currentPhase === "done") {
+    doneBtn.classList.add("hidden");
+  } else {
+    doneBtn.classList.remove("hidden");
+    doneBtn.textContent = btnLabels[currentPhase] || "→";
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -645,6 +650,11 @@ async function sendToAPI() {
       addMessage("bot", data.reply);
       speak(data.reply);
       saveSession(currentPhase);
+      if (data.testPassed && currentPhase === "test") {
+        currentPhase = "done";
+        if (currentTopicId) await markCompleted(currentTopicId);
+        showFinishBtn();
+      }
     } else {
       addMessage("bot", "Что-то пошло не так. Попробуй ещё раз.");
     }
@@ -653,6 +663,15 @@ async function sendToAPI() {
     addMessage("bot", "Не могу связаться с сервером. Проверь соединение.");
   }
   setControls(true); isWaiting = false; input.focus();
+}
+
+function showFinishBtn() {
+  const btn = document.createElement("button");
+  btn.className = "understood-btn";
+  btn.textContent = "🎉 Вернуться к темам";
+  btn.addEventListener("click", showLobby);
+  chat.appendChild(btn);
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function addMessage(role, text) {
