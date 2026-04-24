@@ -14,13 +14,18 @@
     <div id="authScreen" class="screen hidden">
       <div class="auth-wrap">
         <div class="auth-logo">🔭 MathLore</div>
-        <div class="auth-tabs">
-          <button class="auth-tab active" data-tab="parent">Я родитель</button>
-          <button class="auth-tab" data-tab="child">Я ребёнок</button>
+
+        <!-- Ребёнок (по умолчанию) -->
+        <div id="childAuthPanel" class="auth-panel">
+          <input id="childParentEmail" class="auth-input" type="email" placeholder="Email родителя" autocomplete="email" />
+          <input id="childName" class="auth-input" type="text" placeholder="Твоё имя" />
+          <input id="childPassword" class="auth-input" type="password" placeholder="Пароль" autocomplete="current-password" />
+          <div id="childAuthError" class="auth-error hidden"></div>
+          <button id="childAuthBtn" class="auth-btn">Войти</button>
         </div>
 
-        <!-- Родитель -->
-        <div id="parentAuthPanel" class="auth-panel">
+        <!-- Родитель (скрыт) -->
+        <div id="parentAuthPanel" class="auth-panel hidden">
           <div class="auth-mode-tabs">
             <button class="auth-mode active" data-mode="login">Войти</button>
             <button class="auth-mode" data-mode="register">Зарегистрироваться</button>
@@ -32,14 +37,7 @@
           <button id="parentAuthBtn" class="auth-btn">Войти</button>
         </div>
 
-        <!-- Ребёнок -->
-        <div id="childAuthPanel" class="auth-panel hidden">
-          <input id="childParentEmail" class="auth-input" type="email" placeholder="Email родителя" autocomplete="email" />
-          <input id="childName" class="auth-input" type="text" placeholder="Твоё имя" />
-          <input id="childPassword" class="auth-input" type="password" placeholder="Пароль" autocomplete="current-password" />
-          <div id="childAuthError" class="auth-error hidden"></div>
-          <button id="childAuthBtn" class="auth-btn">Войти</button>
-        </div>
+        <button id="parentToggleBtn" class="auth-parent-link">Вход для родителей</button>
       </div>
     </div>
 

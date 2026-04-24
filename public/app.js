@@ -198,17 +198,15 @@ function updatePhaseUI() {
 })();
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
-let authTab = "parent";
+let authTab = "child";
 let parentMode = "login";
 
-document.querySelectorAll(".auth-tab").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".auth-tab").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    authTab = btn.dataset.tab;
-    document.getElementById("parentAuthPanel").classList.toggle("hidden", authTab !== "parent");
-    document.getElementById("childAuthPanel").classList.toggle("hidden", authTab !== "child");
-  });
+document.getElementById("parentToggleBtn").addEventListener("click", () => {
+  const isParent = authTab === "parent";
+  authTab = isParent ? "child" : "parent";
+  document.getElementById("parentAuthPanel").classList.toggle("hidden", authTab !== "parent");
+  document.getElementById("childAuthPanel").classList.toggle("hidden", authTab !== "child");
+  document.getElementById("parentToggleBtn").textContent = isParent ? "Вход для родителей" : "← Назад";
 });
 
 document.querySelectorAll(".auth-mode").forEach(btn => {

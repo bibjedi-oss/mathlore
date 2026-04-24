@@ -863,6 +863,20 @@ input[type="text"]:disabled { background: #f8f8f8; color: #aaa; }
 }
 .auth-btn:hover { background: #3d4da0; }
 
+.auth-parent-link {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px;
+  margin-top: 4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+.auth-parent-link:hover { color: #555; }
+
 .auth-error {
   font-size: 13px;
   color: #d32f2f;
