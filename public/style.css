@@ -180,9 +180,9 @@ header {
   color: #3a2000;
   border: 2.5px solid #c8860a;
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  font-size: 15px;
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 3px 12px rgba(0,0,0,0.45);
