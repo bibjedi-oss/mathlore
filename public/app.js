@@ -645,6 +645,7 @@ async function sendToAPI() {
       addMessage("bot", data.reply);
       speak(data.reply);
       saveSession(currentPhase);
+      if (data.understood && currentPhase === "theory") showUnderstoodBtn();
     } else {
       addMessage("bot", "Что-то пошло не так. Попробуй ещё раз.");
     }
@@ -653,6 +654,20 @@ async function sendToAPI() {
     addMessage("bot", "Не могу связаться с сервером. Проверь соединение.");
   }
   setControls(true); isWaiting = false; input.focus();
+}
+
+function showUnderstoodBtn() {
+  if (document.getElementById("understoodBtn")) return;
+  const btn = document.createElement("button");
+  btn.id = "understoodBtn";
+  btn.className = "understood-btn";
+  btn.textContent = "Завершить урок ✓";
+  btn.addEventListener("click", async () => {
+    if (currentTopicId) await markCompleted(currentTopicId);
+    showLobby();
+  });
+  chat.appendChild(btn);
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function addMessage(role, text) {
