@@ -335,29 +335,17 @@ header {
 }
 
 /* --- Welcome screen --- */
-#welcomeScreen {
-  position: relative;
-  overflow: hidden;
-}
 #welcomeChat {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 16px 20px 90px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 16px 20px;
 }
 #welcomeActions {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
+  flex-shrink: 0;
   background: #fff;
   border-top: 1px solid #eee;
   padding: 14px 20px;
   display: flex;
   justify-content: center;
   gap: 12px;
-  z-index: 2;
 }
 
 .welcome-btn {

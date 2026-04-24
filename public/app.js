@@ -78,6 +78,7 @@ document.getElementById("hiBtn").addEventListener("click", async () => {
 // --- Screen switching ---
 function showLobby() {
   welcomeScreen.classList.add("hidden");
+  welcomeActions.classList.add("hidden");
   chatScreen.classList.add("hidden");
   lobbyScreen.classList.remove("hidden");
   backBtn.classList.add("hidden");
@@ -87,6 +88,7 @@ function showLobby() {
 }
 
 function showChat(topicLabel, topicId) {
+  welcomeActions.classList.add("hidden");
   appDiv.classList.remove("fullscreen-map");
   topic = topicLabel;
   currentTopicId = topicId;
