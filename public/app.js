@@ -43,6 +43,7 @@ function saveToken(token) {
 function clearToken() {
   authToken = null;
   localStorage.removeItem("mathlore_token");
+  localStorage.removeItem("mathlore_progress");
 }
 function parseToken(token) {
   try {
@@ -54,6 +55,10 @@ function apiHeaders() {
 }
 
 // ── Progress (DB for children, localStorage fallback) ─────────────────────────
+function progressKey() {
+  return `mathlore_progress_${currentUser?.id || "guest"}`;
+}
+
 async function getProgress() {
   if (currentUser?.role === "child") {
     try {
@@ -64,7 +69,7 @@ async function getProgress() {
       }
     } catch {}
   }
-  try { return new Set(JSON.parse(localStorage.getItem("mathlore_progress") || "[]")); }
+  try { return new Set(JSON.parse(localStorage.getItem(progressKey()) || "[]")); }
   catch { return new Set(); }
 }
 async function markCompleted(id) {
@@ -79,8 +84,8 @@ async function markCompleted(id) {
       else console.log("markCompleted OK:", id);
     } catch (e) { console.error("markCompleted exception:", e); }
   }
-  const p = JSON.parse(localStorage.getItem("mathlore_progress") || "[]");
-  if (!p.includes(id)) { p.push(id); localStorage.setItem("mathlore_progress", JSON.stringify(p)); }
+  const p = JSON.parse(localStorage.getItem(progressKey()) || "[]");
+  if (!p.includes(id)) { p.push(id); localStorage.setItem(progressKey(), JSON.stringify(p)); }
 }
 function stripImages(msgs) {
   return msgs.map(m => {
