@@ -512,51 +512,70 @@ function renderGradeSelect() {
 }
 
 async function renderTopicLobby(gradeNum) {
-  appDiv.classList.remove("fullscreen-map");
+  appDiv.classList.add("fullscreen-map");
   const gradeData = curriculum.find(g => g.grade === gradeNum);
   const progress = await getProgress();
+  renderQuarterMap(gradeData, progress);
+}
+
+function renderQuarterMap(gradeData, progress) {
   const totalTopics = gradeData.quarters.reduce((s, q) => s + q.topics.length, 0);
   const doneTopics = gradeData.quarters.reduce((s, q) => s + q.topics.filter(t => progress.has(t.id)).length, 0);
   const pct = Math.round(doneTopics / totalTopics * 100);
 
   lobbyScreen.innerHTML = `
-    <div class="lobby">
-      <div class="lobby-header">
-        <button class="grade-back-btn">← Классы</button>
-        <div class="lobby-title">${gradeData.label}</div>
+    <div class="cave-screen">
+      <img class="cave-bg" src="lobby-bg.png" alt="" />
+      <div class="cave-header">
+        <button class="cave-back-btn">← Классы</button>
+        <div class="cave-grade-title">${gradeData.label}</div>
+        <div class="cave-overall-progress">
+          <div class="cave-overall-bar"><div class="cave-overall-fill" style="width:${pct}%"></div></div>
+          <span class="cave-overall-label">${doneTopics}/${totalTopics}</span>
+        </div>
       </div>
-      <div class="overall-progress">
-        <div class="progress-label">Пройдено: ${doneTopics} из ${totalTopics} тем</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="quarters">
+      <div class="cave-grid">
         ${gradeData.quarters.map((q, qi) => {
           const qDone = q.topics.filter(t => progress.has(t.id)).length;
           const qPct = Math.round(qDone / q.topics.length * 100);
-          const isOpen = qi === 0 || q.topics.some(t => !progress.has(t.id) && qi === gradeData.quarters.findIndex(x => x.topics.some(t2 => !progress.has(t2.id))));
           return `
-            <div class="quarter ${isOpen ? "open" : ""}" data-qid="${q.id}">
-              <div class="quarter-header">
-                <span class="quarter-label">${q.label}</span>
-                <span class="quarter-progress">${qDone}/${q.topics.length}</span>
-                <div class="quarter-bar"><div class="quarter-fill" style="width:${qPct}%"></div></div>
-                <span class="quarter-arrow">${isOpen ? "▲" : "▼"}</span>
-              </div>
-              <div class="quarter-topics">
-                ${q.topics.map(t => {
-                  const done = progress.has(t.id);
-                  return `<button class="topic-btn ${done ? "done" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">
-                    ${done ? "✓ " : ""}${t.label}
-                  </button>`;
-                }).join("")}
-              </div>
+            <div class="cave-panel" data-qi="${qi}">
+              <div class="cave-panel-label">${q.label}</div>
+              <div class="cave-panel-progress">${qDone} из ${q.topics.length} тем</div>
+              <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
             </div>`;
         }).join("")}
       </div>
     </div>`;
 
-  lobbyScreen.querySelector(".grade-back-btn").addEventListener("click", () => { selectedGrade = null; renderGradeSelect(); });
-  lobbyScreen.querySelectorAll(".quarter-header").forEach(h => h.addEventListener("click", () => h.closest(".quarter").classList.toggle("open")));
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedGrade = null; renderGradeSelect(); });
+  lobbyScreen.querySelectorAll(".cave-panel").forEach(panel => {
+    panel.addEventListener("click", () => showQuarterTopics(gradeData, progress, parseInt(panel.dataset.qi)));
+  });
+}
+
+function showQuarterTopics(gradeData, progress, qi) {
+  const q = gradeData.quarters[qi];
+  lobbyScreen.innerHTML = `
+    <div class="cave-screen">
+      <img class="cave-bg" src="lobby-bg.png" alt="" />
+      <div class="cave-topics-overlay">
+        <div class="cave-topics-header">
+          <button class="cave-back-btn">← Четверти</button>
+          <div class="cave-topics-title">${q.label}</div>
+        </div>
+        <div class="cave-topics-list">
+          ${q.topics.map(t => {
+            const done = progress.has(t.id);
+            return `<button class="topic-btn ${done ? "done" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">
+              ${done ? "✓ " : ""}${t.label}
+            </button>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>`;
+
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => renderQuarterMap(gradeData, progress));
   lobbyScreen.querySelectorAll(".topic-btn").forEach(btn => {
     btn.addEventListener("click", () => showChat(btn.dataset.topicLabel, btn.dataset.topicId));
   });

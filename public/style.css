@@ -113,6 +113,10 @@ header {
 }
 
 /* --- Fullscreen map mode (grade select) --- */
+.app.fullscreen-map > .screen {
+  overflow: hidden;
+}
+
 .app.fullscreen-map > header {
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -345,6 +349,196 @@ header {
   background: #edfff4;
   border-color: #4caf7d;
   color: #2a7a4f;
+}
+
+/* --- Cave wall lobby --- */
+.cave-screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cave-bg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cave-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.55);
+  flex-shrink: 0;
+}
+
+.cave-grade-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffe8b0;
+  flex: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+.cave-back-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 220, 150, 0.4);
+  color: #ffe8b0;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.cave-back-btn:hover { background: rgba(255, 255, 255, 0.22); }
+
+.cave-overall-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cave-overall-bar {
+  width: 60px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.cave-overall-fill {
+  height: 100%;
+  background: #ffd080;
+  border-radius: 3px;
+}
+
+.cave-overall-label {
+  font-size: 12px;
+  color: #ffd080;
+  white-space: nowrap;
+}
+
+.cave-grid {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  min-height: 0;
+}
+
+.cave-panel {
+  background: rgba(15, 8, 2, 0.58);
+  border: 1.5px solid rgba(255, 210, 120, 0.3);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  backdrop-filter: blur(2px);
+}
+.cave-panel:hover {
+  background: rgba(30, 15, 4, 0.78);
+  border-color: rgba(255, 210, 120, 0.6);
+}
+
+.cave-panel-label {
+  color: #ffe8b0;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  line-height: 1.3;
+}
+
+.cave-panel-progress {
+  color: #ffc870;
+  font-size: 12px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.cave-panel-bar {
+  width: 75%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+}
+
+.cave-panel-fill {
+  height: 100%;
+  background: #ffd080;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Cave topic list */
+.cave-topics-overlay {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 5, 1, 0.82);
+  min-height: 0;
+}
+
+.cave-topics-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 210, 120, 0.2);
+  flex-shrink: 0;
+}
+
+.cave-topics-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffe8b0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+.cave-topics-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cave-topics-list .topic-btn {
+  background: rgba(255, 248, 220, 0.08);
+  border-color: rgba(255, 210, 120, 0.25);
+  color: #ffe8b0;
+}
+.cave-topics-list .topic-btn:hover {
+  background: rgba(255, 248, 220, 0.16);
+  border-color: rgba(255, 210, 120, 0.55);
+}
+.cave-topics-list .topic-btn.done {
+  background: rgba(76, 175, 125, 0.18);
+  border-color: rgba(76, 175, 125, 0.45);
+  color: #7ee8b0;
 }
 
 /* --- Welcome screen --- */
