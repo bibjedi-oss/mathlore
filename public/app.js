@@ -565,60 +565,49 @@ function renderQuarterMap(gradeData, progress) {
           <span class="cave-overall-label">${doneTopics}/${totalTopics}</span>
         </div>
       </div>
-      <div class="cave-grid">
+      <div class="cave-accordion">
         ${gradeData.quarters.map((q, qi) => {
           const unlocked = isQuarterUnlocked(gradeData.grade, qi);
           const qDone = q.topics.filter(t => progress.has(t.id)).length;
           const qPct = Math.round(qDone / q.topics.length * 100);
           if (!unlocked) {
-            return `<div class="cave-panel locked" data-qi="${qi}">
-              <div class="cave-panel-lock">🔒</div>
-              <div class="cave-panel-label">${q.label}</div>
+            return `<div class="cave-quarter locked">
+              <div class="cave-quarter-header">
+                <span class="cave-panel-lock">🔒</span>
+                <span class="cave-panel-label">${q.label}</span>
+              </div>
             </div>`;
           }
           return `
-            <div class="cave-panel" data-qi="${qi}">
-              <div class="cave-panel-label">${q.label}</div>
-              <div class="cave-panel-progress">${qDone} из ${q.topics.length} тем</div>
-              <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
+            <div class="cave-quarter" data-qi="${qi}">
+              <div class="cave-quarter-header">
+                <span class="cave-panel-label">${q.label}</span>
+                <span class="cave-panel-progress">${qDone} из ${q.topics.length}</span>
+                <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
+                <span class="cave-quarter-arrow">▼</span>
+              </div>
+              <div class="cave-quarter-topics">
+                ${q.topics.map((t, ti) => {
+                  const done = progress.has(t.id);
+                  const unlocked = isTopicUnlocked(q.topics, ti, progress);
+                  if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
+                  return `<button class="topic-btn ${done ? "done" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">${done ? "✓ " : ""}${t.label}</button>`;
+                }).join("")}
+              </div>
             </div>`;
         }).join("")}
       </div>
     </div>`;
 
   lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedGrade = null; renderGradeSelect(); });
-  lobbyScreen.querySelectorAll(".cave-panel:not(.locked)").forEach(panel => {
-    panel.addEventListener("click", () => showQuarterTopics(gradeData, progress, parseInt(panel.dataset.qi)));
+  lobbyScreen.querySelectorAll(".cave-quarter:not(.locked) .cave-quarter-header").forEach(h => {
+    h.addEventListener("click", () => {
+      const q = h.closest(".cave-quarter");
+      q.classList.toggle("open");
+      h.querySelector(".cave-quarter-arrow").textContent = q.classList.contains("open") ? "▲" : "▼";
+    });
   });
-}
-
-function showQuarterTopics(gradeData, progress, qi) {
-  const q = gradeData.quarters[qi];
-  lobbyScreen.innerHTML = `
-    <div class="cave-screen">
-      <img class="cave-bg" src="lobby-bg.jpg" alt="" />
-      <div class="cave-topics-overlay">
-        <div class="cave-topics-header">
-          <button class="cave-back-btn">← Четверти</button>
-          <div class="cave-topics-title">${q.label}</div>
-        </div>
-        <div class="cave-topics-list">
-          ${q.topics.map((t, ti) => {
-            const done = progress.has(t.id);
-            const unlocked = isTopicUnlocked(q.topics, ti, progress);
-            if (!unlocked) {
-              return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
-            }
-            return `<button class="topic-btn ${done ? "done" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">
-              ${done ? "✓ " : ""}${t.label}
-            </button>`;
-          }).join("")}
-        </div>
-      </div>
-    </div>`;
-
-  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => renderTopicLobby(gradeData.grade));
-  lobbyScreen.querySelectorAll(".topic-btn").forEach(btn => {
+  lobbyScreen.querySelectorAll(".topic-btn:not(.locked)").forEach(btn => {
     btn.addEventListener("click", () => showChat(btn.dataset.topicLabel, btn.dataset.topicId));
   });
 }
