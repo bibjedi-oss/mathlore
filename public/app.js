@@ -588,18 +588,23 @@ function splitIntoChunks(text, maxChars = 200) {
   return chunks;
 }
 
+const ttsLoading = document.getElementById("ttsLoading");
+
 async function speak(text) {
   if (!ttsEnabled) return;
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   const chunks = splitIntoChunks(text, 200);
+  ttsLoading.classList.remove("hidden");
   let pendingFetch = fetchAudio(chunks[0]);
   for (let i = 0; i < chunks.length; i++) {
     if (!ttsEnabled) break;
     const url = await pendingFetch;
+    ttsLoading.classList.add("hidden");
     if (!url || !ttsEnabled) break;
     pendingFetch = i + 1 < chunks.length ? fetchAudio(chunks[i + 1]) : null;
     await playAudio(url);
   }
+  ttsLoading.classList.add("hidden");
 }
 
 // ── Voice input ───────────────────────────────────────────────────────────────

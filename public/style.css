@@ -89,6 +89,19 @@ header {
 .tts-btn:hover { border-color: #2d3a8c; }
 .tts-btn.active { background: #f0f4ff; border-color: #2d3a8c; }
 
+.tts-loading {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid #dde3ff;
+  border-top-color: #2d3a8c;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .hidden { display: none !important; }
 
 /* --- Screens --- */
