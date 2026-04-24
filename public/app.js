@@ -525,7 +525,7 @@ function renderQuarterMap(gradeData, progress) {
 
   lobbyScreen.innerHTML = `
     <div class="cave-screen">
-      <img class="cave-bg" src="lobby-bg.png" alt="" />
+      <img class="cave-bg" src="lobby-bg.jpg" alt="" />
       <div class="cave-header">
         <button class="cave-back-btn">← Классы</button>
         <div class="cave-grade-title">${gradeData.label}</div>
@@ -558,7 +558,7 @@ function showQuarterTopics(gradeData, progress, qi) {
   const q = gradeData.quarters[qi];
   lobbyScreen.innerHTML = `
     <div class="cave-screen">
-      <img class="cave-bg" src="lobby-bg.png" alt="" />
+      <img class="cave-bg" src="lobby-bg.jpg" alt="" />
       <div class="cave-topics-overlay">
         <div class="cave-topics-header">
           <button class="cave-back-btn">← Четверти</button>
