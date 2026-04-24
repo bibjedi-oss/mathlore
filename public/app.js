@@ -306,22 +306,24 @@ function addChildForm() {
 
 function setupAddChildForm() {
   document.getElementById("addChildBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("addChildBtn");
     const name = document.getElementById("newChildName").value.trim();
     const password = document.getElementById("newChildPassword").value.trim();
     const grade = parseInt(document.getElementById("newChildGrade").value) || null;
     const errEl = document.getElementById("addChildError");
     errEl.classList.add("hidden");
     if (!name || !password) { errEl.textContent = "Введите имя и пароль"; errEl.classList.remove("hidden"); return; }
+    btn.disabled = true; btn.textContent = "Добавляю...";
     try {
       const res = await fetch("/api/parent/children", {
         method: "POST", headers: apiHeaders(),
         body: JSON.stringify({ name, password, grade })
       });
       const data = await res.json();
-      if (!res.ok) { errEl.textContent = data.error || "Ошибка"; errEl.classList.remove("hidden"); return; }
+      if (!res.ok) { errEl.textContent = data.error || "Ошибка"; errEl.classList.remove("hidden"); btn.disabled = false; btn.textContent = "Добавить"; return; }
       renderDashboard();
     } catch {
-      errEl.textContent = "Ошибка"; errEl.classList.remove("hidden");
+      errEl.textContent = "Ошибка"; errEl.classList.remove("hidden"); btn.disabled = false; btn.textContent = "Добавить";
     }
   });
 }
