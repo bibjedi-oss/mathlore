@@ -766,6 +766,59 @@ input[type="text"]:disabled { background: #f8f8f8; color: #aaa; }
   color: #888;
 }
 
+.dash-overall-btn {
+  width: 100%;
+  background: #2d3a8c;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 4px;
+}
+.dash-overall-btn:hover:not(:disabled) { background: #3d4da0; }
+.dash-overall-btn:disabled { background: #aaa; cursor: default; }
+
+.dash-quarter-block {
+  border: 1.5px solid #eee;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dash-quarter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0f4ff;
+}
+
+.dash-quarter-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d3a8c;
+}
+
+.dash-quarter-btn {
+  background: white;
+  color: #2d3a8c;
+  border: 1.5px solid #dde3ff;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.dash-quarter-btn:hover:not(:disabled) { background: #dde3ff; }
+.dash-quarter-btn:disabled { color: #aaa; border-color: #eee; cursor: default; }
+
 .dash-summary-btn {
   align-self: flex-start;
   background: #2d3a8c;

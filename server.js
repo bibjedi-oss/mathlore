@@ -168,6 +168,74 @@ app.get("/api/parent/child/:id/sessions", requireAuth("parent"), async (req, res
   }
 });
 
+app.post("/api/parent/child/:id/quarter-analysis", requireAuth("parent"), async (req, res) => {
+  try {
+    const { data: child } = await supabase
+      .from("children").select("id, name").eq("id", req.params.id).eq("parent_id", req.user.id).single();
+    if (!child) return res.status(403).json({ error: "Нет доступа" });
+
+    const { quarterLabel, topicIds } = req.body;
+    if (!Array.isArray(topicIds) || !topicIds.length) return res.status(400).json({ error: "topicIds обязательны" });
+
+    const { data: sessions } = await supabase
+      .from("topic_sessions")
+      .select("topic_id, topic_label, phase, messages")
+      .eq("child_id", req.params.id)
+      .in("topic_id", topicIds);
+
+    if (!sessions?.length) return res.json({ analysis: "По этой четверти пока нет данных для анализа." });
+
+    const SKIP = ["Начни историю прямо сейчас, с первого предложения. Без вступлений.", "Переходим к заданиям из учебника.", "Дай мне финальное испытание — самое сложное задание на эту тему."];
+    const statsText = sessions.map(s => {
+      const msgs = (s.messages || []).filter(m => typeof m.content === "string" && !SKIP.includes(m.content));
+      const userCount = msgs.filter(m => m.role === "user").length;
+      const dialog = msgs.slice(-16).map(m => `${m.role === "user" ? "Ребёнок" : "Архи"}: ${m.content}`).join("\n");
+      return `[Тема: ${s.topic_label || s.topic_id} | Стадия: ${s.phase} | Реплик ребёнка: ${userCount}]\n${dialog}`;
+    }).join("\n\n---\n\n");
+
+    const response = await anthropic.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 600,
+      system: "Ты анализируешь успехи ребёнка за учебную четверть по математике. Изучи диалоги с ИИ-репетитором и напиши отчёт для родителя (5-6 предложений, без markdown, без заголовков). Охвати: общий прогресс, сильные стороны, трудности, вовлечённость, рекомендации. Пиши тепло, как опытный педагог.",
+      messages: [{ role: "user", content: `Ребёнок: ${child.name}\nЧетверть: ${quarterLabel}\n\n${statsText}` }]
+    });
+    res.json({ analysis: response.content.find(b => b.type === "text")?.text ?? "" });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Ошибка сервера" }); }
+});
+
+app.post("/api/parent/child/:id/overall-analysis", requireAuth("parent"), async (req, res) => {
+  try {
+    const { data: child } = await supabase
+      .from("children").select("id, name, grade").eq("id", req.params.id).eq("parent_id", req.user.id).single();
+    if (!child) return res.status(403).json({ error: "Нет доступа" });
+
+    const { data: sessions } = await supabase
+      .from("topic_sessions")
+      .select("topic_id, topic_label, phase, messages, created_at")
+      .eq("child_id", req.params.id)
+      .order("created_at");
+
+    if (!sessions?.length) return res.json({ analysis: "Пока недостаточно данных. Нужно пройти хотя бы несколько тем." });
+
+    const done = sessions.filter(s => s.phase === "done").length;
+    const SKIP = ["Начни историю прямо сейчас, с первого предложения. Без вступлений.", "Переходим к заданиям из учебника.", "Дай мне финальное испытание — самое сложное задание на эту тему."];
+    const statsText = sessions.map(s => {
+      const msgs = (s.messages || []).filter(m => typeof m.content === "string" && !SKIP.includes(m.content));
+      const userCount = msgs.filter(m => m.role === "user").length;
+      const dialog = msgs.slice(-8).map(m => `${m.role === "user" ? "Ребёнок" : "Архи"}: ${m.content}`).join("\n");
+      return `[${s.topic_label || s.topic_id} | ${s.phase} | реплик: ${userCount}]\n${dialog}`;
+    }).join("\n\n---\n\n");
+
+    const response = await anthropic.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 800,
+      system: "Ты составляешь когнитивный портрет ребёнка на основе занятий с ИИ-репетитором по математике. Напиши отчёт для родителя (6-8 предложений, без markdown, без заголовков). Включи: общий уровень и динамику, когнитивный стиль, сильные стороны, зоны роста, вовлечённость, мягкие наблюдения о внимании или настойчивости (без диагнозов), рекомендации. Пиши как опытный педагог-психолог, тепло и конструктивно.",
+      messages: [{ role: "user", content: `Ребёнок: ${child.name}${child.grade ? ", " + child.grade + " класс" : ""}\nТем начато: ${sessions.length}, завершено: ${done}\n\n${statsText}` }]
+    });
+    res.json({ analysis: response.content.find(b => b.type === "text")?.text ?? "" });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Ошибка сервера" }); }
+});
+
 app.post("/api/parent/session/:id/summary", requireAuth("parent"), async (req, res) => {
   try {
     const { data: session, error } = await supabase

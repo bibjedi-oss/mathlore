@@ -360,38 +360,102 @@ async function loadChildProgress(childId, childName) {
       return;
     }
 
-    const phaseLabel = { theory: "Теория", exercises: "Задания", test: "Тест", done: "✓ Завершено" };
+    const phaseLabels = { theory: "Теория", exercises: "Задания", test: "Тест", done: "✓ Завершено" };
+
+    // Group sessions by quarter using curriculum
+    const quarters = [];
+    const quarterMap = new Map();
+    for (const s of sessions) {
+      let placed = false;
+      for (const grade of curriculum) {
+        for (const q of grade.quarters) {
+          if (q.topics.some(t => t.id === s.topic_id)) {
+            const key = `${grade.grade}-${q.id}`;
+            if (!quarterMap.has(key)) {
+              const entry = { key, label: `${grade.label} — ${q.label}`, quarterLabel: q.label, topicIds: q.topics.map(t => t.id), sessions: [] };
+              quarterMap.set(key, entry);
+              quarters.push(entry);
+            }
+            quarterMap.get(key).sessions.push(s);
+            placed = true; break;
+          }
+        }
+        if (placed) break;
+      }
+    }
 
     detail.innerHTML = `
       <div class="dash-detail-title">${childName}</div>
-      <div class="dash-sessions">
-        ${sessions.map(s => `
-          <div class="dash-session ${s.phase === "done" ? "done" : ""}">
-            <div class="dash-session-topic">${s.topic_label || s.topic_id}</div>
-            <div class="dash-session-phase">${phaseLabel[s.phase] || s.phase}</div>
-            ${s.phase === "done" ? `<button class="dash-summary-btn" data-session="${s.id}">AI-анализ</button>` : ""}
-            <div class="dash-summary-text hidden" id="summary-${s.id}"></div>
-          </div>`).join("")}
-      </div>`;
+      <button class="dash-overall-btn">🧠 Общий портрет</button>
+      <div class="dash-summary-text hidden" id="dash-overall-text"></div>
+      ${quarters.map((q, qi) => `
+        <div class="dash-quarter-block">
+          <div class="dash-quarter-header">
+            <span class="dash-quarter-title">${q.label}</span>
+            <button class="dash-quarter-btn" data-qi="${qi}">📊 Анализ четверти</button>
+          </div>
+          <div class="dash-summary-text hidden" id="dash-qa-${qi}"></div>
+          <div class="dash-sessions">
+            ${q.sessions.map(s => `
+              <div class="dash-session ${s.phase === "done" ? "done" : ""}">
+                <div class="dash-session-topic">${s.topic_label || s.topic_id}</div>
+                <div class="dash-session-phase">${phaseLabels[s.phase] || s.phase}</div>
+                ${s.phase === "done" ? `<button class="dash-summary-btn" data-session="${s.id}">AI-анализ темы</button>` : ""}
+                <div class="dash-summary-text hidden" id="summary-${s.id}"></div>
+              </div>`).join("")}
+          </div>
+        </div>`).join("")}`;
 
+    // Общий портрет
+    detail.querySelector(".dash-overall-btn").addEventListener("click", async function() {
+      const btn = this;
+      const el = document.getElementById("dash-overall-text");
+      btn.disabled = true; btn.textContent = "Анализирую...";
+      try {
+        const r = await fetch(`/api/parent/child/${childId}/overall-analysis`, { method: "POST", headers: apiHeaders() });
+        const data = await r.json();
+        el.textContent = data.analysis || "Нет данных";
+        el.classList.remove("hidden");
+        btn.style.display = "none";
+      } catch { btn.textContent = "Ошибка"; btn.disabled = false; }
+    });
+
+    // Анализ четверти
+    detail.querySelectorAll(".dash-quarter-btn").forEach(btn => {
+      btn.addEventListener("click", async function() {
+        const qi = parseInt(btn.dataset.qi);
+        const q = quarters[qi];
+        const el = document.getElementById(`dash-qa-${qi}`);
+        btn.disabled = true; btn.textContent = "Анализирую...";
+        try {
+          const r = await fetch(`/api/parent/child/${childId}/quarter-analysis`, {
+            method: "POST", headers: apiHeaders(),
+            body: JSON.stringify({ quarterLabel: q.quarterLabel, topicIds: q.topicIds })
+          });
+          const data = await r.json();
+          el.textContent = data.analysis || "Нет данных";
+          el.classList.remove("hidden");
+          btn.style.display = "none";
+        } catch { btn.textContent = "Ошибка"; btn.disabled = false; }
+      });
+    });
+
+    // Анализ темы
     detail.querySelectorAll(".dash-summary-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const sessionId = btn.dataset.session;
-        const summaryEl = document.getElementById(`summary-${sessionId}`);
-        btn.disabled = true;
-        btn.textContent = "Анализирую...";
+        const el = document.getElementById(`summary-${sessionId}`);
+        btn.disabled = true; btn.textContent = "Анализирую...";
         try {
-          const res = await fetch(`/api/parent/session/${sessionId}/summary`, { method: "POST", headers: apiHeaders() });
-          const data = await res.json();
-          summaryEl.textContent = data.summary || "Нет данных";
-          summaryEl.classList.remove("hidden");
+          const r = await fetch(`/api/parent/session/${sessionId}/summary`, { method: "POST", headers: apiHeaders() });
+          const data = await r.json();
+          el.textContent = data.summary || "Нет данных";
+          el.classList.remove("hidden");
           btn.style.display = "none";
-        } catch {
-          btn.textContent = "Ошибка";
-          btn.disabled = false;
-        }
+        } catch { btn.textContent = "Ошибка"; btn.disabled = false; }
       });
     });
+
   } catch {
     detail.innerHTML = `<div class="dash-error">Ошибка загрузки</div>`;
   }
