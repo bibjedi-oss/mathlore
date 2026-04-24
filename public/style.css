@@ -185,8 +185,10 @@ header {
   cursor: pointer;
   box-shadow: 0 3px 12px rgba(0,0,0,0.45);
   transition: transform 0.15s, box-shadow 0.15s;
-  line-height: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 .grade-btn:hover {
   transform: translate(-50%, -50%) scale(1.15);
@@ -502,5 +504,4 @@ input[type="text"]:disabled { background: #f8f8f8; color: #aaa; }
   .input-area { padding: 10px 12px; gap: 6px; }
   #photoBtn, #micBtn, #sendBtn { width: 38px; height: 38px; font-size: 16px; }
   input[type="text"] { padding: 10px 14px; font-size: 14px; }
-  .grade-btn { padding: 16px 24px; font-size: 18px; }
 }
