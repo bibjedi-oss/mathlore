@@ -8,31 +8,80 @@
 </head>
 <body>
   <div class="app">
-    <header>
+
+    <!-- ── Авторизация ── -->
+    <div id="authScreen" class="screen hidden">
+      <div class="auth-wrap">
+        <div class="auth-logo">🔭 MathLore</div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="parent">Я родитель</button>
+          <button class="auth-tab" data-tab="child">Я ребёнок</button>
+        </div>
+
+        <!-- Родитель -->
+        <div id="parentAuthPanel" class="auth-panel">
+          <div class="auth-mode-tabs">
+            <button class="auth-mode active" data-mode="login">Войти</button>
+            <button class="auth-mode" data-mode="register">Зарегистрироваться</button>
+          </div>
+          <input id="parentName" class="auth-input hidden" type="text" placeholder="Ваше имя" />
+          <input id="parentEmail" class="auth-input" type="email" placeholder="Email" autocomplete="email" />
+          <input id="parentPassword" class="auth-input" type="password" placeholder="Пароль" autocomplete="current-password" />
+          <div id="parentAuthError" class="auth-error hidden"></div>
+          <button id="parentAuthBtn" class="auth-btn">Войти</button>
+        </div>
+
+        <!-- Ребёнок -->
+        <div id="childAuthPanel" class="auth-panel hidden">
+          <input id="childParentEmail" class="auth-input" type="email" placeholder="Email родителя" autocomplete="email" />
+          <input id="childName" class="auth-input" type="text" placeholder="Твоё имя" />
+          <input id="childPassword" class="auth-input" type="password" placeholder="Пароль" autocomplete="current-password" />
+          <div id="childAuthError" class="auth-error hidden"></div>
+          <button id="childAuthBtn" class="auth-btn">Войти</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Кабинет родителя ── -->
+    <div id="dashboardScreen" class="screen hidden">
+      <div class="dash-header">
+        <div class="dash-title">Кабинет родителя</div>
+        <button id="dashLogoutBtn" class="dash-logout">Выйти</button>
+      </div>
+      <div class="dash-body">
+        <div id="dashChildren" class="dash-children"></div>
+      </div>
+    </div>
+
+    <!-- ── Приветствие (ребёнок) ── -->
+    <header id="mainHeader">
       <div class="header-left">
         <button id="backBtn" class="back-btn hidden">←</button>
         <div class="logo">🔭 MathLore</div>
       </div>
       <div class="header-right">
-        <button id="doneBtn" class="done-btn hidden" title="Тему изучил">✓ Готово</button>
+        <button id="doneBtn" class="done-btn hidden">✓ Готово</button>
         <button id="ttsToggle" class="tts-btn active" title="Выключить голос">🔊</button>
+        <button id="logoutBtn" class="logout-icon" title="Выйти">⏏</button>
       </div>
     </header>
 
-    <!-- Приветствие -->
-    <div id="welcomeScreen" class="screen">
+    <div id="welcomeScreen" class="screen hidden">
       <div class="chat" id="welcomeChat"></div>
     </div>
     <div id="welcomeActions">
       <button class="welcome-btn" id="hiBtn">Привет 👋</button>
     </div>
 
-    <!-- Лобби -->
+    <!-- ── Лобби ── -->
     <div id="lobbyScreen" class="screen hidden"></div>
 
-    <!-- Чат -->
+    <!-- ── Чат ── -->
     <div id="chatScreen" class="screen hidden">
       <div class="topic-banner" id="topicBanner"></div>
+      <div class="phase-bar hidden" id="phaseBar">
+        <span id="phaseLabel"></span>
+      </div>
       <div class="chat" id="chat"></div>
       <div class="input-area">
         <input type="text" id="input" placeholder="Напиши что-нибудь..." disabled autocomplete="off" />
@@ -42,6 +91,7 @@
         <button id="sendBtn" disabled>→</button>
       </div>
     </div>
+
   </div>
 
   <script src="curriculum.js"></script>
