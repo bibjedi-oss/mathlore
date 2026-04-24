@@ -33,6 +33,17 @@ let currentUser = null; // { role, id, name, grade, ... }
 let authToken = null;
 let selectedGrade = null;
 
+// ── Welcome modal ─────────────────────────────────────────────────────────────
+function showWelcomeModal(emoji, text, btnText) {
+  document.getElementById("welcomeModalEmoji").textContent = emoji;
+  document.getElementById("welcomeModalText").textContent = text;
+  document.getElementById("welcomeModalBtn").textContent = btnText;
+  document.getElementById("welcomeModal").classList.remove("hidden");
+}
+document.getElementById("welcomeModalBtn").addEventListener("click", () => {
+  document.getElementById("welcomeModal").classList.add("hidden");
+});
+
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 function saveToken(token) {
   authToken = token;
@@ -228,6 +239,9 @@ document.getElementById("parentAuthBtn").addEventListener("click", async () => {
     saveToken(data.token);
     currentUser = parseToken(data.token);
     showDashboard();
+    if (parentMode === "register") {
+      showWelcomeModal("👋", "Добро пожаловать в MathLore! Создайте профиль ребёнка — придумайте ему имя и пароль. Ребёнок сможет входить самостоятельно, а вы будете следить за его прогрессом здесь, в кабинете.", "Перейти в кабинет");
+    }
   } catch {
     errEl.textContent = "Нет связи с сервером"; errEl.classList.remove("hidden");
   }
@@ -251,6 +265,11 @@ document.getElementById("childAuthBtn").addEventListener("click", async () => {
     saveToken(data.token);
     currentUser = parseToken(data.token);
     showLobby();
+    const welcomeKey = `mathlore_welcomed_${currentUser?.id}`;
+    if (!localStorage.getItem(welcomeKey)) {
+      localStorage.setItem(welcomeKey, "1");
+      showWelcomeModal("🔭", "Привет! Я Архи — твой гид по математике. Здесь ты выбираешь тему, а я рассказываю историю о том, как её открыли — в Древней Греции, Средневековье или на заводе сто лет назад. Потом решаем задачи вместе. Поехали!", "Поехали!");
+    }
   } catch {
     errEl.textContent = "Нет связи с сервером"; errEl.classList.remove("hidden");
   }
