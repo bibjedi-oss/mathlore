@@ -73,20 +73,33 @@ async function markCompleted(id) {
       await fetch("/api/sessions", {
         method: "POST",
         headers: apiHeaders(),
-        body: JSON.stringify({ topicId: id, topicLabel: topic, messages, phase: "done" })
+        body: JSON.stringify({ topicId: id, topicLabel: topic, messages: stripImages(messages), phase: "done" })
       });
     } catch {}
   }
   const p = JSON.parse(localStorage.getItem("mathlore_progress") || "[]");
   if (!p.includes(id)) { p.push(id); localStorage.setItem("mathlore_progress", JSON.stringify(p)); }
 }
+function stripImages(msgs) {
+  return msgs.map(m => {
+    if (!Array.isArray(m.content)) return m;
+    return {
+      ...m,
+      content: m.content
+        .filter(b => b.type !== "image")
+        .map(b => b.type === "text" ? b.text : b)
+        .join(" ") || "[фото]"
+    };
+  });
+}
+
 async function saveSession(phase) {
   if (!currentUser || currentUser.role !== "child" || !currentTopicId) return;
   try {
     await fetch("/api/sessions", {
       method: "POST",
       headers: apiHeaders(),
-      body: JSON.stringify({ topicId: currentTopicId, topicLabel: topic, messages, phase })
+      body: JSON.stringify({ topicId: currentTopicId, topicLabel: topic, messages: stripImages(messages), phase })
     });
   } catch {}
 }
@@ -649,11 +662,12 @@ async function sendToAPI() {
       messages.push({ role: "assistant", content: data.reply });
       addMessage("bot", data.reply);
       speak(data.reply);
-      saveSession(currentPhase);
       if (data.testPassed && currentPhase === "test") {
         currentPhase = "done";
         if (currentTopicId) await markCompleted(currentTopicId);
         showFinishBtn();
+      } else {
+        saveSession(currentPhase);
       }
     } else {
       addMessage("bot", "Что-то пошло не так. Попробуй ещё раз.");
