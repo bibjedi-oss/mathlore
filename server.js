@@ -94,7 +94,7 @@ app.post("/api/auth/child-login", async (req, res) => {
 
     const { data: child } = await supabase
       .from("children")
-      .select("id, name, grade, password_hash")
+      .select("id, name, grade, current_grade, current_quarter, password_hash")
       .eq("parent_id", parent.id)
       .ilike("name", childName.trim())
       .single();
@@ -103,7 +103,7 @@ app.post("/api/auth/child-login", async (req, res) => {
     const valid = await bcrypt.compare(password, child.password_hash);
     if (!valid) return res.status(401).json({ error: "Неверный пароль" });
 
-    const token = jwt.sign({ role: "child", id: child.id, parentId: parent.id, name: child.name, grade: child.grade }, JWT_SECRET, { expiresIn: "30d" });
+    const token = jwt.sign({ role: "child", id: child.id, parentId: parent.id, name: child.name, grade: child.grade, currentGrade: child.current_grade ?? child.grade ?? 1, currentQuarter: child.current_quarter ?? 1 }, JWT_SECRET, { expiresIn: "30d" });
     res.json({ token, user: { id: child.id, name: child.name, grade: child.grade } });
   } catch (err) {
     console.error(err);
@@ -114,14 +114,14 @@ app.post("/api/auth/child-login", async (req, res) => {
 // ── Parent cabinet ───────────────────────────────────────────────────────────
 
 app.post("/api/parent/children", requireAuth("parent"), async (req, res) => {
-  const { name, password, grade } = req.body;
+  const { name, password, grade, currentGrade, currentQuarter } = req.body;
   if (!name || !password) return res.status(400).json({ error: "Имя и пароль обязательны" });
   try {
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase
       .from("children")
-      .insert({ parent_id: req.user.id, name: name.trim(), password_hash: hash, grade: grade || null })
-      .select("id, name, grade")
+      .insert({ parent_id: req.user.id, name: name.trim(), password_hash: hash, grade: grade || null, current_grade: currentGrade || grade || 1, current_quarter: currentQuarter || 1 })
+      .select("id, name, grade, current_grade, current_quarter")
       .single();
     if (error) {
       if (error.code === "23505") return res.status(409).json({ error: "Ребёнок с таким именем уже добавлен" });
@@ -138,7 +138,7 @@ app.get("/api/parent/children", requireAuth("parent"), async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("children")
-      .select("id, name, grade, created_at")
+      .select("id, name, grade, current_grade, current_quarter, created_at")
       .eq("parent_id", req.user.id)
       .order("created_at");
     if (error) throw error;

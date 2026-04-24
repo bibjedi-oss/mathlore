@@ -213,6 +213,23 @@ header {
   transform: translate(-50%, -50%) scale(1.15);
   box-shadow: 0 5px 18px rgba(0,0,0,0.55);
 }
+.grade-btn.locked {
+  background: rgba(80, 60, 30, 0.6);
+  border-color: rgba(120, 100, 60, 0.5);
+  color: rgba(255, 240, 180, 0.4);
+  cursor: not-allowed;
+  font-size: 11px;
+}
+.grade-btn.locked:hover {
+  transform: translate(-50%, -50%);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.45);
+}
+.grade-btn.done {
+  background: rgba(76, 175, 125, 0.9);
+  border-color: #2a7a4f;
+  color: #fff;
+  font-size: 16px;
+}
 /* Positions set dynamically by positionGradeButtons() in app.js */
 
 /* --- Lobby --- */
@@ -456,9 +473,24 @@ header {
   transition: background 0.2s, border-color 0.2s;
   backdrop-filter: blur(2px);
 }
-.cave-panel:hover {
+.cave-panel:hover:not(.locked) {
   background: rgba(30, 15, 4, 0.78);
   border-color: rgba(255, 210, 120, 0.6);
+}
+.cave-panel.locked {
+  background: rgba(10, 5, 0, 0.35);
+  border-color: rgba(120, 100, 60, 0.2);
+  cursor: not-allowed;
+  justify-content: center;
+  gap: 6px;
+}
+.cave-panel-lock {
+  font-size: 22px;
+  opacity: 0.5;
+}
+.cave-panel.locked .cave-panel-label {
+  color: rgba(255, 232, 176, 0.35);
+  font-size: 13px;
 }
 
 .cave-panel-label {
@@ -539,6 +571,12 @@ header {
   background: rgba(76, 175, 125, 0.18);
   border-color: rgba(76, 175, 125, 0.45);
   color: #7ee8b0;
+}
+.cave-topics-list .topic-btn.locked {
+  background: rgba(10, 5, 0, 0.25);
+  border-color: rgba(120, 100, 60, 0.2);
+  color: rgba(255, 232, 176, 0.3);
+  cursor: not-allowed;
 }
 
 /* --- Welcome screen --- */
@@ -909,6 +947,19 @@ input[type="text"]:disabled { background: #f8f8f8; color: #aaa; }
   font-size: 14px;
   font-weight: 600;
   color: #2d3a8c;
+}
+
+.dash-add-row {
+  display: flex;
+  gap: 8px;
+}
+.dash-select {
+  flex: 1;
+}
+.dash-add-hint {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
 }
 
 .dash-child-list {
