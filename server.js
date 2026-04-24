@@ -123,7 +123,10 @@ app.post("/api/parent/children", requireAuth("parent"), async (req, res) => {
       .insert({ parent_id: req.user.id, name: name.trim(), password_hash: hash, grade: grade || null })
       .select("id, name, grade")
       .single();
-    if (error) throw error;
+    if (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "Ребёнок с таким именем уже добавлен" });
+      throw error;
+    }
     res.json(data);
   } catch (err) {
     console.error(err);
