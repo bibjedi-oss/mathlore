@@ -70,12 +70,14 @@ async function getProgress() {
 async function markCompleted(id) {
   if (currentUser?.role === "child") {
     try {
-      await fetch("/api/sessions", {
+      const res = await fetch("/api/sessions", {
         method: "POST",
         headers: apiHeaders(),
         body: JSON.stringify({ topicId: id, topicLabel: topic, messages: stripImages(messages), phase: "done" })
       });
-    } catch {}
+      if (!res.ok) console.error("markCompleted HTTP error:", res.status, await res.text());
+      else console.log("markCompleted OK:", id);
+    } catch (e) { console.error("markCompleted exception:", e); }
   }
   const p = JSON.parse(localStorage.getItem("mathlore_progress") || "[]");
   if (!p.includes(id)) { p.push(id); localStorage.setItem("mathlore_progress", JSON.stringify(p)); }
@@ -94,14 +96,19 @@ function stripImages(msgs) {
 }
 
 async function saveSession(phase) {
-  if (!currentUser || currentUser.role !== "child" || !currentTopicId) return;
+  if (!currentUser || currentUser.role !== "child" || !currentTopicId) {
+    console.warn("saveSession skipped: no user/child/topicId", { currentUser, currentTopicId });
+    return;
+  }
   try {
-    await fetch("/api/sessions", {
+    const res = await fetch("/api/sessions", {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify({ topicId: currentTopicId, topicLabel: topic, messages: stripImages(messages), phase })
     });
-  } catch {}
+    if (!res.ok) console.error("saveSession HTTP error:", res.status, await res.text());
+    else console.log("saveSession OK:", phase, currentTopicId);
+  } catch (e) { console.error("saveSession exception:", e); }
 }
 
 // ── Screen routing ─────────────────────────────────────────────────────────────
