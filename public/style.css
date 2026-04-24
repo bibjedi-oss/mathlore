@@ -122,22 +122,29 @@ header {
 
 /* --- Grade select --- */
 .grade-screen {
-  position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
   background: #12100a;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* Враппер с точным соотношением сторон картинки (941×1672).
+   Кнопки внутри него позиционируются как % от картинки — без JS. */
+.grade-map-frame {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 941 / 1672;
+  max-width: 100%;
 }
 
 .grade-map {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
   user-select: none;
   pointer-events: none;
 }
@@ -165,11 +172,6 @@ header {
   margin: 0;
 }
 
-.grade-buttons {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-}
 
 .grade-btn {
   position: absolute;
