@@ -319,12 +319,18 @@ async function renderDashboard() {
 }
 
 function addChildForm() {
+  const gradeOpts = Array.from({length: 11}, (_, i) => `<option value="${i+1}">${i+1} класс</option>`).join("");
+  const qOpts = [1,2,3,4].map(q => `<option value="${q}">${q} четверть</option>`).join("");
   return `
     <div class="dash-add-child">
       <div class="dash-add-title">Добавить ребёнка</div>
       <input id="newChildName" class="auth-input" type="text" placeholder="Имя ребёнка" />
       <input id="newChildPassword" class="auth-input" type="text" placeholder="Пароль для входа" />
-      <input id="newChildGrade" class="auth-input" type="number" placeholder="Класс (необязательно)" min="1" max="11" />
+      <div class="dash-add-row">
+        <select id="newChildGrade" class="auth-input dash-select"><option value="">Класс</option>${gradeOpts}</select>
+        <select id="newChildQuarter" class="auth-input dash-select"><option value="">Четверть</option>${qOpts}</select>
+      </div>
+      <div class="dash-add-hint">Классы и четверти до выбранных будут разблокированы</div>
       <div id="addChildError" class="auth-error hidden"></div>
       <button id="addChildBtn" class="auth-btn">Добавить</button>
     </div>`;
@@ -335,7 +341,8 @@ function setupAddChildForm() {
     const btn = document.getElementById("addChildBtn");
     const name = document.getElementById("newChildName").value.trim();
     const password = document.getElementById("newChildPassword").value.trim();
-    const grade = parseInt(document.getElementById("newChildGrade").value) || null;
+    const currentGrade = parseInt(document.getElementById("newChildGrade").value) || null;
+    const currentQuarter = parseInt(document.getElementById("newChildQuarter").value) || null;
     const errEl = document.getElementById("addChildError");
     errEl.classList.add("hidden");
     if (!name || !password) { errEl.textContent = "Введите имя и пароль"; errEl.classList.remove("hidden"); return; }
@@ -343,7 +350,7 @@ function setupAddChildForm() {
     try {
       const res = await fetch("/api/parent/children", {
         method: "POST", headers: apiHeaders(),
-        body: JSON.stringify({ name, password, grade })
+        body: JSON.stringify({ name, password, grade: currentGrade, currentGrade, currentQuarter })
       });
       const data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || "Ошибка"; errEl.classList.remove("hidden"); btn.disabled = false; btn.textContent = "Добавить"; return; }
@@ -475,6 +482,24 @@ function renderLobby() {
   else renderTopicLobby(selectedGrade);
 }
 
+function isGradeUnlocked(gradeNum) {
+  const cg = currentUser?.currentGrade ?? 11;
+  return gradeNum <= cg;
+}
+
+function isQuarterUnlocked(gradeNum, quarterIndex) {
+  const cg = currentUser?.currentGrade ?? 11;
+  const cq = currentUser?.currentQuarter ?? 4;
+  if (gradeNum < cg) return true;
+  if (gradeNum === cg) return (quarterIndex + 1) <= cq;
+  return false;
+}
+
+function isTopicUnlocked(topics, topicIndex, progress) {
+  if (topicIndex === 0) return true;
+  return progress.has(topics[topicIndex - 1].id);
+}
+
 const ROAD_POS = [
   [49, 92], // 1
   [51, 86], // 2
@@ -489,8 +514,10 @@ const ROAD_POS = [
   [40, 19], // 11
 ];
 
-function renderGradeSelect() {
+async function renderGradeSelect() {
   appDiv.classList.add("fullscreen-map");
+  const progress = await getProgress();
+
   lobbyScreen.innerHTML = `
     <div class="grade-screen">
       <div class="grade-map-frame">
@@ -502,61 +529,95 @@ function renderGradeSelect() {
         </div>
         ${curriculum.map((g, i) => {
           const [l, t] = ROAD_POS[i] ?? [50, 50];
-          return `<button class="grade-btn" data-grade="${g.grade}" style="left:${l}%;top:${t}%">${g.grade}</button>`;
+          const unlocked = isGradeUnlocked(g.grade);
+          const allDone = g.quarters.every(q => q.topics.every(t => progress.has(t.id)));
+          const cls = !unlocked ? "grade-btn locked" : allDone ? "grade-btn done" : "grade-btn";
+          const label = !unlocked ? "🔒" : allDone ? "✓" : g.grade;
+          return `<button class="${cls}" data-grade="${g.grade}" style="left:${l}%;top:${t}%" ${!unlocked ? "disabled" : ""}>${label}</button>`;
         }).join("")}
       </div>
     </div>`;
-  lobbyScreen.querySelectorAll(".grade-btn").forEach(btn => {
+  lobbyScreen.querySelectorAll(".grade-btn:not(.locked)").forEach(btn => {
     btn.addEventListener("click", () => { selectedGrade = parseInt(btn.dataset.grade); renderTopicLobby(selectedGrade); });
   });
 }
 
 async function renderTopicLobby(gradeNum) {
-  appDiv.classList.remove("fullscreen-map");
+  appDiv.classList.add("fullscreen-map");
   const gradeData = curriculum.find(g => g.grade === gradeNum);
   const progress = await getProgress();
+  renderQuarterMap(gradeData, progress);
+}
+
+function renderQuarterMap(gradeData, progress) {
   const totalTopics = gradeData.quarters.reduce((s, q) => s + q.topics.length, 0);
   const doneTopics = gradeData.quarters.reduce((s, q) => s + q.topics.filter(t => progress.has(t.id)).length, 0);
   const pct = Math.round(doneTopics / totalTopics * 100);
 
   lobbyScreen.innerHTML = `
-    <div class="lobby">
-      <div class="lobby-header">
-        <button class="grade-back-btn">← Классы</button>
-        <div class="lobby-title">${gradeData.label}</div>
+    <div class="cave-screen">
+      <img class="cave-bg" src="lobby-bg.jpg" alt="" />
+      <div class="cave-header">
+        <button class="cave-back-btn">← Классы</button>
+        <div class="cave-grade-title">${gradeData.label}</div>
+        <div class="cave-overall-progress">
+          <div class="cave-overall-bar"><div class="cave-overall-fill" style="width:${pct}%"></div></div>
+          <span class="cave-overall-label">${doneTopics}/${totalTopics}</span>
+        </div>
       </div>
-      <div class="overall-progress">
-        <div class="progress-label">Пройдено: ${doneTopics} из ${totalTopics} тем</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="quarters">
+      <div class="cave-grid">
         ${gradeData.quarters.map((q, qi) => {
+          const unlocked = isQuarterUnlocked(gradeData.grade, qi);
           const qDone = q.topics.filter(t => progress.has(t.id)).length;
           const qPct = Math.round(qDone / q.topics.length * 100);
-          const isOpen = qi === 0 || q.topics.some(t => !progress.has(t.id) && qi === gradeData.quarters.findIndex(x => x.topics.some(t2 => !progress.has(t2.id))));
+          if (!unlocked) {
+            return `<div class="cave-panel locked" data-qi="${qi}">
+              <div class="cave-panel-lock">🔒</div>
+              <div class="cave-panel-label">${q.label}</div>
+            </div>`;
+          }
           return `
-            <div class="quarter ${isOpen ? "open" : ""}" data-qid="${q.id}">
-              <div class="quarter-header">
-                <span class="quarter-label">${q.label}</span>
-                <span class="quarter-progress">${qDone}/${q.topics.length}</span>
-                <div class="quarter-bar"><div class="quarter-fill" style="width:${qPct}%"></div></div>
-                <span class="quarter-arrow">${isOpen ? "▲" : "▼"}</span>
-              </div>
-              <div class="quarter-topics">
-                ${q.topics.map(t => {
-                  const done = progress.has(t.id);
-                  return `<button class="topic-btn ${done ? "done" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">
-                    ${done ? "✓ " : ""}${t.label}
-                  </button>`;
-                }).join("")}
-              </div>
+            <div class="cave-panel" data-qi="${qi}">
+              <div class="cave-panel-label">${q.label}</div>
+              <div class="cave-panel-progress">${qDone} из ${q.topics.length} тем</div>
+              <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
             </div>`;
         }).join("")}
       </div>
     </div>`;
 
-  lobbyScreen.querySelector(".grade-back-btn").addEventListener("click", () => { selectedGrade = null; renderGradeSelect(); });
-  lobbyScreen.querySelectorAll(".quarter-header").forEach(h => h.addEventListener("click", () => h.closest(".quarter").classList.toggle("open")));
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedGrade = null; renderGradeSelect(); });
+  lobbyScreen.querySelectorAll(".cave-panel:not(.locked)").forEach(panel => {
+    panel.addEventListener("click", () => showQuarterTopics(gradeData, progress, parseInt(panel.dataset.qi)));
+  });
+}
+
+function showQuarterTopics(gradeData, progress, qi) {
+  const q = gradeData.quarters[qi];
+  lobbyScreen.innerHTML = `
+    <div class="cave-screen">
+      <img class="cave-bg" src="lobby-bg.jpg" alt="" />
+      <div class="cave-topics-overlay">
+        <div class="cave-topics-header">
+          <button class="cave-back-btn">← Четверти</button>
+          <div class="cave-topics-title">${q.label}</div>
+        </div>
+        <div class="cave-topics-list">
+          ${q.topics.map((t, ti) => {
+            const done = progress.has(t.id);
+            const unlocked = isTopicUnlocked(q.topics, ti, progress);
+            if (!unlocked) {
+              return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
+            }
+            return `<button class="topic-btn ${done ? "done" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">
+              ${done ? "✓ " : ""}${t.label}
+            </button>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>`;
+
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => renderQuarterMap(gradeData, progress));
   lobbyScreen.querySelectorAll(".topic-btn").forEach(btn => {
     btn.addEventListener("click", () => showChat(btn.dataset.topicLabel, btn.dataset.topicId));
   });
