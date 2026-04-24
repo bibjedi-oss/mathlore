@@ -644,7 +644,7 @@ async function sendToAPI() {
       messages.push({ role: "assistant", content: data.reply });
       addMessage("bot", data.reply);
       speak(data.reply);
-      await saveSession(currentPhase);
+      saveSession(currentPhase);
     } else {
       addMessage("bot", "Что-то пошло не так. Попробуй ещё раз.");
     }
