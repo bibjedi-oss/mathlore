@@ -182,18 +182,7 @@ function updatePhaseUI() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
-  const stored = localStorage.getItem("mathlore_token");
-  if (stored) {
-    const payload = parseToken(stored);
-    if (payload && payload.exp * 1000 > Date.now()) {
-      authToken = stored;
-      currentUser = payload;
-      if (payload.role === "parent") { showDashboard(); return; }
-      if (payload.role === "child") { showLobby(); return; }
-    } else {
-      clearToken();
-    }
-  }
+  clearToken();
   showAuth();
 })();
 
