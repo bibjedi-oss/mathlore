@@ -123,6 +123,10 @@ header {
   background: transparent;
   border-bottom: none;
   z-index: 20;
+  pointer-events: none;
+}
+.app.fullscreen-map > header button {
+  pointer-events: auto;
 }
 .app.fullscreen-map > header .logo {
   display: none;
