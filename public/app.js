@@ -171,6 +171,8 @@ function showChat(topicLabelArg, topicIdArg) {
   backBtn.classList.remove("hidden");
   doneBtn.classList.remove("hidden");
   topicBanner.textContent = topicLabelArg;
+  const bg = selectedGrade ? gradeBg(selectedGrade) : "lobby-bg.jpg";
+  chatScreen.style.backgroundImage = `url('${bg}')`;
   updatePhaseUI();
   setControls(true);
   messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
@@ -540,6 +542,9 @@ async function renderGradeSelect() {
   });
 }
 
+const GRADE_BG = { 1: "bg-1.jpg", 2: "bg-2.jpg", 3: "bg-3.jpg" };
+function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || "lobby-bg.jpg"; }
+
 async function renderTopicLobby(gradeNum) {
   appDiv.classList.add("fullscreen-map");
   const gradeData = curriculum.find(g => g.grade === gradeNum);
@@ -554,7 +559,7 @@ function renderQuarterMap(gradeData, progress) {
 
   lobbyScreen.innerHTML = `
     <div class="cave-screen">
-      <img class="cave-bg" src="lobby-bg.jpg" alt="" />
+      <img class="cave-bg" src="${gradeBg(gradeData.grade)}" alt="" />
       <div class="cave-header">
         <button class="cave-back-btn">← Классы</button>
         <div class="cave-grade-title">${gradeData.label}</div>
