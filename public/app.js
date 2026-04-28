@@ -209,8 +209,59 @@ function updatePhaseUI() {
   }
 }
 
+// ── Demo mode ─────────────────────────────────────────────────────────────────
+let isDemoMode = false;
+let demoMessages = [];
+
+async function startDemo() {
+  isDemoMode = true;
+  hideAll();
+  mainHeader.classList.remove("hidden");
+  chatScreen.classList.remove("hidden");
+  backBtn.classList.add("hidden");
+  doneBtn.classList.add("hidden");
+  phaseBar.classList.add("hidden");
+  topicBanner.textContent = "🔭 Демо: Архимед и корона царя";
+  chatScreen.style.backgroundImage = "url('bg-1.jpg')";
+  setControls(true);
+  history.replaceState(null, "", window.location.pathname);
+  demoMessages = [{ role: "user", content: "Начни историю прямо сейчас, с первого предложения." }];
+  await sendDemoMessage();
+}
+
+async function sendDemoMessage() {
+  showTyping();
+  setControls(false);
+  try {
+    const res = await fetch("/api/demo", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: demoMessages })
+    });
+    const data = await res.json();
+    hideTyping();
+    if (data.reply) {
+      demoMessages.push({ role: "assistant", content: data.reply });
+      addMessage("bot", data.reply);
+      speak(data.reply);
+      if (demoMessages.length >= 14) showDemoCTA();
+    }
+  } catch { hideTyping(); addMessage("bot", "Нет связи с сервером."); }
+  setControls(true); input.focus();
+}
+
+function showDemoCTA() {
+  const div = document.createElement("div");
+  div.className = "demo-cta";
+  div.innerHTML = `
+    <div class="demo-cta-text">Хочешь заниматься так каждый день?</div>
+    <a href="#parent-register" class="auth-btn demo-cta-btn" onclick="location.reload()">Зарегистрироваться бесплатно →</a>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
+  if (window.location.hash === "#demo") { startDemo(); return; }
   const saved = localStorage.getItem("mathlore_token");
   if (saved) {
     const user = parseToken(saved);
@@ -869,5 +920,20 @@ async function sendMessage(userText) {
   await sendToAPI();
 }
 
-sendBtn.addEventListener("click", () => { const t = input.value.trim(); if (t) sendMessage(t); });
-input.addEventListener("keydown", e => { if (e.key === "Enter") { const t = input.value.trim(); if (t) sendMessage(t); } });
+sendBtn.addEventListener("click", () => {
+  const t = input.value.trim(); if (!t) return;
+  if (isDemoMode) {
+    addMessage("user", t); input.value = "";
+    demoMessages.push({ role: "user", content: t });
+    sendDemoMessage();
+  } else { sendMessage(t); }
+});
+input.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const t = input.value.trim(); if (!t) return;
+  if (isDemoMode) {
+    addMessage("user", t); input.value = "";
+    demoMessages.push({ role: "user", content: t });
+    sendDemoMessage();
+  } else { sendMessage(t); }
+});

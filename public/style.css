@@ -1188,3 +1188,28 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
   align-items: center;
   justify-content: center;
 }
+
+.demo-cta {
+  margin: 16px 8px;
+  padding: 16px;
+  background: rgba(10,5,1,0.8);
+  border: 1.5px solid #ffd080;
+  border-radius: 12px;
+  text-align: center;
+}
+.demo-cta-text {
+  color: #ffe8b0;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.demo-cta-btn {
+  display: inline-block;
+  text-decoration: none;
+  background: rgba(180,100,10,0.85);
+  color: #fff8e8;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 15px;
+  cursor: pointer;
+}
