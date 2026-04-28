@@ -649,7 +649,20 @@ function renderQuarterMap(gradeData, progress) {
     });
   });
   lobbyScreen.querySelectorAll(".topic-btn:not(.locked)").forEach(btn => {
-    btn.addEventListener("click", () => showChat(btn.dataset.topicLabel, btn.dataset.topicId));
+    btn.addEventListener("click", async () => {
+      const topicId = btn.dataset.topicId;
+      const topicLabel = btn.dataset.topicLabel;
+      const progress = await getProgress();
+      if (progress.has(topicId)) {
+        showWelcomeModal("✓", `Тема "${topicLabel}" уже пройдена. Хочешь пройти её заново?`, "Пройти заново");
+        document.getElementById("welcomeModalBtn").onclick = () => {
+          document.getElementById("welcomeModal").classList.add("hidden");
+          showChat(topicLabel, topicId);
+        };
+        return;
+      }
+      showChat(topicLabel, topicId);
+    });
   });
 }
 
