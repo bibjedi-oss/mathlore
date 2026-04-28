@@ -211,7 +211,16 @@ function updatePhaseUI() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
-  clearToken();
+  const saved = localStorage.getItem("mathlore_token");
+  if (saved) {
+    const user = parseToken(saved);
+    if (user && user.exp * 1000 > Date.now()) {
+      authToken = saved;
+      currentUser = user;
+      if (user.role === "parent") { showDashboard(); return; }
+      if (user.role === "child") { showLobby(); return; }
+    }
+  }
   showAuth();
   if (window.location.hash === "#parent-register") {
     authTab = "parent";
