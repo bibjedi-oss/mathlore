@@ -248,17 +248,16 @@ document.getElementById("parentAuthBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("childAuthBtn").addEventListener("click", async () => {
-  const parentEmail = document.getElementById("childParentEmail").value.trim();
   const childName = document.getElementById("childName").value.trim();
   const password = document.getElementById("childPassword").value;
   const errEl = document.getElementById("childAuthError");
   errEl.classList.add("hidden");
-  if (!parentEmail || !childName || !password) { errEl.textContent = "Заполни все поля"; errEl.classList.remove("hidden"); return; }
+  if (!childName || !password) { errEl.textContent = "Заполни все поля"; errEl.classList.remove("hidden"); return; }
 
   try {
     const res = await fetch("/api/auth/child-login", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ parentEmail, childName, password })
+      body: JSON.stringify({ childName, password })
     });
     const data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || "Ошибка"; errEl.classList.remove("hidden"); return; }

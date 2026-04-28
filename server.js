@@ -82,28 +82,20 @@ app.post("/api/auth/parent-login", async (req, res) => {
 // ── Child auth ───────────────────────────────────────────────────────────────
 
 app.post("/api/auth/child-login", async (req, res) => {
-  const { parentEmail, childName, password } = req.body;
-  if (!parentEmail || !childName || !password) return res.status(400).json({ error: "Все поля обязательны" });
+  const { childName, password } = req.body;
+  if (!childName || !password) return res.status(400).json({ error: "Все поля обязательны" });
   try {
-    const { data: parent } = await supabase
-      .from("parents")
-      .select("id")
-      .eq("email", parentEmail.toLowerCase().trim())
-      .single();
-    if (!parent) return res.status(401).json({ error: "Родитель не найден" });
-
     const { data: child } = await supabase
       .from("children")
-      .select("id, name, grade, current_grade, current_quarter, password_hash")
-      .eq("parent_id", parent.id)
+      .select("id, name, grade, current_grade, current_quarter, password_hash, parent_id")
       .ilike("name", childName.trim())
       .single();
-    if (!child) return res.status(401).json({ error: "Ребёнок не найден" });
+    if (!child) return res.status(401).json({ error: "Имя не найдено" });
 
     const valid = await bcrypt.compare(password, child.password_hash);
     if (!valid) return res.status(401).json({ error: "Неверный пароль" });
 
-    const token = jwt.sign({ role: "child", id: child.id, parentId: parent.id, name: child.name, grade: child.grade, currentGrade: child.current_grade ?? child.grade ?? 1, currentQuarter: child.current_quarter ?? 1 }, JWT_SECRET, { expiresIn: "30d" });
+    const token = jwt.sign({ role: "child", id: child.id, parentId: child.parent_id, name: child.name, grade: child.grade, currentGrade: child.current_grade ?? child.grade ?? 1, currentQuarter: child.current_quarter ?? 1 }, JWT_SECRET, { expiresIn: "30d" });
     res.json({ token, user: { id: child.id, name: child.name, grade: child.grade } });
   } catch (err) {
     console.error(err);
@@ -117,6 +109,8 @@ app.post("/api/parent/children", requireAuth("parent"), async (req, res) => {
   const { name, password, grade, currentGrade, currentQuarter } = req.body;
   if (!name || !password) return res.status(400).json({ error: "Имя и пароль обязательны" });
   try {
+    const { data: existing } = await supabase.from("children").select("id").ilike("name", name.trim()).maybeSingle();
+    if (existing) return res.status(409).json({ error: "Это имя уже занято — придумайте другое или добавьте цифру" });
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase
       .from("children")
