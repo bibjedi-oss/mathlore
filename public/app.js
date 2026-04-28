@@ -655,8 +655,9 @@ function renderQuarterMap(gradeData, progress) {
       const progress = await getProgress();
       if (progress.has(topicId)) {
         showWelcomeModal("✓", `Тема "${topicLabel}" уже пройдена. Хочешь пройти её заново?`, "Пройти заново");
-        document.getElementById("welcomeModalBtn").onclick = () => {
+        document.getElementById("welcomeModalBtn").onclick = async () => {
           document.getElementById("welcomeModal").classList.add("hidden");
+          await markCompleted(topicId);
           showChat(topicLabel, topicId);
         };
         return;
