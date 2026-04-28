@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { Resend } from "resend";
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -17,6 +18,18 @@ const supabase = createClient(
 );
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
+const APP_URL = process.env.APP_URL || "https://mathlore.ru";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+async function sendEmail(to, subject, html) {
+  if (!resend) return;
+  try {
+    await resend.emails.send({ from: "MathLore <noreply@mathlore.ru>", to, subject, html });
+  } catch (err) {
+    console.error("Email send error:", err.message);
+  }
+}
 
 // ── Auth middleware ──────────────────────────────────────────────────────────
 
@@ -52,6 +65,12 @@ app.post("/api/auth/parent-register", async (req, res) => {
       throw error;
     }
     const token = jwt.sign({ role: "parent", id: data.id, email: data.email, name: data.name }, JWT_SECRET, { expiresIn: "30d" });
+    sendEmail(data.email, "Добро пожаловать в MathLore!", `
+      <h2>Добро пожаловать в MathLore! 🔭</h2>
+      <p>Ваш аккаунт родителя создан.</p>
+      <p><b>Email:</b> ${data.email}</p>
+      <p>Войдите в кабинет и добавьте ребёнка: <a href="${APP_URL}">${APP_URL}</a></p>
+    `);
     res.json({ token, user: { id: data.id, email: data.email, name: data.name } });
   } catch (err) {
     console.error(err);
@@ -121,7 +140,13 @@ app.post("/api/parent/children", requireAuth("parent"), async (req, res) => {
       if (error.code === "23505") return res.status(409).json({ error: "Ребёнок с таким именем уже добавлен" });
       throw error;
     }
-    res.json(data);
+    sendEmail(req.user.email, `Профиль ребёнка "${data.name}" создан`, `
+      <h2>Профиль ребёнка создан 🎉</h2>
+      <p><b>Имя для входа:</b> ${data.name}</p>
+      <p><b>Пароль:</b> ${password}</p>
+      <p>Отправьте ребёнку эту ссылку для входа: <a href="${APP_URL}">${APP_URL}</a></p>
+    `);
+    res.json({ ...data, password });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Ошибка сервера" });

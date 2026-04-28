@@ -44,6 +44,22 @@ document.getElementById("welcomeModalBtn").addEventListener("click", () => {
   document.getElementById("welcomeModal").classList.add("hidden");
 });
 
+function showChildCredentials(name, password) {
+  const appUrl = window.location.origin;
+  document.getElementById("welcomeModalEmoji").textContent = "🎉";
+  document.getElementById("welcomeModalText").innerHTML = `
+    <div style="text-align:left;font-size:14px;line-height:1.8">
+      <b>Профиль создан!</b><br><br>
+      Имя для входа: <b>${name}</b><br>
+      Пароль: <b>${password}</b><br><br>
+      Ссылка для ребёнка:<br>
+      <a href="${appUrl}" style="color:#ffd080;word-break:break-all">${appUrl}</a><br><br>
+      <small style="opacity:0.7">Письмо с этими данными отправлено на ваш email</small>
+    </div>`;
+  document.getElementById("welcomeModalBtn").textContent = "Понятно";
+  document.getElementById("welcomeModal").classList.remove("hidden");
+}
+
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 function saveToken(token) {
   authToken = token;
@@ -197,6 +213,19 @@ function updatePhaseUI() {
 (function init() {
   clearToken();
   showAuth();
+  if (window.location.hash === "#parent-register") {
+    authTab = "parent";
+    parentMode = "register";
+    document.getElementById("parentAuthPanel").classList.remove("hidden");
+    document.getElementById("childAuthPanel").classList.add("hidden");
+    document.getElementById("parentToggleBtn").textContent = "← Назад";
+    document.getElementById("parentName").classList.remove("hidden");
+    document.getElementById("parentAuthBtn").textContent = "Зарегистрироваться";
+    document.querySelectorAll(".auth-mode").forEach(b => {
+      b.classList.toggle("active", b.dataset.mode === "register");
+    });
+    history.replaceState(null, "", window.location.pathname);
+  }
 })();
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
@@ -353,6 +382,7 @@ function setupAddChildForm() {
       });
       const data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || "Ошибка"; errEl.classList.remove("hidden"); btn.disabled = false; btn.textContent = "Добавить"; return; }
+      showChildCredentials(data.name, password);
       renderDashboard();
     } catch {
       errEl.textContent = "Ошибка"; errEl.classList.remove("hidden"); btn.disabled = false; btn.textContent = "Добавить";
