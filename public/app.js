@@ -243,7 +243,7 @@ async function startDemo() {
   doneBtn.classList.add("hidden");
   phaseBar.classList.add("hidden");
   topicBanner.textContent = "🔭 Демо: Архимед и корона царя";
-  chatScreen.style.backgroundImage = `url('${GRADE_BG[1]}')`;
+  chatScreen.style.backgroundImage = `url('${GRADE_BG[3]}')`;
   setControls(true);
   history.replaceState(null, "", window.location.pathname);
   demoMessages = [{ role: "user", content: "Начни историю прямо сейчас, с первого предложения." }];
