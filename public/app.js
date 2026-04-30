@@ -92,12 +92,12 @@ async function getProgress() {
       const res = await fetch("/api/progress", { headers: apiHeaders() });
       if (res.ok) {
         const data = await res.json();
-        return new Set(data.completed || []);
+        return { completed: new Set(data.completed || []), inProgress: new Set(data.inProgress || []) };
       }
     } catch {}
   }
-  try { return new Set(JSON.parse(localStorage.getItem(progressKey()) || "[]")); }
-  catch { return new Set(); }
+  try { return { completed: new Set(JSON.parse(localStorage.getItem(progressKey()) || "[]")), inProgress: new Set() }; }
+  catch { return { completed: new Set(), inProgress: new Set() }; }
 }
 async function markCompleted(id) {
   if (currentUser?.role === "child") {
@@ -174,7 +174,13 @@ function showLobby() {
   renderLobby();
 }
 
-function showChat(topicLabelArg, topicIdArg) {
+const PHASE_TRIGGERS = [
+  "Начни историю прямо сейчас, с первого предложения. Без вступлений.",
+  "Переходим к заданиям из учебника.",
+  "Дай мне финальное испытание — самое сложное задание на эту тему."
+];
+
+function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   hideAll();
   appDiv.classList.remove("fullscreen-map");
   mainHeader.classList.remove("hidden");
@@ -187,12 +193,27 @@ function showChat(topicLabelArg, topicIdArg) {
   backBtn.classList.remove("hidden");
   doneBtn.classList.remove("hidden");
   topicBanner.textContent = topicLabelArg;
-  const bg = selectedGrade ? gradeBg(selectedGrade) : "lobby-bg.jpg";
+  const bg = selectedGrade ? gradeBg(selectedGrade) : GRADE_BG[1];
   chatScreen.style.backgroundImage = `url('${bg}')`;
-  updatePhaseUI();
-  setControls(true);
-  messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
-  sendToAPI();
+  history.pushState({ screen: "chat" }, "");
+
+  if (resumeData?.messages?.length > 0) {
+    messages = resumeData.messages;
+    currentPhase = resumeData.phase || "theory";
+    messages.forEach(m => {
+      if (m.role === "user" && PHASE_TRIGGERS.includes(m.content)) return;
+      const text = typeof m.content === "string" ? m.content : "[фото]";
+      addMessage(m.role === "user" ? "user" : "bot", text);
+    });
+    chat.scrollTop = chat.scrollHeight;
+    updatePhaseUI();
+    setControls(true);
+  } else {
+    updatePhaseUI();
+    setControls(true);
+    messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
+    sendToAPI();
+  }
 }
 
 function updatePhaseUI() {
@@ -222,7 +243,7 @@ async function startDemo() {
   doneBtn.classList.add("hidden");
   phaseBar.classList.add("hidden");
   topicBanner.textContent = "🔭 Демо: Архимед и корона царя";
-  chatScreen.style.backgroundImage = "url('bg-1.jpg')";
+  chatScreen.style.backgroundImage = `url('${GRADE_BG[1]}')`;
   setControls(true);
   history.replaceState(null, "", window.location.pathname);
   demoMessages = [{ role: "user", content: "Начни историю прямо сейчас, с первого предложения." }];
@@ -243,20 +264,76 @@ async function sendDemoMessage() {
       demoMessages.push({ role: "assistant", content: data.reply });
       addMessage("bot", data.reply);
       speak(data.reply);
-      if (demoMessages.length >= 14) showDemoCTA();
+      if (data.eurekaReached) {
+        setTimeout(() => {
+          addMessage("bot", "Вот так и открывают настоящую математику — не зубрёжкой, а через живую задачу. Хочешь, чтобы ребёнок занимался так каждый день?");
+          showDemoCTA();
+        }, 1800);
+        return;
+      }
     }
   } catch { hideTyping(); addMessage("bot", "Нет связи с сервером."); }
   setControls(true); input.focus();
 }
 
+let demoCTAEl = null;
+
 function showDemoCTA() {
-  const div = document.createElement("div");
-  div.className = "demo-cta";
-  div.innerHTML = `
-    <div class="demo-cta-text">Хочешь заниматься так каждый день?</div>
-    <a href="#parent-register" class="auth-btn demo-cta-btn" onclick="location.reload()">Зарегистрироваться бесплатно →</a>`;
-  chat.appendChild(div);
+  demoCTAEl = document.createElement("div");
+  demoCTAEl.className = "demo-cta";
+  chat.appendChild(demoCTAEl);
+  renderDemoCTAStep1();
   chat.scrollTop = chat.scrollHeight;
+}
+
+function renderDemoCTAStep1() {
+  demoCTAEl.innerHTML = `
+    <div class="demo-cta-text">Хочешь заниматься так каждый день?</div>
+    <input id="demoTgInput" type="text" placeholder="Ваш Telegram @username" class="demo-tg-input" />
+    <button id="demoTgBtn" class="auth-btn demo-cta-btn">Оставить контакт →</button>
+    <div class="demo-skip"><a href="#" id="demoSkipBtn">Пропустить</a></div>`;
+
+  document.getElementById("demoTgBtn").addEventListener("click", async () => {
+    const tg = document.getElementById("demoTgInput").value.trim();
+    if (tg) {
+      try {
+        await fetch("/api/lead", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telegram: tg, source: "demo" })
+        });
+      } catch {}
+    }
+    renderDemoCTAStep2();
+  });
+
+  document.getElementById("demoSkipBtn").addEventListener("click", e => {
+    e.preventDefault();
+    renderDemoCTAStep2();
+  });
+}
+
+function renderDemoCTAStep2() {
+  demoCTAEl.innerHTML = `
+    <div class="demo-cta-text">Зарегистрируйся — первые 40 сообщений бесплатно!</div>
+    <button class="auth-btn demo-cta-btn" id="demoRegisterBtn">Зарегистрироваться →</button>`;
+  chat.scrollTop = chat.scrollHeight;
+  document.getElementById("demoRegisterBtn").addEventListener("click", goToParentRegister);
+}
+
+function goToParentRegister() {
+  isDemoMode = false;
+  demoMessages = [];
+  showAuth();
+  authTab = "parent";
+  parentMode = "register";
+  document.getElementById("parentAuthPanel").classList.remove("hidden");
+  document.getElementById("childAuthPanel").classList.add("hidden");
+  document.getElementById("parentToggleBtn").textContent = "← Назад";
+  document.getElementById("parentName").classList.remove("hidden");
+  document.getElementById("parentAuthBtn").textContent = "Зарегистрироваться";
+  document.querySelectorAll(".auth-mode").forEach(b => {
+    b.classList.toggle("active", b.dataset.mode === "register");
+  });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -586,7 +663,7 @@ function isQuarterUnlocked(gradeNum, quarterIndex) {
 
 function isTopicUnlocked(topics, topicIndex, progress) {
   if (topicIndex === 0) return true;
-  return progress.has(topics[topicIndex - 1].id);
+  return progress.completed.has(topics[topicIndex - 1].id);
 }
 
 const ROAD_POS = [
@@ -610,7 +687,7 @@ async function renderGradeSelect() {
   lobbyScreen.innerHTML = `
     <div class="grade-screen">
       <div class="grade-map-frame">
-        <img class="grade-map" src="map.jpg" alt="" />
+        <img class="grade-map" src="${MEDIA}map.jpg" alt="" />
         <div class="grade-screen-title">
           <div class="grade-title-box">
             <p class="welcome-sub">Выбери свой класс</p>
@@ -619,7 +696,7 @@ async function renderGradeSelect() {
         ${curriculum.map((g, i) => {
           const [l, t] = ROAD_POS[i] ?? [50, 50];
           const unlocked = isGradeUnlocked(g.grade);
-          const allDone = g.quarters.every(q => q.topics.every(t => progress.has(t.id)));
+          const allDone = g.quarters.every(q => q.topics.every(t => progress.completed.has(t.id)));
           const cls = !unlocked ? "grade-btn locked" : allDone ? "grade-btn done" : "grade-btn";
           const label = !unlocked ? "🔒" : allDone ? "✓" : g.grade;
           return `<button class="${cls}" data-grade="${g.grade}" style="left:${l}%;top:${t}%" ${!unlocked ? "disabled" : ""}>${label}</button>`;
@@ -631,8 +708,9 @@ async function renderGradeSelect() {
   });
 }
 
-const GRADE_BG = { 1: "bg-1.jpg", 2: "bg-2.jpg", 3: "bg-3.jpg" };
-function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || "lobby-bg.jpg"; }
+const MEDIA = "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/";
+const GRADE_BG = { 1: MEDIA + "bg-1.jpg", 2: MEDIA + "bg-2.jpg", 3: MEDIA + "bg-3.jpg", 4: MEDIA + "bg-4.jpg" };
+function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || GRADE_BG[1]; }
 
 async function renderTopicLobby(gradeNum) {
   appDiv.classList.add("fullscreen-map");
@@ -643,7 +721,7 @@ async function renderTopicLobby(gradeNum) {
 
 function renderQuarterMap(gradeData, progress) {
   const totalTopics = gradeData.quarters.reduce((s, q) => s + q.topics.length, 0);
-  const doneTopics = gradeData.quarters.reduce((s, q) => s + q.topics.filter(t => progress.has(t.id)).length, 0);
+  const doneTopics = gradeData.quarters.reduce((s, q) => s + q.topics.filter(t => progress.completed.has(t.id)).length, 0);
   const pct = Math.round(doneTopics / totalTopics * 100);
 
   lobbyScreen.innerHTML = `
@@ -660,7 +738,7 @@ function renderQuarterMap(gradeData, progress) {
       <div class="cave-accordion">
         ${gradeData.quarters.map((q, qi) => {
           const unlocked = isQuarterUnlocked(gradeData.grade, qi);
-          const qDone = q.topics.filter(t => progress.has(t.id)).length;
+          const qDone = q.topics.filter(t => progress.completed.has(t.id)).length;
           const qPct = Math.round(qDone / q.topics.length * 100);
           if (!unlocked) {
             return `<div class="cave-quarter locked">
@@ -680,10 +758,13 @@ function renderQuarterMap(gradeData, progress) {
               </div>
               <div class="cave-quarter-topics">
                 ${q.topics.map((t, ti) => {
-                  const done = progress.has(t.id);
+                  const done = progress.completed.has(t.id);
+                  const resume = !done && progress.inProgress.has(t.id);
                   const unlocked = isTopicUnlocked(q.topics, ti, progress);
                   if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
-                  return `<button class="topic-btn ${done ? "done" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">${done ? "✓ " : ""}${t.label}</button>`;
+                  if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}</button>`;
+                  if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}</button>`;
+                  return `<button class="topic-btn" data-topic-id="${t.id}" data-topic-label="${t.label}">${t.label}</button>`;
                 }).join("")}
               </div>
             </div>`;
@@ -704,13 +785,18 @@ function renderQuarterMap(gradeData, progress) {
       const topicId = btn.dataset.topicId;
       const topicLabel = btn.dataset.topicLabel;
       const progress = await getProgress();
-      if (progress.has(topicId)) {
+      if (progress.completed.has(topicId)) {
         showWelcomeModal("✓", `Тема "${topicLabel}" уже пройдена. Хочешь пройти её заново?`, "Пройти заново");
         document.getElementById("welcomeModalBtn").onclick = async () => {
           document.getElementById("welcomeModal").classList.add("hidden");
+          document.getElementById("welcomeModalBtn2").style.display = "none";
           await markCompleted(topicId);
           showChat(topicLabel, topicId);
         };
+        return;
+      }
+      if (progress.inProgress.has(topicId)) {
+        showResumeModal(topicLabel, topicId);
         return;
       }
       showChat(topicLabel, topicId);
@@ -719,6 +805,10 @@ function renderQuarterMap(gradeData, progress) {
 }
 
 backBtn.addEventListener("click", showLobby);
+
+window.addEventListener("popstate", () => {
+  if (!chatScreen.classList.contains("hidden")) showLobby();
+});
 
 doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
@@ -865,6 +955,14 @@ async function sendToAPI() {
       method: "POST", headers: apiHeaders(),
       body: JSON.stringify({ messages, topic, phase: currentPhase })
     });
+
+    if (res.status === 402) {
+      hideTyping();
+      showTrialEndedModal();
+      isWaiting = false;
+      return;
+    }
+
     const data = await res.json();
     hideTyping();
     if (data.reply) {
@@ -878,6 +976,10 @@ async function sendToAPI() {
       } else {
         saveSession(currentPhase);
       }
+      if (data.creditsLeft === 0) {
+        showTrialEndedModal();
+        return;
+      }
     } else {
       addMessage("bot", "Что-то пошло не так. Попробуй ещё раз.");
     }
@@ -888,6 +990,69 @@ async function sendToAPI() {
   setControls(true); isWaiting = false; input.focus();
 }
 
+function showTrialEndedModal() {
+  setControls(false);
+  const modal = document.getElementById("trialModal");
+  const box = document.getElementById("trialModalBox");
+  box.innerHTML = `
+    <div class="modal-emoji">🎉</div>
+    <div class="modal-text"><b>Пробный период завершён</b><br><br>Ваш ребёнок отправил 40 сообщений Архи.<br><br>Один вопрос:</div>
+    <div style="font-weight:600;color:#333;font-size:15px">Сколько бы вы заплатили за доступ на месяц?</div>
+    <textarea id="priceInput" class="modal-textarea" placeholder="Ваш ответ..."></textarea>
+    <button id="submitFeedbackBtn" class="auth-btn">Ответить →</button>`;
+  modal.classList.remove("hidden");
+
+  document.getElementById("submitFeedbackBtn").addEventListener("click", async () => {
+    const opinion = document.getElementById("priceInput").value.trim();
+    const btn = document.getElementById("submitFeedbackBtn");
+    btn.disabled = true; btn.textContent = "Сохраняем...";
+    try {
+      await fetch("/api/feedback", {
+        method: "POST", headers: apiHeaders(),
+        body: JSON.stringify({ priceOpinion: opinion, messagesUsed: 40 })
+      });
+    } catch {}
+    showTrialTgStep(box);
+  });
+}
+
+function showTrialTgStep(box) {
+  box.innerHTML = `
+    <div class="modal-emoji">📱</div>
+    <div class="modal-text"><b>Оставьте Telegram</b><br><br>Напишем лично — договоримся о продолжении.</div>
+    <input id="trialTgInput" type="text" placeholder="@username" class="modal-textarea" style="min-height:auto;padding:12px 14px" />
+    <button id="trialTgBtn" class="auth-btn">Оставить контакт →</button>
+    <div style="text-align:center;margin-top:4px">
+      <a href="#" id="trialTgSkip" style="font-size:13px;color:#aaa;text-decoration:none">Пропустить</a>
+    </div>`;
+
+  async function submitTg() {
+    const tg = document.getElementById("trialTgInput")?.value?.trim();
+    if (tg) {
+      try {
+        await fetch("/api/parent/telegram", {
+          method: "POST", headers: apiHeaders(),
+          body: JSON.stringify({ telegram: tg })
+        });
+      } catch {}
+    }
+    showTrialCommunityLinks(box);
+  }
+
+  document.getElementById("trialTgBtn").addEventListener("click", submitTg);
+  document.getElementById("trialTgSkip").addEventListener("click", e => { e.preventDefault(); showTrialCommunityLinks(box); });
+}
+
+function showTrialCommunityLinks(box) {
+  box.innerHTML = `
+    <div class="modal-emoji">💬</div>
+    <div class="modal-text"><b>Спасибо!</b><br><br>Вступайте в сообщество — следим за новинками вместе.</div>
+    <div class="modal-community-links">
+      <a href="https://t.me/+TlWWAQ8-mn02MDUy" target="_blank" class="auth-btn" style="text-decoration:none">Telegram →</a>
+      <a href="https://max.ru/join/qcb5TNldItcA9c0NokfaxHXATyFcRn00QdJMA6gZYwk" target="_blank" class="auth-btn auth-btn-secondary" style="text-decoration:none">Max →</a>
+    </div>`;
+}
+
 function showFinishBtn() {
   const btn = document.createElement("button");
   btn.className = "understood-btn";
@@ -895,6 +1060,38 @@ function showFinishBtn() {
   btn.addEventListener("click", showLobby);
   chat.appendChild(btn);
   chat.scrollTop = chat.scrollHeight;
+}
+
+function showResumeModal(topicLabel, topicId) {
+  document.getElementById("welcomeModalEmoji").textContent = "▶️";
+  document.getElementById("welcomeModalText").textContent = `Продолжить тему "${topicLabel}" с того места?`;
+  document.getElementById("welcomeModalBtn").textContent = "Продолжить";
+  const btn2 = document.getElementById("welcomeModalBtn2");
+  btn2.textContent = "Начать заново";
+  btn2.style.display = "";
+  document.getElementById("welcomeModal").classList.remove("hidden");
+
+  document.getElementById("welcomeModalBtn").onclick = async () => {
+    document.getElementById("welcomeModal").classList.add("hidden");
+    btn2.style.display = "none";
+    await resumeSession(topicLabel, topicId);
+  };
+  btn2.onclick = () => {
+    document.getElementById("welcomeModal").classList.add("hidden");
+    btn2.style.display = "none";
+    showChat(topicLabel, topicId);
+  };
+}
+
+async function resumeSession(topicLabel, topicId) {
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(topicId)}`, { headers: apiHeaders() });
+    if (!res.ok) { showChat(topicLabel, topicId); return; }
+    const session = await res.json();
+    showChat(topicLabel, topicId, { messages: session.messages || [], phase: session.phase });
+  } catch {
+    showChat(topicLabel, topicId);
+  }
 }
 
 function addMessage(role, text) {

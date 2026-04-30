@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MathLore Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4ff; min-height: 100vh; padding: 32px 16px; }
+
+    .wrap { max-width: 900px; margin: 0 auto; }
+
+    h1 { font-size: 22px; color: #2d3a8c; margin-bottom: 24px; }
+    h2 { font-size: 16px; color: #444; margin: 28px 0 12px; }
+
+    /* Login */
+    #loginScreen { max-width: 360px; margin: 80px auto; background: white; border-radius: 16px; padding: 32px 28px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 14px; }
+    .logo { font-size: 20px; font-weight: 700; color: #2d3a8c; text-align: center; margin-bottom: 8px; }
+    input { width: 100%; padding: 12px 16px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+    input:focus { border-color: #2d3a8c; }
+    .btn { background: #2d3a8c; color: white; border: none; border-radius: 10px; padding: 12px 20px; font-size: 15px; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #3d4da0; }
+    .btn:disabled { background: #aaa; cursor: default; }
+    .error { color: #c0392b; font-size: 13px; display: none; }
+
+    /* Dashboard */
+    #dashScreen { display: none; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .logout-btn { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #666; }
+    .logout-btn:hover { border-color: #999; color: #333; }
+
+    /* Stats bar */
+    .stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-card { background: white; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 140px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-val { font-size: 28px; font-weight: 700; color: #2d3a8c; }
+    .stat-label { font-size: 12px; color: #888; margin-top: 2px; }
+
+    /* Tables */
+    .table-wrap { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; margin-bottom: 8px; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { text-align: left; padding: 12px 16px; font-size: 12px; color: #888; border-bottom: 1px solid #eee; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .data-table td { padding: 13px 16px; border-bottom: 1px solid #f5f5f5; font-size: 14px; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #fafbff; }
+
+    .credit-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .credit-badge.zero { background: #fde8e8; color: #c0392b; }
+    .credit-badge.low  { background: #fff3cd; color: #856404; }
+    .credit-badge.ok   { background: #e8f5e9; color: #2e7d32; }
+
+    .tg-link { color: #2d3a8c; text-decoration: none; font-weight: 500; }
+    .tg-link:hover { text-decoration: underline; }
+    .tg-none { color: #ccc; font-size: 13px; }
+
+    .credit-row { display: flex; gap: 8px; align-items: center; }
+    .credit-input { width: 80px; padding: 6px 10px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+    .credit-input:focus { border-color: #2d3a8c; }
+    .top-up-btn { background: #2d3a8c; color: white; border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+    .top-up-btn:hover { background: #3d4da0; }
+    .top-up-btn:disabled { background: #aaa; cursor: default; }
+    .top-up-ok { color: #2e7d32; font-size: 13px; display: none; }
+
+    .source-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; background: #e8f0fe; color: #2d3a8c; }
+
+    .date { color: #aaa; font-size: 12px; }
+    .loading { padding: 32px; text-align: center; color: #aaa; }
+  </style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div id="loginScreen">
+    <div class="logo">🔭 MathLore Admin</div>
+    <input id="adminEmail" type="email" placeholder="Email" />
+    <input id="adminPassword" type="password" placeholder="Пароль" />
+    <div class="error" id="loginError"></div>
+    <button class="btn" id="loginBtn">Войти</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashScreen">
+    <div class="wrap">
+      <div class="dash-header">
+        <h1>🔭 MathLore Admin</h1>
+        <button class="logout-btn" id="logoutBtn">Выйти</button>
+      </div>
+
+      <div class="stats" id="statsBar"></div>
+
+      <h2>Зарегистрированные родители</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Родитель</th>
+              <th>Email</th>
+              <th>Telegram</th>
+              <th>Кредиты</th>
+              <th>Пополнить</th>
+              <th>Дата</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr><td colspan="6" class="loading">Загружаю...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Лиды из демо</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Telegram</th>
+              <th>Источник</th>
+              <th>Дата</th>
+            </tr>
+          </thead>
+          <tbody id="leadsBody">
+            <tr><td colspan="3" class="loading">Загружаю...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let adminToken = localStorage.getItem("mathlore_admin_token");
+
+    function authHeaders() {
+      return { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` };
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    }
+
+    function creditClass(n) {
+      if (n <= 0) return "zero";
+      if (n < 50) return "low";
+      return "ok";
+    }
+
+    function tgLink(tg) {
+      if (!tg) return `<span class="tg-none">—</span>`;
+      const handle = tg.startsWith("@") ? tg.slice(1) : tg;
+      return `<a class="tg-link" href="https://t.me/${handle}" target="_blank">${tg}</a>`;
+    }
+
+    async function loadUsers() {
+      const res = await fetch("/api/admin/users", { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const users = await res.json();
+
+      const total = users.length;
+      const trialDone = users.filter(u => u.message_credits <= 0).length;
+      const active = users.filter(u => u.message_credits > 0 && u.message_credits < 40).length;
+      const withTg = users.filter(u => u.telegram).length;
+      document.getElementById("statsBar").innerHTML = `
+        <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-label">Всего родителей</div></div>
+        <div class="stat-card"><div class="stat-val">${active}</div><div class="stat-label">Использовали триал</div></div>
+        <div class="stat-card"><div class="stat-val">${trialDone}</div><div class="stat-label">Триал исчерпан</div></div>
+        <div class="stat-card"><div class="stat-val">${withTg}</div><div class="stat-label">Оставили Telegram</div></div>`;
+
+      if (!users.length) {
+        document.getElementById("usersBody").innerHTML = `<tr><td colspan="6" class="loading">Пользователей пока нет</td></tr>`;
+        return;
+      }
+
+      document.getElementById("usersBody").innerHTML = users.map(u => `
+        <tr>
+          <td><b>${u.name || "—"}</b></td>
+          <td>${u.email}</td>
+          <td>${tgLink(u.telegram)}</td>
+          <td><span class="credit-badge ${creditClass(u.message_credits)}">${u.message_credits}</span></td>
+          <td>
+            <div class="credit-row">
+              <input class="credit-input" type="number" min="0" value="200" id="ci-${u.id}" />
+              <button class="top-up-btn" onclick="topUp('${u.id}')">Пополнить</button>
+              <span class="top-up-ok" id="ok-${u.id}">✓</span>
+            </div>
+          </td>
+          <td class="date">${formatDate(u.created_at)}</td>
+        </tr>`).join("");
+    }
+
+    async function loadLeads() {
+      const res = await fetch("/api/admin/leads", { headers: authHeaders() });
+      if (!res.ok) { document.getElementById("leadsBody").innerHTML = `<tr><td colspan="3" class="loading">Ошибка загрузки</td></tr>`; return; }
+      const leads = await res.json();
+      if (!leads.length) {
+        document.getElementById("leadsBody").innerHTML = `<tr><td colspan="3" class="loading">Лидов пока нет</td></tr>`;
+        return;
+      }
+      document.getElementById("leadsBody").innerHTML = leads.map(l => `
+        <tr>
+          <td>${tgLink(l.telegram)}</td>
+          <td><span class="source-badge">${l.source}</span></td>
+          <td class="date">${formatDate(l.created_at)}</td>
+        </tr>`).join("");
+    }
+
+    async function topUp(userId) {
+      const input = document.getElementById(`ci-${userId}`);
+      const btn = input.parentElement.querySelector(".top-up-btn");
+      const ok = document.getElementById(`ok-${userId}`);
+      const credits = parseInt(input.value);
+      if (isNaN(credits) || credits < 0) return;
+      btn.disabled = true; btn.textContent = "...";
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/credits`, {
+          method: "POST", headers: authHeaders(),
+          body: JSON.stringify({ credits })
+        });
+        if (res.ok) {
+          ok.style.display = "inline";
+          setTimeout(() => { ok.style.display = "none"; loadUsers(); }, 1200);
+        }
+      } catch {}
+      btn.disabled = false; btn.textContent = "Пополнить";
+    }
+
+    function logout() {
+      localStorage.removeItem("mathlore_admin_token");
+      adminToken = null;
+      document.getElementById("loginScreen").style.display = "";
+      document.getElementById("dashScreen").style.display = "none";
+    }
+
+    function showDash() {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("dashScreen").style.display = "";
+      loadUsers();
+      loadLeads();
+    }
+
+    if (adminToken) showDash();
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("adminEmail").value.trim();
+      const password = document.getElementById("adminPassword").value;
+      const errEl = document.getElementById("loginError");
+      const btn = document.getElementById("loginBtn");
+      errEl.style.display = "none";
+      btn.disabled = true; btn.textContent = "Вхожу...";
+      try {
+        const res = await fetch("/api/auth/admin-login", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { errEl.textContent = data.error || "Ошибка"; errEl.style.display = "block"; return; }
+        adminToken = data.token;
+        localStorage.setItem("mathlore_admin_token", adminToken);
+        showDash();
+      } catch {
+        errEl.textContent = "Нет связи с сервером"; errEl.style.display = "block";
+      }
+      btn.disabled = false; btn.textContent = "Войти";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+    document.getElementById("adminPassword").addEventListener("keydown", e => {
+      if (e.key === "Enter") document.getElementById("loginBtn").click();
+    });
+  </script>
+</body>
+</html>

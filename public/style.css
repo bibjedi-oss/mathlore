@@ -7,6 +7,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  overscroll-behavior: none;
 }
 
 .app {
@@ -562,6 +563,11 @@ header {
   border-color: rgba(76, 175, 125, 0.45);
   color: #7ee8b0;
 }
+.cave-quarter-topics .topic-btn.resume {
+  background: rgba(255, 180, 30, 0.15);
+  border-color: rgba(255, 180, 30, 0.45);
+  color: #ffd080;
+}
 .cave-quarter-topics .topic-btn.locked {
   background: rgba(10, 5, 0, 0.25);
   border-color: rgba(120, 100, 60, 0.18);
@@ -781,6 +787,34 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
   font-size: 15px;
   line-height: 1.6;
   color: #333;
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  min-height: 80px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+  color: #333;
+}
+.modal-textarea:focus { border-color: #2d3a8c; }
+
+.modal-community-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.modal-community-links .auth-btn { text-align: center; }
+
+.auth-btn-secondary {
+  background: #f0f4ff !important;
+  color: #2d3a8c !important;
+  border: 1.5px solid #c0caef;
 }
 
 /* --- Auth screen --- */
@@ -1212,4 +1246,23 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
   padding: 10px 20px;
   font-size: 15px;
   cursor: pointer;
+  width: 100%;
 }
+
+.demo-tg-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(255, 180, 60, 0.4);
+  border-radius: 10px;
+  font-size: 14px;
+  background: rgba(10, 5, 1, 0.55);
+  color: #ffe8b0;
+  outline: none;
+  margin-bottom: 8px;
+}
+.demo-tg-input::placeholder { color: rgba(255, 220, 150, 0.35); }
+.demo-tg-input:focus { border-color: rgba(255, 180, 60, 0.7); }
+
+.demo-skip { text-align: center; margin-top: 10px; }
+.demo-skip a { color: rgba(255, 232, 176, 0.4); font-size: 13px; text-decoration: none; }
+.demo-skip a:hover { color: rgba(255, 232, 176, 0.7); }
