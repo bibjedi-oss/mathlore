@@ -23,6 +23,8 @@ const supabase = createClient(
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const APP_URL = process.env.APP_URL || "https://mathlore.ru";
 
+let currentModel = process.env.DEFAULT_MODEL || "claude-opus-4-6";
+
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 async function sendEmail(to, subject, html) {
@@ -216,7 +218,7 @@ app.post("/api/parent/child/:id/quarter-analysis", requireAuth("parent"), async 
     }).join("\n\n---\n\n");
 
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-6",
+      model: currentModel,
       max_tokens: 600,
       system: "Ты анализируешь успехи ребёнка за учебную четверть по математике. Изучи диалоги с ИИ-репетитором и напиши отчёт для родителя (5-6 предложений, без markdown, без заголовков). Охвати: общий прогресс, сильные стороны, трудности, вовлечённость, рекомендации. Пиши тепло, как опытный педагог.",
       messages: [{ role: "user", content: `Ребёнок: ${child.name}\nЧетверть: ${quarterLabel}\n\n${statsText}` }]
@@ -249,7 +251,7 @@ app.post("/api/parent/child/:id/overall-analysis", requireAuth("parent"), async 
     }).join("\n\n---\n\n");
 
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-6",
+      model: currentModel,
       max_tokens: 800,
       system: "Ты составляешь когнитивный портрет ребёнка на основе занятий с ИИ-репетитором по математике. Напиши отчёт для родителя (6-8 предложений, без markdown, без заголовков). Включи: общий уровень и динамику, когнитивный стиль, сильные стороны, зоны роста, вовлечённость, мягкие наблюдения о внимании или настойчивости (без диагнозов), рекомендации. Пиши как опытный педагог-психолог, тепло и конструктивно.",
       messages: [{ role: "user", content: `Ребёнок: ${child.name}${child.grade ? ", " + child.grade + " класс" : ""}\nТем начато: ${sessions.length}, завершено: ${done}\n\n${statsText}` }]
@@ -278,7 +280,7 @@ app.post("/api/parent/session/:id/summary", requireAuth("parent"), async (req, r
       .join("\n");
 
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-6",
+      model: currentModel,
       max_tokens: 400,
       system: "Ты анализируешь диалог ребёнка с ИИ-репетитором по математике. Напиши краткий отчёт для родителя (4-5 предложений): понял ли ребёнок тему, где были трудности, насколько был вовлечён, что стоит повторить. Пиши тепло, без markdown.",
       messages: [{ role: "user", content: `Тема: ${session.topic_label}\n\n${dialogText}` }]
@@ -459,7 +461,7 @@ app.post("/api/demo", async (req, res) => {
   if (messages.length > 20) return res.status(400).json({ error: "demo limit reached" });
   try {
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-6",
+      model: currentModel,
       max_tokens: 512,
       system: DEMO_SYSTEM,
       messages,
@@ -492,7 +494,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     }
 
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-6",
+      model: currentModel,
       max_tokens: 1024,
       system: buildSystemPrompt(topic || "математика", phase || "theory"),
       messages,
@@ -571,6 +573,19 @@ app.post("/api/admin/users/:id/credits", requireAuth("admin"), async (req, res) 
     console.error(err);
     res.status(500).json({ error: "Ошибка сервера" });
   }
+});
+
+app.get("/api/admin/model", requireAuth("admin"), (req, res) => {
+  res.json({ model: currentModel });
+});
+
+app.post("/api/admin/model", requireAuth("admin"), (req, res) => {
+  const ALLOWED = ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-6", "claude-opus-4-7"];
+  const { model } = req.body;
+  if (!ALLOWED.includes(model)) return res.status(400).json({ error: "Недопустимая модель" });
+  currentModel = model;
+  console.log("[ADMIN] Model switched to:", currentModel);
+  res.json({ ok: true, model: currentModel });
 });
 
 // ── Feedback & leads ──────────────────────────────────────────────────────────

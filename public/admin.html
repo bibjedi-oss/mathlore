@@ -64,6 +64,19 @@
 
     .date { color: #aaa; font-size: 12px; }
     .loading { padding: 32px; text-align: center; color: #aaa; }
+
+    /* Model switcher */
+    .model-bar { background: white; border-radius: 14px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .model-bar label { font-size: 13px; font-weight: 600; color: #555; white-space: nowrap; }
+    .model-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .model-opt { display: none; }
+    .model-opt + span { display: inline-block; padding: 7px 16px; border-radius: 20px; border: 1.5px solid #ddd; font-size: 13px; cursor: pointer; transition: all 0.15s; color: #555; }
+    .model-opt:checked + span { background: #2d3a8c; color: white; border-color: #2d3a8c; }
+    .model-opt + span:hover { border-color: #2d3a8c; }
+    .model-save-btn { background: #2d3a8c; color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+    .model-save-btn:hover { background: #3d4da0; }
+    .model-save-btn:disabled { background: #aaa; cursor: default; }
+    .model-ok { color: #2e7d32; font-size: 13px; display: none; margin-left: 4px; }
   </style>
 </head>
 <body>
@@ -83,6 +96,18 @@
       <div class="dash-header">
         <h1>🔭 MathLore Admin</h1>
         <button class="logout-btn" id="logoutBtn">Выйти</button>
+      </div>
+
+      <div class="model-bar">
+        <label>Модель ИИ:</label>
+        <div class="model-options" id="modelOptions">
+          <label><input class="model-opt" type="radio" name="model" value="claude-haiku-4-5-20251001" /><span>Haiku 4.5 ⚡</span></label>
+          <label><input class="model-opt" type="radio" name="model" value="claude-sonnet-4-6" /><span>Sonnet 4.6</span></label>
+          <label><input class="model-opt" type="radio" name="model" value="claude-opus-4-6" /><span>Opus 4.6</span></label>
+          <label><input class="model-opt" type="radio" name="model" value="claude-opus-4-7" /><span>Opus 4.7 ★</span></label>
+        </div>
+        <button class="model-save-btn" id="modelSaveBtn">Применить</button>
+        <span class="model-ok" id="modelOk">✓ Сохранено</span>
       </div>
 
       <div class="stats" id="statsBar"></div>
@@ -186,6 +211,34 @@
         </tr>`).join("");
     }
 
+    async function loadModel() {
+      try {
+        const res = await fetch("/api/admin/model", { headers: authHeaders() });
+        const data = await res.json();
+        const radio = document.querySelector(`.model-opt[value="${data.model}"]`);
+        if (radio) radio.checked = true;
+      } catch {}
+    }
+
+    document.getElementById("modelSaveBtn").addEventListener("click", async () => {
+      const selected = document.querySelector(".model-opt:checked");
+      if (!selected) return;
+      const btn = document.getElementById("modelSaveBtn");
+      const ok = document.getElementById("modelOk");
+      btn.disabled = true; btn.textContent = "...";
+      try {
+        const res = await fetch("/api/admin/model", {
+          method: "POST", headers: authHeaders(),
+          body: JSON.stringify({ model: selected.value })
+        });
+        if (res.ok) {
+          ok.style.display = "inline";
+          setTimeout(() => { ok.style.display = "none"; }, 2000);
+        }
+      } catch {}
+      btn.disabled = false; btn.textContent = "Применить";
+    });
+
     async function loadLeads() {
       const res = await fetch("/api/admin/leads", { headers: authHeaders() });
       if (!res.ok) { document.getElementById("leadsBody").innerHTML = `<tr><td colspan="3" class="loading">Ошибка загрузки</td></tr>`; return; }
@@ -232,6 +285,7 @@
     function showDash() {
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("dashScreen").style.display = "";
+      loadModel();
       loadUsers();
       loadLeads();
     }
