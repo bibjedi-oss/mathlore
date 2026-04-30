@@ -10,7 +10,10 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static("public"));
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  ...(process.env.ANTHROPIC_BASE_URL ? { baseURL: process.env.ANTHROPIC_BASE_URL } : {})
+});
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
