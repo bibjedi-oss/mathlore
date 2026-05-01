@@ -709,7 +709,7 @@ async function renderGradeSelect() {
 }
 
 const MEDIA = "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/";
-const GRADE_BG = { 1: MEDIA + "bg-1.jpg", 2: MEDIA + "bg-2.jpg", 3: MEDIA + "bg-3.jpg", 4: MEDIA + "bg-4.jpg" };
+const GRADE_BG = { 1: "/bg-1.webp", 2: "/bg-2.webp", 3: "/bg-3.webp", 4: "/bg-4.webp" };
 function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || GRADE_BG[1]; }
 
 async function renderTopicLobby(gradeNum) {
