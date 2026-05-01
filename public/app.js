@@ -339,6 +339,23 @@ function goToParentRegister() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
   if (window.location.hash === "#demo") { startDemo(); return; }
+
+  if (window.location.hash === "#parent-register") {
+    history.replaceState(null, "", window.location.pathname);
+    showAuth();
+    authTab = "parent";
+    parentMode = "register";
+    document.getElementById("parentAuthPanel").classList.remove("hidden");
+    document.getElementById("childAuthPanel").classList.add("hidden");
+    document.getElementById("parentToggleBtn").textContent = "← Назад";
+    document.getElementById("parentName").classList.remove("hidden");
+    document.getElementById("parentAuthBtn").textContent = "Зарегистрироваться";
+    document.querySelectorAll(".auth-mode").forEach(b => {
+      b.classList.toggle("active", b.dataset.mode === "register");
+    });
+    return;
+  }
+
   const saved = localStorage.getItem("mathlore_token");
   if (saved) {
     const user = parseToken(saved);
@@ -350,19 +367,6 @@ function goToParentRegister() {
     }
   }
   showAuth();
-  if (window.location.hash === "#parent-register") {
-    authTab = "parent";
-    parentMode = "register";
-    document.getElementById("parentAuthPanel").classList.remove("hidden");
-    document.getElementById("childAuthPanel").classList.add("hidden");
-    document.getElementById("parentToggleBtn").textContent = "← Назад";
-    document.getElementById("parentName").classList.remove("hidden");
-    document.getElementById("parentAuthBtn").textContent = "Зарегистрироваться";
-    document.querySelectorAll(".auth-mode").forEach(b => {
-      b.classList.toggle("active", b.dataset.mode === "register");
-    });
-    history.replaceState(null, "", window.location.pathname);
-  }
 })();
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
@@ -709,7 +713,11 @@ async function renderGradeSelect() {
 }
 
 const MEDIA = "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/";
-const GRADE_BG = { 1: MEDIA + "bg-1.webp", 2: MEDIA + "bg-2.webp", 3: MEDIA + "bg-3.webp", 4: MEDIA + "bg-4.webp" };
+const IMG_EXT = (() => {
+  const c = document.createElement("canvas");
+  return c.getContext && c.toDataURL("image/webp").startsWith("data:image/webp") ? "webp" : "jpg";
+})();
+const GRADE_BG = { 1: MEDIA + "bg-1." + IMG_EXT, 2: MEDIA + "bg-2." + IMG_EXT, 3: MEDIA + "bg-3." + IMG_EXT, 4: MEDIA + "bg-4." + IMG_EXT };
 function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || GRADE_BG[1]; }
 
 async function renderTopicLobby(gradeNum) {
