@@ -30,6 +30,21 @@ jobs:
           curl -L "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-8.jpg" -o android/app/src/main/assets/mathlore-assets/bg-8.jpg
           curl -L "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-9.jpg" -o android/app/src/main/assets/mathlore-assets/bg-9.jpg
 
+      - name: Generate placeholder app icons
+        run: |
+          for density_size in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            density="${density_size%%:*}"
+            size="${density_size##*:}"
+            dir="android/app/src/main/res/mipmap-${density}"
+            mkdir -p "$dir"
+            convert -size ${size}x${size} xc:"#8b5e1a" \
+              -fill white -gravity Center \
+              -font DejaVu-Sans-Bold -pointsize $((size*2/5)) \
+              -annotate 0 "A" \
+              "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+
       - name: Build Debug APK
         working-directory: android
         run: gradle assembleDebug
