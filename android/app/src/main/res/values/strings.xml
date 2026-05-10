@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ArchiMath</string>
+    <string name="exit_confirm">Выйти из приложения?</string>
+    <string name="yes">Выйти</string>
+    <string name="no">Отмена</string>
+</resources>

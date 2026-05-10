@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MathLore</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
+  <meta name="theme-color" content="#8b5e1a" />
+  <title>ArchiMath</title>
   <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -13,7 +14,7 @@
     <!-- ── Авторизация ── -->
     <div id="authScreen" class="screen hidden">
       <div class="auth-wrap">
-        <div class="auth-logo">🔭 MathLore</div>
+        <div class="auth-logo">🔭 ArchiMath</div>
 
         <!-- Ребёнок (по умолчанию) -->
         <div id="childAuthPanel" class="auth-panel">
@@ -44,7 +45,18 @@
     <div id="dashboardScreen" class="screen hidden">
       <div class="dash-header">
         <div class="dash-title">Кабинет родителя</div>
-        <button id="dashLogoutBtn" class="dash-logout">Выйти</button>
+        <div class="dash-header-actions">
+          <button id="dashFeedbackBtn" class="dash-feedback-btn">💬 Отзыв</button>
+          <button id="dashLogoutBtn" class="dash-logout">Выйти</button>
+        </div>
+      </div>
+      <div id="dashFeedbackPanel" class="dash-feedback-panel hidden">
+        <div class="dash-feedback-title">Оставьте отзыв</div>
+        <textarea id="dashFeedbackText" class="dash-feedback-textarea" placeholder="Что нравится? Что мешает? Чего не хватает?"></textarea>
+        <div class="dash-feedback-row">
+          <button id="dashFeedbackSend" class="auth-btn" style="width:auto;padding:10px 24px">Отправить</button>
+          <span id="dashFeedbackOk" class="dash-feedback-ok hidden">Спасибо!</span>
+        </div>
       </div>
       <div class="dash-body">
         <div id="dashChildren" class="dash-children"></div>
@@ -55,7 +67,7 @@
     <header id="mainHeader">
       <div class="header-left">
         <button id="backBtn" class="back-btn hidden">←</button>
-        <div class="logo">🔭 MathLore</div>
+        <div class="logo">🔭 ArchiMath</div>
       </div>
       <div class="header-right">
         <button id="doneBtn" class="done-btn hidden">✓ Готово</button>

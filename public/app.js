@@ -19,6 +19,11 @@ const phaseBar      = document.getElementById("phaseBar");
 const phaseLabel    = document.getElementById("phaseLabel");
 const logoutBtn     = document.getElementById("logoutBtn");
 
+// ── Контакт для оплаты (заполни перед запуском трафика) ───────────────────────
+// Telegram: "https://t.me/ВАШ_USERNAME?text=..."
+// WhatsApp: "https://wa.me/7XXXXXXXXXX?text=..."
+const PAYMENT_CONTACT_URL = "https://t.me/bibikin";
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let messages = [];
 let topic = "";
@@ -166,6 +171,7 @@ function showDashboard() {
 
 function showLobby() {
   hideAll();
+  isReplayMode = false;
   mainHeader.classList.remove("hidden");
   backBtn.classList.add("hidden");
   doneBtn.classList.add("hidden");
@@ -232,14 +238,17 @@ function updatePhaseUI() {
 
 // ── Demo mode ─────────────────────────────────────────────────────────────────
 let isDemoMode = false;
+let isReplayMode = false;
 let demoMessages = [];
 
 async function startDemo() {
   isDemoMode = true;
+  localStorage.setItem("archi_demo_seen", "1");
   hideAll();
   mainHeader.classList.remove("hidden");
   chatScreen.classList.remove("hidden");
-  backBtn.classList.add("hidden");
+  backBtn.classList.remove("hidden");
+  backBtn.onclick = () => { isDemoMode = false; demoMessages = []; showAuth(); backBtn.onclick = null; };
   doneBtn.classList.add("hidden");
   phaseBar.classList.add("hidden");
   topicBanner.textContent = "🔭 Демо: Архимед и корона царя";
@@ -336,6 +345,10 @@ function goToParentRegister() {
   });
 }
 
+// ── Auth screen state (must be declared before init runs) ─────────────────────
+let authTab = "child";
+let parentMode = "login";
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
   if (window.location.hash === "#demo") { startDemo(); return; }
@@ -366,13 +379,15 @@ function goToParentRegister() {
       if (user.role === "child") { showLobby(); return; }
     }
   }
-  showAuth();
+  // J1/J2: новый пользователь без аккаунта — показываем демо автоматически
+  if (!localStorage.getItem("archi_demo_seen")) {
+    startDemo();
+  } else {
+    showAuth();
+  }
 })();
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
-let authTab = "child";
-let parentMode = "login";
-
 document.getElementById("parentToggleBtn").addEventListener("click", () => {
   const isParent = authTab === "parent";
   authTab = isParent ? "child" : "parent";
@@ -410,7 +425,7 @@ document.getElementById("parentAuthBtn").addEventListener("click", async () => {
     currentUser = parseToken(data.token);
     showDashboard();
     if (parentMode === "register") {
-      showWelcomeModal("👋", "Добро пожаловать в MathLore! Создайте профиль ребёнка — придумайте ему имя и пароль. Ребёнок сможет входить самостоятельно, а вы будете следить за его прогрессом здесь, в кабинете.", "Перейти в кабинет");
+      showWelcomeModal("👋", "Добро пожаловать в ArchiMath! Создайте профиль ребёнка — придумайте ему имя и пароль. Ребёнок сможет входить самостоятельно, а вы будете следить за его прогрессом здесь, в кабинете.", "Перейти в кабинет");
     }
   } catch {
     errEl.textContent = "Нет связи с сервером"; errEl.classList.remove("hidden");
@@ -449,23 +464,62 @@ logoutBtn.addEventListener("click", () => { clearToken(); currentUser = null; sh
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 document.getElementById("dashLogoutBtn").addEventListener("click", () => { clearToken(); currentUser = null; showAuth(); });
 
+document.getElementById("dashFeedbackBtn").addEventListener("click", () => {
+  const panel = document.getElementById("dashFeedbackPanel");
+  panel.classList.toggle("hidden");
+});
+
+document.getElementById("dashFeedbackSend").addEventListener("click", async () => {
+  const text = document.getElementById("dashFeedbackText").value.trim();
+  if (!text) return;
+  const btn = document.getElementById("dashFeedbackSend");
+  btn.disabled = true; btn.textContent = "Отправляем...";
+  try {
+    await fetch("/api/parent/feedback", {
+      method: "POST", headers: apiHeaders(),
+      body: JSON.stringify({ text })
+    });
+  } catch {}
+  document.getElementById("dashFeedbackText").value = "";
+  document.getElementById("dashFeedbackOk").classList.remove("hidden");
+  btn.disabled = false; btn.textContent = "Отправить";
+  setTimeout(() => document.getElementById("dashFeedbackOk").classList.add("hidden"), 3000);
+});
+
 async function renderDashboard() {
   const container = document.getElementById("dashChildren");
   container.innerHTML = `<div class="dash-loading">Загружаю...</div>`;
 
   try {
-    const res = await fetch("/api/parent/children", { headers: apiHeaders() });
-    const children = await res.json();
+    const [childrenRes, meRes] = await Promise.all([
+      fetch("/api/parent/children", { headers: apiHeaders() }),
+      fetch("/api/parent/me", { headers: apiHeaders() })
+    ]);
+    const children = await childrenRes.json();
+    const me = meRes.ok ? await meRes.json() : null;
+
+    const credits = me?.message_credits ?? null;
+    const creditsCls = credits === null ? "" : credits <= 0 ? "dash-balance-zero" : credits < 20 ? "dash-balance-low" : "dash-balance-ok";
+    const creditsLabel = credits === null ? "" : credits <= 0
+      ? `<span class="${creditsCls}">Токены закончились — <a href="#" id="buyCreditsLink">получить доступ</a></span>`
+      : `<span class="${creditsCls}">Токенов осталось: <b>${credits}</b></span>`;
+
+    const balanceBar = creditsLabel
+      ? `<div class="dash-balance-bar">${creditsLabel}</div>`
+      : "";
 
     if (!children.length) {
       container.innerHTML = `
+        ${balanceBar}
         <div class="dash-empty">У вас пока нет детей. Добавьте первого!</div>
         <div class="dash-add-wrap">${addChildForm()}</div>`;
       setupAddChildForm();
+      setupBuyCreditsLink(container);
       return;
     }
 
     container.innerHTML = `
+      ${balanceBar}
       <div class="dash-add-wrap">${addChildForm()}</div>
       <div class="dash-child-list">
         ${children.map(c => `
@@ -478,6 +532,7 @@ async function renderDashboard() {
       <div id="dashChildDetail" class="dash-detail hidden"></div>`;
 
     setupAddChildForm();
+    setupBuyCreditsLink(container);
 
     container.querySelectorAll(".dash-progress-btn").forEach(btn => {
       btn.addEventListener("click", () => loadChildProgress(btn.dataset.id, children.find(c => c.id === btn.dataset.id)?.name));
@@ -488,7 +543,7 @@ async function renderDashboard() {
 }
 
 function addChildForm() {
-  const gradeOpts = Array.from({length: 11}, (_, i) => `<option value="${i+1}">${i+1} класс</option>`).join("");
+  const gradeOpts = [7, 8, 9].map(g => `<option value="${g}">${g} класс</option>`).join("");
   const qOpts = [1,2,3,4].map(q => `<option value="${q}">${q} четверть</option>`).join("");
   return `
     <div class="dash-add-child">
@@ -503,6 +558,19 @@ function addChildForm() {
       <div id="addChildError" class="auth-error hidden"></div>
       <button id="addChildBtn" class="auth-btn">Добавить</button>
     </div>`;
+}
+
+function setupBuyCreditsLink(container) {
+  const link = container.querySelector("#buyCreditsLink");
+  if (!link) return;
+  link.addEventListener("click", e => {
+    e.preventDefault();
+    const msg = encodeURIComponent("Хочу продолжить обучение в ArchiMath. Как оплатить доступ?");
+    const url = PAYMENT_CONTACT_URL.includes("?")
+      ? PAYMENT_CONTACT_URL + "&text=" + msg
+      : PAYMENT_CONTACT_URL + "?text=" + msg;
+    window.open(url, "_blank");
+  });
 }
 
 function setupAddChildForm() {
@@ -547,21 +615,21 @@ async function loadChildProgress(childId, childName) {
 
     const phaseLabels = { theory: "Теория", exercises: "Задания", test: "Тест", done: "✓ Завершено" };
 
-    // Group sessions by quarter using curriculum
-    const quarters = [];
-    const quarterMap = new Map();
+    // Group sessions by theme using curriculum
+    const themes = [];
+    const themeMap = new Map();
     for (const s of sessions) {
       let placed = false;
       for (const grade of curriculum) {
-        for (const q of grade.quarters) {
-          if (q.topics.some(t => t.id === s.topic_id)) {
+        for (const q of (grade.themes ?? grade.quarters)) {
+          if ((q.paragraphs ?? q.topics).some(t => t.id === s.topic_id)) {
             const key = `${grade.grade}-${q.id}`;
-            if (!quarterMap.has(key)) {
-              const entry = { key, label: `${grade.label} — ${q.label}`, quarterLabel: q.label, topicIds: q.topics.map(t => t.id), sessions: [] };
-              quarterMap.set(key, entry);
-              quarters.push(entry);
+            if (!themeMap.has(key)) {
+              const entry = { key, label: `${grade.label} — ${q.label}`, themeLabel: q.label, topicIds: (q.paragraphs ?? q.topics).map(t => t.id), sessions: [] };
+              themeMap.set(key, entry);
+              themes.push(entry);
             }
-            quarterMap.get(key).sessions.push(s);
+            themeMap.get(key).sessions.push(s);
             placed = true; break;
           }
         }
@@ -573,13 +641,13 @@ async function loadChildProgress(childId, childName) {
       <div class="dash-detail-title">${childName}</div>
       <button class="dash-overall-btn">🧠 Общий портрет</button>
       <div class="dash-summary-text hidden" id="dash-overall-text"></div>
-      ${quarters.map((q, qi) => `
-        <div class="dash-quarter-block">
-          <div class="dash-quarter-header">
-            <span class="dash-quarter-title">${q.label}</span>
-            <button class="dash-quarter-btn" data-qi="${qi}">📊 Анализ четверти</button>
+      ${themes.map((q, qi) => `
+        <div class="dash-theme-block">
+          <div class="dash-theme-header">
+            <span class="dash-theme-title">${q.label}</span>
+            <button class="dash-theme-btn" data-qi="${qi}">📊 Анализ темы</button>
           </div>
-          <div class="dash-summary-text hidden" id="dash-qa-${qi}"></div>
+          <div class="dash-summary-text hidden" id="dash-ta-${qi}"></div>
           <div class="dash-sessions">
             ${q.sessions.map(s => `
               <div class="dash-session ${s.phase === "done" ? "done" : ""}">
@@ -605,17 +673,17 @@ async function loadChildProgress(childId, childName) {
       } catch { btn.textContent = "Ошибка"; btn.disabled = false; }
     });
 
-    // Анализ четверти
-    detail.querySelectorAll(".dash-quarter-btn").forEach(btn => {
+    // Анализ темы
+    detail.querySelectorAll(".dash-theme-btn").forEach(btn => {
       btn.addEventListener("click", async function() {
         const qi = parseInt(btn.dataset.qi);
-        const q = quarters[qi];
-        const el = document.getElementById(`dash-qa-${qi}`);
+        const q = themes[qi];
+        const el = document.getElementById(`dash-ta-${qi}`);
         btn.disabled = true; btn.textContent = "Анализирую...";
         try {
           const r = await fetch(`/api/parent/child/${childId}/quarter-analysis`, {
             method: "POST", headers: apiHeaders(),
-            body: JSON.stringify({ quarterLabel: q.quarterLabel, topicIds: q.topicIds })
+            body: JSON.stringify({ quarterLabel: q.themeLabel, topicIds: q.topicIds })
           });
           const data = await r.json();
           el.textContent = data.analysis || "Нет данных";
@@ -657,12 +725,9 @@ function isGradeUnlocked(gradeNum) {
   return gradeNum <= cg;
 }
 
-function isQuarterUnlocked(gradeNum, quarterIndex) {
+function isThemeUnlocked(gradeNum) {
   const cg = currentUser?.currentGrade ?? 11;
-  const cq = currentUser?.currentQuarter ?? 4;
-  if (gradeNum < cg) return true;
-  if (gradeNum === cg) return (quarterIndex + 1) <= cq;
-  return false;
+  return gradeNum <= cg;
 }
 
 function isTopicUnlocked(topics, topicIndex, progress) {
@@ -699,8 +764,9 @@ async function renderGradeSelect() {
         </div>
         ${curriculum.map((g, i) => {
           const [l, t] = ROAD_POS[i] ?? [50, 50];
-          const unlocked = isGradeUnlocked(g.grade);
-          const allDone = g.quarters.every(q => q.topics.every(t => progress.completed.has(t.id)));
+          const permanentlyLocked = g.locked === true;
+          const unlocked = !permanentlyLocked && isGradeUnlocked(g.grade);
+          const allDone = !permanentlyLocked && (g.themes ?? g.quarters).every(q => (q.paragraphs ?? q.topics).every(p => progress.completed.has(p.id)));
           const cls = !unlocked ? "grade-btn locked" : allDone ? "grade-btn done" : "grade-btn";
           const label = !unlocked ? "🔒" : allDone ? "✓" : g.grade;
           return `<button class="${cls}" data-grade="${g.grade}" style="left:${l}%;top:${t}%" ${!unlocked ? "disabled" : ""}>${label}</button>`;
@@ -713,23 +779,31 @@ async function renderGradeSelect() {
 }
 
 const MEDIA = "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/";
-const IMG_EXT = (() => {
-  const c = document.createElement("canvas");
-  return c.getContext && c.toDataURL("image/webp").startsWith("data:image/webp") ? "webp" : "jpg";
-})();
-const GRADE_BG = { 1: MEDIA + "bg-1." + IMG_EXT, 2: MEDIA + "bg-2." + IMG_EXT, 3: MEDIA + "bg-3." + IMG_EXT, 4: MEDIA + "bg-4." + IMG_EXT };
-function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || GRADE_BG[1]; }
+const GRADE_BG = {
+  1: MEDIA + "bg-1.jpg",
+  2: MEDIA + "bg-2.jpg",
+  3: MEDIA + "bg-3.jpg",
+  4: MEDIA + "bg-4.jpg",
+  7: MEDIA + "bg-7.jpg",
+  8: MEDIA + "bg-8.jpg",
+  9: MEDIA + "bg-9.jpg"
+};
+function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || GRADE_BG[7]; }
 
 async function renderTopicLobby(gradeNum) {
   appDiv.classList.add("fullscreen-map");
   const gradeData = curriculum.find(g => g.grade === gradeNum);
-  const progress = await getProgress();
-  renderQuarterMap(gradeData, progress);
+  const [progress, balanceData] = await Promise.all([
+    getProgress(),
+    fetch("/api/child/balance", { headers: apiHeaders() }).then(r => r.ok ? r.json() : { credits: null }).catch(() => ({ credits: null }))
+  ]);
+  renderThemeMap(gradeData, progress, balanceData.credits);
 }
 
-function renderQuarterMap(gradeData, progress) {
-  const totalTopics = gradeData.quarters.reduce((s, q) => s + q.topics.length, 0);
-  const doneTopics = gradeData.quarters.reduce((s, q) => s + q.topics.filter(t => progress.completed.has(t.id)).length, 0);
+function renderThemeMap(gradeData, progress, credits = null) {
+  const allItems = (gradeData.themes ?? gradeData.quarters);
+  const totalTopics = allItems.reduce((s, q) => s + (q.paragraphs ?? q.topics).length, 0);
+  const doneTopics = allItems.reduce((s, q) => s + (q.paragraphs ?? q.topics).filter(t => progress.completed.has(t.id)).length, 0);
   const pct = Math.round(doneTopics / totalTopics * 100);
 
   lobbyScreen.innerHTML = `
@@ -742,33 +816,35 @@ function renderQuarterMap(gradeData, progress) {
           <div class="cave-overall-bar"><div class="cave-overall-fill" style="width:${pct}%"></div></div>
           <span class="cave-overall-label">${doneTopics}/${totalTopics}</span>
         </div>
+        ${credits !== null ? `<div class="cave-credits ${credits <= 0 ? "cave-credits-zero" : credits < 10 ? "cave-credits-low" : ""}">${credits <= 0 ? "⚠️ Токены закончились" : `🪙 ${credits}`}</div>` : ""}
       </div>
       <div class="cave-accordion">
-        ${gradeData.quarters.map((q, qi) => {
-          const unlocked = isQuarterUnlocked(gradeData.grade, qi);
-          const qDone = q.topics.filter(t => progress.completed.has(t.id)).length;
-          const qPct = Math.round(qDone / q.topics.length * 100);
+        ${allItems.map((q, qi) => {
+          const unlocked = isThemeUnlocked(gradeData.grade);
+          const items = (q.paragraphs ?? q.topics);
+          const qDone = items.filter(t => progress.completed.has(t.id)).length;
+          const qPct = Math.round(qDone / items.length * 100);
           if (!unlocked) {
-            return `<div class="cave-quarter locked">
-              <div class="cave-quarter-header">
+            return `<div class="cave-theme locked">
+              <div class="cave-theme-header">
                 <span class="cave-panel-lock">🔒</span>
                 <span class="cave-panel-label">${q.label}</span>
               </div>
             </div>`;
           }
           return `
-            <div class="cave-quarter" data-qi="${qi}">
-              <div class="cave-quarter-header">
+            <div class="cave-theme" data-qi="${qi}">
+              <div class="cave-theme-header">
                 <span class="cave-panel-label">${q.label}</span>
-                <span class="cave-panel-progress">${qDone} из ${q.topics.length}</span>
+                <span class="cave-panel-progress">${qDone} из ${items.length}</span>
                 <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
-                <span class="cave-quarter-arrow">▼</span>
+                <span class="cave-theme-arrow">▼</span>
               </div>
-              <div class="cave-quarter-topics">
-                ${q.topics.map((t, ti) => {
+              <div class="cave-theme-topics">
+                ${items.map((t, ti) => {
                   const done = progress.completed.has(t.id);
                   const resume = !done && progress.inProgress.has(t.id);
-                  const unlocked = isTopicUnlocked(q.topics, ti, progress);
+                  const unlocked = isTopicUnlocked(items, ti, progress);
                   if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
                   if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}</button>`;
                   if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}</button>`;
@@ -781,11 +857,11 @@ function renderQuarterMap(gradeData, progress) {
     </div>`;
 
   lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedGrade = null; renderGradeSelect(); });
-  lobbyScreen.querySelectorAll(".cave-quarter:not(.locked) .cave-quarter-header").forEach(h => {
+  lobbyScreen.querySelectorAll(".cave-theme:not(.locked) .cave-theme-header").forEach(h => {
     h.addEventListener("click", () => {
-      const q = h.closest(".cave-quarter");
+      const q = h.closest(".cave-theme");
       q.classList.toggle("open");
-      h.querySelector(".cave-quarter-arrow").textContent = q.classList.contains("open") ? "▲" : "▼";
+      h.querySelector(".cave-theme-arrow").textContent = q.classList.contains("open") ? "▲" : "▼";
     });
   });
   lobbyScreen.querySelectorAll(".topic-btn:not(.locked)").forEach(btn => {
@@ -794,12 +870,22 @@ function renderQuarterMap(gradeData, progress) {
       const topicLabel = btn.dataset.topicLabel;
       const progress = await getProgress();
       if (progress.completed.has(topicId)) {
-        showWelcomeModal("✓", `Тема "${topicLabel}" уже пройдена. Хочешь пройти её заново?`, "Пройти заново");
-        document.getElementById("welcomeModalBtn").onclick = async () => {
+        document.getElementById("welcomeModalEmoji").textContent = "✓";
+        document.getElementById("welcomeModalText").textContent = `Тема "${topicLabel}" уже пройдена. Хочешь пройти её заново?`;
+        document.getElementById("welcomeModalBtn").textContent = "Пройти заново";
+        const btn2 = document.getElementById("welcomeModalBtn2");
+        btn2.textContent = "Отмена";
+        btn2.style.display = "";
+        document.getElementById("welcomeModal").classList.remove("hidden");
+        document.getElementById("welcomeModalBtn").onclick = () => {
           document.getElementById("welcomeModal").classList.add("hidden");
-          document.getElementById("welcomeModalBtn2").style.display = "none";
-          await markCompleted(topicId);
+          btn2.style.display = "none";
+          isReplayMode = true;
           showChat(topicLabel, topicId);
+        };
+        btn2.onclick = () => {
+          document.getElementById("welcomeModal").classList.add("hidden");
+          btn2.style.display = "none";
         };
         return;
       }
@@ -812,17 +898,27 @@ function renderQuarterMap(gradeData, progress) {
   });
 }
 
-backBtn.addEventListener("click", showLobby);
+backBtn.addEventListener("click", async () => {
+  if (!isDemoMode && !isReplayMode && messages.length > 0 && currentTopicId && currentPhase !== "done") {
+    await saveSession(currentPhase);
+  }
+  showLobby();
+});
 
-window.addEventListener("popstate", () => {
-  if (!chatScreen.classList.contains("hidden")) showLobby();
+window.addEventListener("popstate", async () => {
+  if (!chatScreen.classList.contains("hidden")) {
+    if (!isDemoMode && !isReplayMode && messages.length > 0 && currentTopicId && currentPhase !== "done") {
+      await saveSession(currentPhase);
+    }
+    showLobby();
+  }
 });
 
 doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
     currentPhase = "exercises";
     updatePhaseUI();
-    await saveSession("exercises");
+    if (!isReplayMode) await saveSession("exercises");
     addMessage("bot", "Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне — проверю вместе с тобой.");
     speak("Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне.");
     messages.push({ role: "user", content: "Переходим к заданиям из учебника." });
@@ -831,7 +927,7 @@ doneBtn.addEventListener("click", async () => {
   if (currentPhase === "exercises") {
     currentPhase = "test";
     updatePhaseUI();
-    await saveSession("test");
+    if (!isReplayMode) await saveSession("test");
     messages.push({ role: "user", content: "Дай мне финальное испытание — самое сложное задание на эту тему." });
     sendToAPI();
     return;
@@ -981,7 +1077,7 @@ async function sendToAPI() {
         currentPhase = "done";
         if (currentTopicId) await markCompleted(currentTopicId);
         showFinishBtn();
-      } else {
+      } else if (!isReplayMode) {
         saveSession(currentPhase);
       }
       if (data.creditsLeft === 0) {
@@ -1052,12 +1148,18 @@ function showTrialTgStep(box) {
 }
 
 function showTrialCommunityLinks(box) {
+  const msg = encodeURIComponent("Хочу продолжить обучение в ArchiMath. Как оплатить доступ?");
+  const contactUrl = PAYMENT_CONTACT_URL.includes("?")
+    ? PAYMENT_CONTACT_URL + "&text=" + msg
+    : PAYMENT_CONTACT_URL + "?text=" + msg;
   box.innerHTML = `
-    <div class="modal-emoji">💬</div>
-    <div class="modal-text"><b>Спасибо!</b><br><br>Вступайте в сообщество — следим за новинками вместе.</div>
+    <div class="modal-emoji">🔓</div>
+    <div class="modal-text"><b>Спасибо за ответ!</b><br><br>Чтобы продолжить занятия — напишите нам. Ответим в течение дня и активируем доступ.</div>
+    <a href="${contactUrl}" target="_blank" class="auth-btn" style="text-decoration:none;display:block;text-align:center">Написать →</a>
+    <div style="text-align:center;margin-top:12px;font-size:13px;color:#888">или вступайте в сообщество:</div>
     <div class="modal-community-links">
-      <a href="https://t.me/+TlWWAQ8-mn02MDUy" target="_blank" class="auth-btn" style="text-decoration:none">Telegram →</a>
-      <a href="https://max.ru/join/qcb5TNldItcA9c0NokfaxHXATyFcRn00QdJMA6gZYwk" target="_blank" class="auth-btn auth-btn-secondary" style="text-decoration:none">Max →</a>
+      <a href="https://t.me/+TlWWAQ8-mn02MDUy" target="_blank" style="font-size:13px;color:#8b5e1a">Telegram</a>
+      <a href="https://max.ru/join/qcb5TNldItcA9c0NokfaxHXATyFcRn00QdJMA6gZYwk" target="_blank" style="font-size:13px;color:#8b5e1a">Max</a>
     </div>`;
 }
 
