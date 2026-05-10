@@ -2,3 +2,7 @@ node_modules/
 .env
 *.txt
 контент/
+android/app/src/main/assets/mathlore-assets/*.jpg
+android/.gradle/
+android/local.properties
+android/*.log

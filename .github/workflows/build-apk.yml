@@ -18,6 +18,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Download background images from Supabase
+        run: |
+          mkdir -p android/app/src/main/assets/mathlore-assets
+          curl -L "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-7.jpg" -o android/app/src/main/assets/mathlore-assets/bg-7.jpg
+          curl -L "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-8.jpg" -o android/app/src/main/assets/mathlore-assets/bg-8.jpg
+          curl -L "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-9.jpg" -o android/app/src/main/assets/mathlore-assets/bg-9.jpg
+
       - name: Make gradlew executable
         working-directory: android
         run: chmod +x gradlew
