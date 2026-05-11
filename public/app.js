@@ -370,7 +370,7 @@ let parentMode = "login";
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
-  if (window.location.hash === "#demo") { startDemo(); return; }
+  if (window.location.hash === "#demo") { showAuth(); return; }
 
   if (window.location.hash === "#parent-register") {
     history.replaceState(null, "", window.location.pathname);
@@ -398,12 +398,7 @@ let parentMode = "login";
       if (user.role === "child") { showLobby(); return; }
     }
   }
-  // J1/J2: новый пользователь без аккаунта — показываем демо автоматически
-  if (!localStorage.getItem("archi_demo_seen")) {
-    startDemo();
-  } else {
-    showAuth();
-  }
+  showAuth();
 })();
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
