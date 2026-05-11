@@ -588,11 +588,7 @@ function setupBuyCreditsLink(container) {
   if (!link) return;
   link.addEventListener("click", e => {
     e.preventDefault();
-    const msg = encodeURIComponent("Хочу продолжить обучение в ArchiMath. Как пополнить баланс?");
-    const url = PAYMENT_CONTACT_URL.includes("?")
-      ? PAYMENT_CONTACT_URL + "&text=" + msg
-      : PAYMENT_CONTACT_URL + "?text=" + msg;
-    window.open(url, "_blank");
+    showTrialEndedModal();
   });
 }
 
@@ -1318,69 +1314,35 @@ function showTrialEndedModal() {
   setControls(false);
   const modal = document.getElementById("trialModal");
   const box = document.getElementById("trialModalBox");
-  box.innerHTML = `
-    <div class="modal-emoji">🎉</div>
-    <div class="modal-text"><b>Пробный период завершён</b><br><br>Ваш ребёнок отправил 40 сообщений Архи.<br><br>Один вопрос:</div>
-    <div style="font-weight:600;color:#333;font-size:15px">Сколько бы вы заплатили за доступ на месяц?</div>
-    <textarea id="priceInput" class="modal-textarea" placeholder="Ваш ответ..."></textarea>
-    <button id="submitFeedbackBtn" class="auth-btn">Ответить →</button>`;
-  modal.classList.remove("hidden");
-
-  document.getElementById("submitFeedbackBtn").addEventListener("click", async () => {
-    const opinion = document.getElementById("priceInput").value.trim();
-    const btn = document.getElementById("submitFeedbackBtn");
-    btn.disabled = true; btn.textContent = "Сохраняем...";
-    try {
-      await fetch("/api/feedback", {
-        method: "POST", headers: apiHeaders(),
-        body: JSON.stringify({ priceOpinion: opinion, messagesUsed: 40 })
-      });
-    } catch {}
-    showTrialTgStep(box);
-  });
-}
-
-function showTrialTgStep(box) {
-  box.innerHTML = `
-    <div class="modal-emoji">📱</div>
-    <div class="modal-text"><b>Оставьте Telegram</b><br><br>Напишем лично — договоримся о продолжении.</div>
-    <input id="trialTgInput" type="text" placeholder="@username" class="modal-textarea" style="min-height:auto;padding:12px 14px" />
-    <button id="trialTgBtn" class="auth-btn">Оставить контакт →</button>
-    <div style="text-align:center;margin-top:4px">
-      <a href="#" id="trialTgSkip" style="font-size:13px;color:#aaa;text-decoration:none">Пропустить</a>
-    </div>`;
-
-  async function submitTg() {
-    const tg = document.getElementById("trialTgInput")?.value?.trim();
-    if (tg) {
-      try {
-        await fetch("/api/parent/telegram", {
-          method: "POST", headers: apiHeaders(),
-          body: JSON.stringify({ telegram: tg })
-        });
-      } catch {}
-    }
-    showTrialCommunityLinks(box);
-  }
-
-  document.getElementById("trialTgBtn").addEventListener("click", submitTg);
-  document.getElementById("trialTgSkip").addEventListener("click", e => { e.preventDefault(); showTrialCommunityLinks(box); });
-}
-
-function showTrialCommunityLinks(box) {
-  const msg = encodeURIComponent("Хочу продолжить обучение в ArchiMath. Как оплатить доступ?");
+  const msg = encodeURIComponent("Хочу купить подписку ArchiMath и пополнить баланс токенов");
   const contactUrl = PAYMENT_CONTACT_URL.includes("?")
     ? PAYMENT_CONTACT_URL + "&text=" + msg
     : PAYMENT_CONTACT_URL + "?text=" + msg;
   box.innerHTML = `
-    <div class="modal-emoji">🔓</div>
-    <div class="modal-text"><b>Спасибо за ответ!</b><br><br>Чтобы продолжить занятия — напишите нам. Ответим в течение дня и активируем доступ.</div>
-    <a href="${contactUrl}" target="_blank" class="auth-btn" style="text-decoration:none;display:block;text-align:center">Написать →</a>
-    <div style="text-align:center;margin-top:12px;font-size:13px;color:#888">или вступайте в сообщество:</div>
-    <div class="modal-community-links">
-      <a href="https://t.me/+TlWWAQ8-mn02MDUy" target="_blank" style="font-size:13px;color:#8b5e1a">Telegram</a>
-      <a href="https://max.ru/join/qcb5TNldItcA9c0NokfaxHXATyFcRn00QdJMA6gZYwk" target="_blank" style="font-size:13px;color:#8b5e1a">Max</a>
-    </div>`;
+    <div class="modal-emoji">🪙</div>
+    <div class="modal-text">
+      <b>Токены закончились</b><br><br>
+      Чтобы продолжить занятия:
+    </div>
+    <div class="payment-steps">
+      <div class="payment-step">
+        <span class="payment-num">1</span>
+        <div>Оформить подписку<br>
+          <b>998 ₽/мес</b> <span class="payment-hint">· летом 498 ₽/мес</span>
+        </div>
+      </div>
+      <div class="payment-step">
+        <span class="payment-num">2</span>
+        <div>Пополнить баланс токенов<br>
+          <span class="payment-hint">1 урок ≈ 100–150 ₽</span>
+        </div>
+      </div>
+    </div>
+    <a href="${contactUrl}" target="_blank" class="auth-btn" style="text-decoration:none;display:block;text-align:center">
+      Написать в Telegram →
+    </a>
+    <div style="text-align:center;margin-top:10px;font-size:13px;color:#aaa">Отвечу в течение дня</div>`;
+  modal.classList.remove("hidden");
 }
 
 function showFinishBtn() {

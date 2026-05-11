@@ -1194,6 +1194,42 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
   padding: 4px 2px;
 }
 
+/* --- Payment steps --- */
+.payment-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f7f0e0;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.payment-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
+.payment-num {
+  background: #8b5e1a;
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.payment-hint {
+  color: #999;
+  font-size: 13px;
+}
+
 /* --- Dashboard screen --- */
 #dashboardScreen {
   flex-direction: column;
