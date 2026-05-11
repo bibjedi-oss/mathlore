@@ -32,18 +32,25 @@ jobs:
 
       - name: Generate placeholder app icons
         run: |
-          for density_size in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
-            density="${density_size%%:*}"
-            size="${density_size##*:}"
-            dir="android/app/src/main/res/mipmap-${density}"
-            mkdir -p "$dir"
-            convert -size ${size}x${size} xc:"#8b5e1a" \
-              -fill white -gravity Center \
-              -font DejaVu-Sans-Bold -pointsize $((size*2/5)) \
-              -annotate 0 "A" \
-              "$dir/ic_launcher.png"
-            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
-          done
+          python3 - <<'EOF'
+          import struct, zlib, os
+
+          def make_png(size, r=0x8b, g=0x5e, b=0x1a):
+              def chunk(name, data):
+                  crc = zlib.crc32(name + data) & 0xffffffff
+                  return struct.pack('>I', len(data)) + name + data + struct.pack('>I', crc)
+              ihdr = struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0)
+              raw = b''.join(b'\x00' + bytes([r, g, b] * size) for _ in range(size))
+              return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', ihdr) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+
+          for density, size in [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]:
+              path = f'android/app/src/main/res/mipmap-{density}'
+              os.makedirs(path, exist_ok=True)
+              data = make_png(size)
+              open(f'{path}/ic_launcher.png', 'wb').write(data)
+              open(f'{path}/ic_launcher_round.png', 'wb').write(data)
+          print('Icons generated')
+          EOF
 
       - name: Build Debug APK
         working-directory: android
