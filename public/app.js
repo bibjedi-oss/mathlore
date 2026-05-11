@@ -191,11 +191,16 @@ const PHASE_TRIGGERS = [
   "Дай мне финальное испытание — самое сложное задание на эту тему."
 ];
 
-function updateHeaderBalance(rubles) {
-  if (rubles === null || rubles === undefined) { headerCredits.classList.add("hidden"); return; }
+const TOKEN_RATE = 0.004; // ₽ за 1 токен
+
+function tokensToRubles(tokens) { return Math.round(tokens * TOKEN_RATE); }
+
+function updateHeaderBalance(tokens) {
+  if (tokens === null || tokens === undefined) { headerCredits.classList.add("hidden"); return; }
   headerCredits.classList.remove("hidden");
-  headerCredits.textContent = `₽ ${rubles.toFixed(0)}`;
-  headerCredits.className = "header-credits" + (rubles <= 0 ? " hc-zero" : rubles < 100 ? " hc-low" : "");
+  const rub = tokensToRubles(tokens);
+  headerCredits.textContent = `₽ ${rub}`;
+  headerCredits.className = "header-credits" + (tokens <= 0 ? " hc-zero" : tokens < 25000 ? " hc-low" : "");
 }
 
 function isSpecialCourseTopic(topicId) {
@@ -515,10 +520,11 @@ async function renderDashboard() {
     const me = meRes.ok ? await meRes.json() : null;
 
     const balance = me?.token_balance ?? null;
-    const balanceCls = balance === null ? "" : balance <= 0 ? "dash-balance-zero" : balance < 100 ? "dash-balance-low" : "dash-balance-ok";
+    const balanceRub = balance !== null ? tokensToRubles(balance) : null;
+    const balanceCls = balance === null ? "" : balance <= 0 ? "dash-balance-zero" : balance < 25000 ? "dash-balance-low" : "dash-balance-ok";
     const balanceLabel = balance === null ? "" : balance <= 0
       ? `<span class="${balanceCls}">Баланс исчерпан — <a href="#" id="buyCreditsLink">пополнить</a></span>`
-      : `<span class="${balanceCls}">Баланс: <b>₽${balance.toFixed(0)}</b></span> <a href="#" id="pricingInfoLink" class="dash-pricing-link">Как считается?</a>`;
+      : `<span class="${balanceCls}">Баланс: <b>₽${balanceRub}</b></span> <a href="#" id="pricingInfoLink" class="dash-pricing-link">Как считается?</a>`;
 
     const balanceBar = balanceLabel
       ? `<div class="dash-balance-bar">${balanceLabel}</div>`

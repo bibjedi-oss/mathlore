@@ -25,9 +25,9 @@ const APP_URL = process.env.APP_URL || "https://mathlore.ru";
 
 let currentModel = process.env.DEFAULT_MODEL || "claude-opus-4-6";
 
-// Стоимость токенов для клиента (₽/токен, наценка ×2 на Opus при курсе 90₽/$)
-const INPUT_TOKEN_RATE  = 0.0027;  // $15/MTok × 90 × 2 / 1_000_000
-const OUTPUT_TOKEN_RATE = 0.0135;  // $75/MTok × 90 × 2 / 1_000_000
+// Курс токенов: 1 токен = TOKEN_RATE ₽ (блендированный, Opus ×2 при 90₽/$)
+const TOKEN_RATE = 0.004;
+const TRIAL_TOKENS = 50_000; // ≈ 200₽ при старте
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -66,7 +66,7 @@ app.post("/api/auth/parent-register", async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase
       .from("parents")
-      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name, token_balance: 200 })
+      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name, token_balance: TRIAL_TOKENS })
       .select("id, email, name")
       .single();
     if (error) {
@@ -574,8 +574,8 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       messages,
     });
 
-    const cost = (response.usage.input_tokens * INPUT_TOKEN_RATE) + (response.usage.output_tokens * OUTPUT_TOKEN_RATE);
-    const newBalance = Math.max(0, (parent.token_balance || 0) - cost);
+    const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
+    const newBalance = Math.max(0, (parent.token_balance || 0) - tokensUsed);
     await supabase.from("parents").update({ token_balance: newBalance }).eq("id", req.user.parentId);
 
     let text = response.content.find(b => b.type === "text")?.text ?? "";
