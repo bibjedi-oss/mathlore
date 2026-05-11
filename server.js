@@ -224,7 +224,7 @@ app.post("/api/parent/child/:id/quarter-analysis", requireAuth("parent"), async 
 
     if (!sessions?.length) return res.json({ analysis: "По этой четверти пока нет данных для анализа." });
 
-    const SKIP = ["Начни историю прямо сейчас, с первого предложения. Без вступлений.", "Переходим к заданиям из учебника.", "Дай мне финальное испытание — самое сложное задание на эту тему."];
+    const SKIP = ["Начни историю прямо сейчас, с первого предложения. Без вступлений.", "Переходим к заданиям из учебника.", "Переходим к практике.", "Дай мне финальное испытание — самое сложное задание на эту тему."];
     const statsText = sessions.map(s => {
       const msgs = (s.messages || []).filter(m => typeof m.content === "string" && !SKIP.includes(m.content));
       const userCount = msgs.filter(m => m.role === "user").length;
@@ -257,7 +257,7 @@ app.post("/api/parent/child/:id/overall-analysis", requireAuth("parent"), async 
     if (!sessions?.length) return res.json({ analysis: "Пока недостаточно данных. Нужно пройти хотя бы несколько тем." });
 
     const done = sessions.filter(s => s.phase === "done").length;
-    const SKIP = ["Начни историю прямо сейчас, с первого предложения. Без вступлений.", "Переходим к заданиям из учебника.", "Дай мне финальное испытание — самое сложное задание на эту тему."];
+    const SKIP = ["Начни историю прямо сейчас, с первого предложения. Без вступлений.", "Переходим к заданиям из учебника.", "Переходим к практике.", "Дай мне финальное испытание — самое сложное задание на эту тему."];
     const statsText = sessions.map(s => {
       const msgs = (s.messages || []).filter(m => typeof m.content === "string" && !SKIP.includes(m.content));
       const userCount = msgs.filter(m => m.role === "user").length;
@@ -383,7 +383,7 @@ app.post("/api/sessions", requireAuth("child"), async (req, res) => {
 
 // ── System prompts ────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(topic, phase, grade = 7) {
+function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false) {
   const isConsolidation = topic.startsWith("Закрепление");
 
   const base = `ТЕМА УРОКА: ${topic}
@@ -404,6 +404,20 @@ function buildSystemPrompt(topic, phase, grade = 7) {
 БЕЗОПАСНОСТЬ: никогда не предлагай ребёнку физически что-либо делать со своим телом (трогать, считать части тела и т.п.) или с предметами вокруг для проверки математической идеи. Только воображаемые примеры.`;
 
   if (phase === "exercises") {
+    if (noTextbook) {
+      return `Ты — Архи, проводишь практику по теме: ${topic}.
+
+Дай ребёнку ровно 3 задачи по очереди — одну за другой:
+1. Сформулируй первую задачу прямо сейчас — без вступлений
+2. Жди ответа (текст или фото)
+3. Если верно — коротко похвали и дай следующую задачу
+4. Если ошибка — мягко укажи где, дай подсказку, не решай сам
+5. После третьей задачи скажи что молодец, напомни нажать "→ Финальный тест"
+
+Задачи должны строго соответствовать теме "${topic}" — практические, без учебника.
+
+${base}`;
+    }
     return `Ты — Архи, проверяешь задания из учебника по теме: ${topic} (${grade} класс).
 
 Ребёнок решил задачи самостоятельно и присылает фото или пишет ответ. Проверь ровно 3 задания:
@@ -536,7 +550,7 @@ app.post("/api/demo", async (req, res) => {
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
 app.post("/api/chat", requireAuth("child"), async (req, res) => {
-  const { messages, topic, phase } = req.body;
+  const { messages, topic, phase, noTextbook } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages required" });
   try {
     const { data: parent } = await supabase
@@ -552,7 +566,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const response = await anthropic.messages.create({
       model: currentModel,
       max_tokens: 1024,
-      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11),
+      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook),
       messages,
     });
 

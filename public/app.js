@@ -185,8 +185,13 @@ function showLobby() {
 const PHASE_TRIGGERS = [
   "Начни историю прямо сейчас, с первого предложения. Без вступлений.",
   "Переходим к заданиям из учебника.",
+  "Переходим к практике.",
   "Дай мне финальное испытание — самое сложное задание на эту тему."
 ];
+
+function isSpecialCourseTopic(topicId) {
+  return specialCourses.some(c => c.chapters.some(ch => ch.topics.some(t => t.id === topicId)));
+}
 
 function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   hideAll();
@@ -225,7 +230,8 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
 }
 
 function updatePhaseUI() {
-  const labels = { theory: "Теория", exercises: "Задания из учебника", test: "Финальный тест", done: "Завершено" };
+  const exercisesLabel = isSpecialCourseTopic(currentTopicId) ? "Практика" : "Задания из учебника";
+  const labels = { theory: "Теория", exercises: exercisesLabel, test: "Финальный тест", done: "Завершено" };
   const btnLabels = { theory: "→ Задания", exercises: "→ Финальный тест" };
   phaseLabel.textContent = labels[currentPhase] || "";
   phaseBar.classList.remove("hidden");
@@ -1072,9 +1078,15 @@ doneBtn.addEventListener("click", async () => {
     currentPhase = "exercises";
     updatePhaseUI();
     if (!isReplayMode) await saveSession("exercises");
-    addMessage("bot", "Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне — проверю вместе с тобой.");
-    speak("Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне.");
-    messages.push({ role: "user", content: "Переходим к заданиям из учебника." });
+    if (isSpecialCourseTopic(currentTopicId)) {
+      addMessage("bot", "Отлично! Теперь потренируемся. Я дам тебе несколько задач — пиши ответы прямо здесь.");
+      speak("Отлично! Теперь потренируемся. Я дам тебе несколько задач.");
+      messages.push({ role: "user", content: "Переходим к практике." });
+    } else {
+      addMessage("bot", "Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне — проверю вместе с тобой.");
+      speak("Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне.");
+      messages.push({ role: "user", content: "Переходим к заданиям из учебника." });
+    }
     return;
   }
   if (currentPhase === "exercises") {
@@ -1192,7 +1204,7 @@ photoInput.addEventListener("change", async () => {
   messages.push({ role: "user", content: [
     { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
     { type: "text", text: currentPhase === "exercises"
-      ? "Я решил задачу из учебника. Проверь моё решение."
+      ? (isSpecialCourseTopic(currentTopicId) ? "Я написал ответ на задачу. Прочитай и проверь." : "Я решил задачу из учебника. Проверь моё решение.")
       : "Я написал ответ на бумаге. Прочитай что там написано и продолжай разговор как обычно." }
   ]});
   addMessage("user", "📷 Отправил фото");
@@ -1210,7 +1222,7 @@ async function sendToAPI() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ messages, topic, phase: currentPhase })
+      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId) })
     });
 
     if (res.status === 402) {
