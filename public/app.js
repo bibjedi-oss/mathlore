@@ -819,6 +819,9 @@ async function renderSpecialCourseTopics(courseId) {
   const pct = totalTopics > 0 ? Math.round(doneTopics / totalTopics * 100) : 0;
   const credits = balanceData.credits;
 
+  const descSeenKey = `archi_desc_seen_${courseId}`;
+  const descSeen = !!localStorage.getItem(descSeenKey);
+
   lobbyScreen.innerHTML = `
     <div class="cave-screen">
       <img class="cave-bg" src="${courseData.bg || GRADE_BG[7]}" alt="" />
@@ -830,7 +833,13 @@ async function renderSpecialCourseTopics(courseId) {
           <span class="cave-overall-label">${doneTopics}/${totalTopics}</span>
         </div>
         ${credits !== null ? `<div class="cave-credits ${credits <= 0 ? "cave-credits-zero" : credits < 10 ? "cave-credits-low" : ""}">${credits <= 0 ? "⚠️ Токены закончились" : `🪙 ${credits}`}</div>` : ""}
+        ${courseData.description ? `<button class="course-info-btn" id="courseInfoBtn" title="Что это такое?">ℹ</button>` : ""}
       </div>
+      ${courseData.description ? `
+      <div class="course-desc-panel" id="courseDescPanel" ${descSeen ? 'style="display:none"' : ''}>
+        <div class="course-desc-text">${courseData.description}</div>
+        <button class="course-desc-close" id="courseDescClose">Понятно →</button>
+      </div>` : ""}
       <div class="cave-accordion">
         ${allItems.map((q, qi) => {
           const items = q.topics;
@@ -861,6 +870,21 @@ async function renderSpecialCourseTopics(courseId) {
     </div>`;
 
   lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedSpecialCourse = null; renderGradeSelect(); });
+
+  const descPanel = lobbyScreen.querySelector("#courseDescPanel");
+  const infoBtn   = lobbyScreen.querySelector("#courseInfoBtn");
+  if (descPanel) {
+    lobbyScreen.querySelector("#courseDescClose").addEventListener("click", () => {
+      descPanel.style.display = "none";
+      localStorage.setItem(descSeenKey, "1");
+    });
+  }
+  if (infoBtn) {
+    infoBtn.addEventListener("click", () => {
+      if (descPanel) descPanel.style.display = descPanel.style.display === "none" ? "" : "none";
+    });
+  }
+
   lobbyScreen.querySelectorAll(".cave-theme .cave-theme-header").forEach(h => {
     h.addEventListener("click", () => {
       const q = h.closest(".cave-theme");

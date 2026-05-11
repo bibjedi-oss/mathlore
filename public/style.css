@@ -250,17 +250,17 @@ header {
   font-size: 16px;
 }
 .grade-btn.special {
-  background: rgba(60, 30, 100, 0.88);
-  border-color: #9b6fff;
-  color: #d8b4fe;
+  background: rgba(30, 80, 45, 0.92);
+  border-color: #5aaa6e;
+  color: #b8f0c8;
   font-size: 14px;
   font-style: italic;
   font-weight: 800;
-  box-shadow: 0 3px 14px rgba(100, 50, 200, 0.5);
+  box-shadow: 0 3px 14px rgba(30, 120, 60, 0.55);
 }
 .grade-btn.special:hover {
   transform: translate(-50%, -50%) scale(1.15);
-  box-shadow: 0 5px 20px rgba(100, 50, 200, 0.7);
+  box-shadow: 0 5px 20px rgba(30, 120, 60, 0.75);
 }
 .grade-btn.special.done {
   background: rgba(76, 175, 125, 0.9);
@@ -617,6 +617,55 @@ header {
   color: rgba(255, 232, 176, 0.28);
   cursor: not-allowed;
 }
+
+/* Course description panel */
+.course-desc-panel {
+  position: relative;
+  z-index: 11;
+  margin: 0 16px 4px;
+  background: rgba(10, 30, 15, 0.82);
+  border: 1.5px solid rgba(90, 170, 110, 0.5);
+  border-radius: 12px;
+  padding: 14px 16px;
+  backdrop-filter: blur(6px);
+  flex-shrink: 0;
+}
+.course-desc-text {
+  font-size: 14px;
+  color: #d4f0dc;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.course-desc-close {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: rgba(90, 170, 110, 0.2);
+  border: 1px solid rgba(90, 170, 110, 0.4);
+  border-radius: 8px;
+  color: #9de8b0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.course-desc-close:hover { background: rgba(90, 170, 110, 0.35); }
+.course-info-btn {
+  background: none;
+  border: 1.5px solid rgba(90, 170, 110, 0.5);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  color: #9de8b0;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+.course-info-btn:hover { background: rgba(90, 170, 110, 0.2); }
 
 /* Subject cards */
 .subject-cards {
