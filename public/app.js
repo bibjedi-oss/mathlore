@@ -826,7 +826,7 @@ async function renderSpecialCourseTopics(courseId) {
 
   lobbyScreen.innerHTML = `
     <div class="cave-screen">
-      <img class="cave-bg" src="${GRADE_BG[7]}" alt="" />
+      <img class="cave-bg" src="${courseData.bg || GRADE_BG[7]}" alt="" />
       <div class="cave-header">
         <button class="cave-back-btn">← Карта</button>
         <div class="cave-grade-title">${courseData.label}</div>

@@ -234,7 +234,7 @@ const specialCourses = [
     label: "Логика",
     btnIcon: "Л",
     mapPos: [22, 50],
-    bg: null,
+    bg: "/bg-logic.jpg",
     chapters: [
       { id: "log1", label: "Логические высказывания", topics: [
         { id: "log1-1", label: "Что такое высказывание. Истина и ложь", requires: [] },
@@ -263,7 +263,7 @@ const specialCourses = [
     label: "ТРИЗ",
     btnIcon: "Т",
     mapPos: [18, 22],
-    bg: null,
+    bg: "/bg-triz.jpg",
     chapters: [
       { id: "triz1", label: "Противоречие — ключ к задаче", topics: [
         { id: "triz1-1", label: "Что такое изобретательская задача", requires: [] },
