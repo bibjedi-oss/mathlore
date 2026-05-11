@@ -586,10 +586,7 @@ function addChildForm() {
 function setupBuyCreditsLink(container) {
   const link = container.querySelector("#buyCreditsLink");
   if (!link) return;
-  link.addEventListener("click", e => {
-    e.preventDefault();
-    showTrialEndedModal();
-  });
+  link.addEventListener("click", e => { e.preventDefault(); showPaymentModal(); });
 }
 
 function setupPricingInfoLink(container) {
@@ -1314,16 +1311,25 @@ function showTrialEndedModal() {
   setControls(false);
   const modal = document.getElementById("trialModal");
   const box = document.getElementById("trialModalBox");
+  box.innerHTML = `
+    <div class="modal-emoji">⏸️</div>
+    <div class="modal-text">
+      <b>Занятие на паузе</b><br><br>
+      Токены закончились. Попроси маму или папу зайти в свой кабинет и пополнить баланс.
+    </div>`;
+  modal.classList.remove("hidden");
+}
+
+function showPaymentModal() {
+  const modal = document.getElementById("trialModal");
+  const box = document.getElementById("trialModalBox");
   const msg = encodeURIComponent("Хочу купить подписку ArchiMath и пополнить баланс токенов");
   const contactUrl = PAYMENT_CONTACT_URL.includes("?")
     ? PAYMENT_CONTACT_URL + "&text=" + msg
     : PAYMENT_CONTACT_URL + "?text=" + msg;
   box.innerHTML = `
     <div class="modal-emoji">🪙</div>
-    <div class="modal-text">
-      <b>Токены закончились</b><br><br>
-      Чтобы продолжить занятия:
-    </div>
+    <div class="modal-text"><b>Пополнение баланса</b><br><br>Чтобы продолжить занятия:</div>
     <div class="payment-steps">
       <div class="payment-step">
         <span class="payment-num">1</span>
