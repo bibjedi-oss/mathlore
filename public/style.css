@@ -1098,6 +1098,96 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
 }
 .auth-parent-link:hover { color: #555; }
 
+.auth-pricing-link {
+  background: none;
+  border: none;
+  color: #8b5e1a;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+  align-self: center;
+  margin-top: 2px;
+}
+.auth-pricing-link:hover { color: #5a3a08; }
+
+/* --- Pricing modal --- */
+.pricing-box {
+  background: #fffdf5;
+  border-radius: 20px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+}
+
+.pricing-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4a2c08;
+  text-align: center;
+}
+
+.pricing-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pricing-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+}
+
+.pricing-table {
+  background: #f7f0e0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #444;
+  border-bottom: 1px solid #e8d5a0;
+}
+.pricing-row:last-child { border-bottom: none; }
+.pricing-row-summer { background: rgba(255,200,60,0.12); }
+
+.pricing-price {
+  font-weight: 700;
+  color: #4a2c08;
+  font-size: 15px;
+}
+
+.pricing-desc {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+.pricing-desc-muted { color: #999; font-size: 13px; }
+
+.dash-pricing-link {
+  color: #8b5e1a;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.dash-pricing-link:hover { color: #5a3a08; }
+
 .auth-error {
   font-size: 13px;
   color: #d32f2f;

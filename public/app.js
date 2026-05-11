@@ -191,11 +191,11 @@ const PHASE_TRIGGERS = [
   "Дай мне финальное испытание — самое сложное задание на эту тему."
 ];
 
-function updateHeaderCredits(n) {
-  if (n === null || n === undefined) { headerCredits.classList.add("hidden"); return; }
+function updateHeaderBalance(rubles) {
+  if (rubles === null || rubles === undefined) { headerCredits.classList.add("hidden"); return; }
   headerCredits.classList.remove("hidden");
-  headerCredits.textContent = `🪙 ${n}`;
-  headerCredits.className = "header-credits" + (n <= 0 ? " hc-zero" : n < 10 ? " hc-low" : "");
+  headerCredits.textContent = `₽ ${rubles.toFixed(0)}`;
+  headerCredits.className = "header-credits" + (rubles <= 0 ? " hc-zero" : rubles < 100 ? " hc-low" : "");
 }
 
 function isSpecialCourseTopic(topicId) {
@@ -218,7 +218,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   const bg = selectedGrade ? gradeBg(selectedGrade) : GRADE_BG[1];
   chatScreen.style.backgroundImage = `url('${bg}')`;
   fetch("/api/child/balance", { headers: apiHeaders() })
-    .then(r => r.ok ? r.json() : null).then(d => updateHeaderCredits(d?.credits ?? null)).catch(() => {});
+    .then(r => r.ok ? r.json() : null).then(d => updateHeaderBalance(d?.tokenBalance ?? null)).catch(() => {});
   history.pushState({ screen: "chat" }, "");
 
   if (resumeData?.messages?.length > 0) {
@@ -402,6 +402,8 @@ let parentMode = "login";
 })();
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
+document.getElementById("authPricingBtn").addEventListener("click", () => showPricingModal());
+
 document.getElementById("parentToggleBtn").addEventListener("click", () => {
   const isParent = authTab === "parent";
   authTab = isParent ? "child" : "parent";
@@ -512,14 +514,14 @@ async function renderDashboard() {
     const children = await childrenRes.json();
     const me = meRes.ok ? await meRes.json() : null;
 
-    const credits = me?.message_credits ?? null;
-    const creditsCls = credits === null ? "" : credits <= 0 ? "dash-balance-zero" : credits < 20 ? "dash-balance-low" : "dash-balance-ok";
-    const creditsLabel = credits === null ? "" : credits <= 0
-      ? `<span class="${creditsCls}">Токены закончились — <a href="#" id="buyCreditsLink">получить доступ</a></span>`
-      : `<span class="${creditsCls}">Токенов осталось: <b>${credits}</b></span>`;
+    const balance = me?.token_balance ?? null;
+    const balanceCls = balance === null ? "" : balance <= 0 ? "dash-balance-zero" : balance < 100 ? "dash-balance-low" : "dash-balance-ok";
+    const balanceLabel = balance === null ? "" : balance <= 0
+      ? `<span class="${balanceCls}">Баланс исчерпан — <a href="#" id="buyCreditsLink">пополнить</a></span>`
+      : `<span class="${balanceCls}">Баланс: <b>₽${balance.toFixed(0)}</b></span> <a href="#" id="pricingInfoLink" class="dash-pricing-link">Как считается?</a>`;
 
-    const balanceBar = creditsLabel
-      ? `<div class="dash-balance-bar">${creditsLabel}</div>`
+    const balanceBar = balanceLabel
+      ? `<div class="dash-balance-bar">${balanceLabel}</div>`
       : "";
 
     if (!children.length) {
@@ -529,6 +531,7 @@ async function renderDashboard() {
         <div class="dash-add-wrap">${addChildForm()}</div>`;
       setupAddChildForm();
       setupBuyCreditsLink(container);
+      setupPricingInfoLink(container);
       return;
     }
 
@@ -547,6 +550,7 @@ async function renderDashboard() {
 
     setupAddChildForm();
     setupBuyCreditsLink(container);
+    setupPricingInfoLink(container);
 
     container.querySelectorAll(".dash-progress-btn").forEach(btn => {
       btn.addEventListener("click", () => loadChildProgress(btn.dataset.id, children.find(c => c.id === btn.dataset.id)?.name));
@@ -579,13 +583,24 @@ function setupBuyCreditsLink(container) {
   if (!link) return;
   link.addEventListener("click", e => {
     e.preventDefault();
-    const msg = encodeURIComponent("Хочу продолжить обучение в ArchiMath. Как оплатить доступ?");
+    const msg = encodeURIComponent("Хочу продолжить обучение в ArchiMath. Как пополнить баланс?");
     const url = PAYMENT_CONTACT_URL.includes("?")
       ? PAYMENT_CONTACT_URL + "&text=" + msg
       : PAYMENT_CONTACT_URL + "?text=" + msg;
     window.open(url, "_blank");
   });
 }
+
+function setupPricingInfoLink(container) {
+  const link = container.querySelector("#pricingInfoLink");
+  if (!link) return;
+  link.addEventListener("click", e => { e.preventDefault(); showPricingModal(); });
+}
+
+function showPricingModal() {
+  document.getElementById("pricingModal").classList.remove("hidden");
+}
+
 
 function setupAddChildForm() {
   document.getElementById("addChildBtn").addEventListener("click", async () => {
@@ -1279,8 +1294,8 @@ async function sendToAPI() {
       } else if (!isReplayMode) {
         saveSession(currentPhase);
       }
-      updateHeaderCredits(data.creditsLeft);
-      if (data.creditsLeft === 0) {
+      updateHeaderBalance(data.tokenBalance);
+      if (data.tokenBalance <= 0) {
         showTrialEndedModal();
         return;
       }

@@ -25,6 +25,10 @@ const APP_URL = process.env.APP_URL || "https://mathlore.ru";
 
 let currentModel = process.env.DEFAULT_MODEL || "claude-opus-4-6";
 
+// Стоимость токенов для клиента (₽/токен, наценка ×2 на Opus при курсе 90₽/$)
+const INPUT_TOKEN_RATE  = 0.0027;  // $15/MTok × 90 × 2 / 1_000_000
+const OUTPUT_TOKEN_RATE = 0.0135;  // $75/MTok × 90 × 2 / 1_000_000
+
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 async function sendEmail(to, subject, html) {
@@ -62,7 +66,7 @@ app.post("/api/auth/parent-register", async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase
       .from("parents")
-      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name, message_credits: 40 })
+      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name, token_balance: 200 })
       .select("id, email, name")
       .single();
     if (error) {
@@ -162,7 +166,7 @@ app.get("/api/parent/me", requireAuth("parent"), async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("parents")
-      .select("id, name, email, message_credits")
+      .select("id, name, email, token_balance")
       .eq("id", req.user.id)
       .single();
     if (error) throw error;
@@ -315,11 +319,11 @@ app.get("/api/child/balance", requireAuth("child"), async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("parents")
-      .select("message_credits")
+      .select("token_balance")
       .eq("id", req.user.parentId)
       .single();
     if (error) throw error;
-    res.json({ credits: data.message_credits ?? 0 });
+    res.json({ tokenBalance: data.token_balance ?? 0 });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Ошибка сервера" });
@@ -555,12 +559,12 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
   try {
     const { data: parent } = await supabase
       .from("parents")
-      .select("message_credits")
+      .select("token_balance")
       .eq("id", req.user.parentId)
       .single();
 
-    if (!parent || parent.message_credits <= 0) {
-      return res.status(402).json({ error: "trial_ended", creditsLeft: 0 });
+    if (!parent || (parent.token_balance ?? 0) <= 0) {
+      return res.status(402).json({ error: "trial_ended", tokenBalance: 0 });
     }
 
     const response = await anthropic.messages.create({
@@ -570,8 +574,9 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       messages,
     });
 
-    const newCredits = parent.message_credits - 1;
-    await supabase.from("parents").update({ message_credits: newCredits }).eq("id", req.user.parentId);
+    const cost = (response.usage.input_tokens * INPUT_TOKEN_RATE) + (response.usage.output_tokens * OUTPUT_TOKEN_RATE);
+    const newBalance = Math.max(0, (parent.token_balance || 0) - cost);
+    await supabase.from("parents").update({ token_balance: newBalance }).eq("id", req.user.parentId);
 
     let text = response.content.find(b => b.type === "text")?.text ?? "";
     const testPassed = text.includes("[ТЕСТ_ПРОЙДЕН]");
@@ -579,7 +584,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const isFiction = text.startsWith("[ВЫМЫСЕЛ]");
     text = text.replace(/^\[ВЫМЫСЕЛ\]\s*/g, "");
     if (isFiction) text = "(Выдуманная история, но она хорошо объясняет тему)\n\n" + text;
-    res.json({ reply: text, testPassed, creditsLeft: newCredits });
+    res.json({ reply: text, testPassed, tokenBalance: newBalance });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "API error" });
@@ -617,7 +622,7 @@ app.get("/api/admin/users", requireAuth("admin"), async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("parents")
-      .select("id, email, name, message_credits, telegram, created_at")
+      .select("id, email, name, token_balance, telegram, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json(data);
@@ -648,7 +653,7 @@ app.post("/api/admin/users/:id/credits", requireAuth("admin"), async (req, res) 
   try {
     const { error } = await supabase
       .from("parents")
-      .update({ message_credits: credits })
+      .update({ token_balance: credits })
       .eq("id", req.params.id);
     if (error) throw error;
     res.json({ ok: true });

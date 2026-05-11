@@ -38,6 +38,7 @@
         </div>
 
         <button id="parentToggleBtn" class="auth-parent-link">Вход для родителей</button>
+        <button id="authPricingBtn" class="auth-pricing-link">Стоимость →</button>
       </div>
     </div>
 
@@ -46,6 +47,7 @@
       <div class="dash-header">
         <div class="dash-title">Кабинет родителя</div>
         <div class="dash-header-actions">
+          <button id="dashPricingBtn" class="dash-feedback-btn" onclick="showPricingModal()">₽ Стоимость</button>
           <button id="dashFeedbackBtn" class="dash-feedback-btn">💬 Отзыв</button>
           <button id="dashLogoutBtn" class="dash-logout">Выйти</button>
         </div>
@@ -110,6 +112,41 @@
 
   <div id="trialModal" class="modal-overlay hidden">
     <div class="modal-box" id="trialModalBox"></div>
+  </div>
+
+  <!-- ── Модалка с ценами ── -->
+  <div id="pricingModal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="pricing-box">
+      <div class="pricing-title">Стоимость ArchiMath</div>
+      <div class="pricing-section">
+        <div class="pricing-section-title">📅 Месячная подписка</div>
+        <div class="pricing-table">
+          <div class="pricing-row">
+            <span>Учебный год</span>
+            <span class="pricing-price">998 ₽/мес</span>
+          </div>
+          <div class="pricing-row pricing-row-summer">
+            <span>Лето (июнь–август)</span>
+            <span class="pricing-price">498 ₽/мес</span>
+          </div>
+        </div>
+      </div>
+      <div class="pricing-section">
+        <div class="pricing-section-title">🤖 Уроки с ИИ (по факту)</div>
+        <div class="pricing-desc">
+          Каждый урок использует ИИ-модель. Стоимость зависит от длины диалога.<br>
+          <b>В среднем 1 урок — 100–150 ₽.</b>
+        </div>
+        <div class="pricing-desc pricing-desc-muted">
+          Средний полный курс за класс (≈40 тем) — 4 000–6 000 ₽ за год.
+        </div>
+      </div>
+      <div class="pricing-section">
+        <div class="pricing-section-title">🎁 При регистрации</div>
+        <div class="pricing-desc">200 ₽ на баланс — попробуйте 1–2 урока бесплатно.</div>
+      </div>
+      <button class="auth-btn" onclick="document.getElementById('pricingModal').classList.add('hidden')">Понятно</button>
+    </div>
   </div>
 
   <script src="curriculum.js?v=5"></script>
