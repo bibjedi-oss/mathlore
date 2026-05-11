@@ -227,3 +227,62 @@ const curriculum = [
   { grade: 10, label: "10 класс", locked: true, subjects: [] },
   { grade: 11, label: "11 класс", locked: true, subjects: [] },
 ];
+
+const specialCourses = [
+  {
+    id: "logic",
+    label: "Логика",
+    btnIcon: "Л",
+    mapPos: [22, 50],
+    bg: null,
+    chapters: [
+      { id: "log1", label: "Логические высказывания", topics: [
+        { id: "log1-1", label: "Что такое высказывание. Истина и ложь", requires: [] },
+        { id: "log1-2", label: "Отрицание: «не»", requires: ["log1-1"] },
+        { id: "log1-3", label: "Конъюнкция «и» — оба должны выполняться", requires: ["log1-2"] },
+        { id: "log1-4", label: "Дизъюнкция «или» — хотя бы одно", requires: ["log1-2"] },
+        { id: "log1-5", label: "Импликация «если…, то…»", requires: ["log1-3","log1-4"] },
+        { id: "log1-6", label: "Таблицы истинности", requires: ["log1-5"] },
+      ]},
+      { id: "log2", label: "Структура доказательств", topics: [
+        { id: "log2-1", label: "Прямое и обратное утверждение", requires: ["log1-5"] },
+        { id: "log2-2", label: "Контрпозиция: доказательство «от обратного»", requires: ["log2-1"] },
+        { id: "log2-3", label: "Доказательство от противного", requires: ["log2-2"] },
+        { id: "log2-4", label: "Метод контрпримера", requires: ["log2-1"] },
+      ]},
+      { id: "log3", label: "Кванторы и условия", topics: [
+        { id: "log3-1", label: "Квантор всеобщности «для всех» (∀)", requires: ["log1-1"] },
+        { id: "log3-2", label: "Квантор существования «существует» (∃)", requires: ["log3-1"] },
+        { id: "log3-3", label: "Необходимые и достаточные условия", requires: ["log2-1","log3-1"] },
+        { id: "log3-4", label: "Логика в задачах: как не ошибиться", requires: ["log3-3"] },
+      ]},
+    ]
+  },
+  {
+    id: "triz",
+    label: "ТРИЗ",
+    btnIcon: "Т",
+    mapPos: [18, 22],
+    bg: null,
+    chapters: [
+      { id: "triz1", label: "Противоречие — ключ к задаче", topics: [
+        { id: "triz1-1", label: "Что такое изобретательская задача", requires: [] },
+        { id: "triz1-2", label: "Техническое противоречие: улучшаю одно — ухудшаю другое", requires: ["triz1-1"] },
+        { id: "triz1-3", label: "Физическое противоречие: нужно и А, и не-А", requires: ["triz1-2"] },
+        { id: "triz1-4", label: "Идеальный конечный результат (ИКР)", requires: ["triz1-1"] },
+      ]},
+      { id: "triz2", label: "Инструменты ТРИЗ", topics: [
+        { id: "triz2-1", label: "Системный оператор: смотри шире и во времени", requires: ["triz1-1"] },
+        { id: "triz2-2", label: "Ресурсный подход: используй что есть", requires: ["triz1-4"] },
+        { id: "triz2-3", label: "Метод маленьких человечков", requires: ["triz1-3"] },
+        { id: "triz2-4", label: "10 ключевых изобретательских приёмов", requires: ["triz1-2","triz1-3"] },
+      ]},
+      { id: "triz3", label: "ТРИЗ в деле", topics: [
+        { id: "triz3-1", label: "АРИЗ: алгоритм решения задач (упрощённый)", requires: ["triz2-4"] },
+        { id: "triz3-2", label: "ТРИЗ в математике: нестандартные задачи", requires: ["triz2-1","triz2-2"] },
+        { id: "triz3-3", label: "ТРИЗ в учёбе: как учиться эффективнее", requires: ["triz2-1"] },
+        { id: "triz3-4", label: "Практика: реши 3 задачи методами ТРИЗ", requires: ["triz3-1","triz3-2","triz3-3"] },
+      ]},
+    ]
+  },
+];

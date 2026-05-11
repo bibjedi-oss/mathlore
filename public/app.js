@@ -38,6 +38,7 @@ let currentUser = null; // { role, id, name, grade, ... }
 let authToken = null;
 let selectedGrade = null;
 let selectedSubject = null;
+let selectedSpecialCourse = null;
 
 // ── Welcome modal ─────────────────────────────────────────────────────────────
 function showWelcomeModal(emoji, text, btnText) {
@@ -717,7 +718,8 @@ async function loadChildProgress(childId, childName) {
 
 // ── Lobby ─────────────────────────────────────────────────────────────────────
 function renderLobby() {
-  if (!selectedGrade) renderGradeSelect();
+  if (selectedSpecialCourse) renderSpecialCourseTopics(selectedSpecialCourse);
+  else if (!selectedGrade) renderGradeSelect();
   else if (!selectedSubject) renderSubjectSelect(selectedGrade);
   else renderTopicLobby(selectedGrade, selectedSubject);
 }
@@ -774,10 +776,117 @@ async function renderGradeSelect() {
           const label = !unlocked ? "🔒" : allDone ? "✓" : g.grade;
           return `<button class="${cls}" data-grade="${g.grade}" style="left:${l}%;top:${t}%" ${!unlocked ? "disabled" : ""}>${label}</button>`;
         }).join("")}
+        ${specialCourses.map(sc => {
+          const [l, t] = sc.mapPos;
+          const allDone = sc.chapters.every(c => c.topics.every(tp => progress.completed.has(tp.id)));
+          const cls = allDone ? "grade-btn special done" : "grade-btn special";
+          const lbl = allDone ? "✓" : sc.btnIcon;
+          return `<button class="${cls}" data-special-id="${sc.id}" style="left:${l}%;top:${t}%">${lbl}</button>`;
+        }).join("")}
       </div>
     </div>`;
-  lobbyScreen.querySelectorAll(".grade-btn:not(.locked)").forEach(btn => {
+  lobbyScreen.querySelectorAll(".grade-btn:not(.locked):not(.special)").forEach(btn => {
     btn.addEventListener("click", () => { selectedGrade = parseInt(btn.dataset.grade); selectedSubject = null; renderSubjectSelect(selectedGrade); });
+  });
+  lobbyScreen.querySelectorAll(".grade-btn.special").forEach(btn => {
+    btn.addEventListener("click", () => { selectedSpecialCourse = btn.dataset.specialId; renderSpecialCourseTopics(selectedSpecialCourse); });
+  });
+}
+
+async function renderSpecialCourseTopics(courseId) {
+  appDiv.classList.add("fullscreen-map");
+  const courseData = specialCourses.find(c => c.id === courseId);
+  const [progress, balanceData] = await Promise.all([
+    getProgress(),
+    fetch("/api/child/balance", { headers: apiHeaders() }).then(r => r.ok ? r.json() : { credits: null }).catch(() => ({ credits: null }))
+  ]);
+
+  const allItems = courseData.chapters;
+  const totalTopics = allItems.reduce((s, q) => s + q.topics.length, 0);
+  const doneTopics = allItems.reduce((s, q) => s + q.topics.filter(t => progress.completed.has(t.id)).length, 0);
+  const pct = totalTopics > 0 ? Math.round(doneTopics / totalTopics * 100) : 0;
+  const credits = balanceData.credits;
+
+  lobbyScreen.innerHTML = `
+    <div class="cave-screen">
+      <img class="cave-bg" src="${GRADE_BG[7]}" alt="" />
+      <div class="cave-header">
+        <button class="cave-back-btn">← Карта</button>
+        <div class="cave-grade-title">${courseData.label}</div>
+        <div class="cave-overall-progress">
+          <div class="cave-overall-bar"><div class="cave-overall-fill" style="width:${pct}%"></div></div>
+          <span class="cave-overall-label">${doneTopics}/${totalTopics}</span>
+        </div>
+        ${credits !== null ? `<div class="cave-credits ${credits <= 0 ? "cave-credits-zero" : credits < 10 ? "cave-credits-low" : ""}">${credits <= 0 ? "⚠️ Токены закончились" : `🪙 ${credits}`}</div>` : ""}
+      </div>
+      <div class="cave-accordion">
+        ${allItems.map((q, qi) => {
+          const items = q.topics;
+          const qDone = items.filter(t => progress.completed.has(t.id)).length;
+          const qPct = Math.round(qDone / items.length * 100);
+          return `
+            <div class="cave-theme" data-qi="${qi}">
+              <div class="cave-theme-header">
+                <span class="cave-panel-label">${q.label}</span>
+                <span class="cave-panel-progress">${qDone} из ${items.length}</span>
+                <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
+                <span class="cave-theme-arrow">▼</span>
+              </div>
+              <div class="cave-theme-topics">
+                ${items.map((t, ti) => {
+                  const done = progress.completed.has(t.id);
+                  const resume = !done && progress.inProgress.has(t.id);
+                  const unlocked = isTopicUnlocked(items, ti, progress);
+                  if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
+                  if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}</button>`;
+                  if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}</button>`;
+                  return `<button class="topic-btn" data-topic-id="${t.id}" data-topic-label="${t.label}">${t.label}</button>`;
+                }).join("")}
+              </div>
+            </div>`;
+        }).join("")}
+      </div>
+    </div>`;
+
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedSpecialCourse = null; renderGradeSelect(); });
+  lobbyScreen.querySelectorAll(".cave-theme .cave-theme-header").forEach(h => {
+    h.addEventListener("click", () => {
+      const q = h.closest(".cave-theme");
+      q.classList.toggle("open");
+      h.querySelector(".cave-theme-arrow").textContent = q.classList.contains("open") ? "▲" : "▼";
+    });
+  });
+  lobbyScreen.querySelectorAll(".topic-btn:not(.locked)").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const topicId = btn.dataset.topicId;
+      const topicLabel = btn.dataset.topicLabel;
+      const progress = await getProgress();
+      if (progress.completed.has(topicId)) {
+        document.getElementById("welcomeModalEmoji").textContent = "✓";
+        document.getElementById("welcomeModalText").textContent = `Тема "${topicLabel}" уже пройдена. Хочешь пройти её заново?`;
+        document.getElementById("welcomeModalBtn").textContent = "Пройти заново";
+        const btn2 = document.getElementById("welcomeModalBtn2");
+        btn2.textContent = "Отмена";
+        btn2.style.display = "";
+        document.getElementById("welcomeModal").classList.remove("hidden");
+        document.getElementById("welcomeModalBtn").onclick = () => {
+          document.getElementById("welcomeModal").classList.add("hidden");
+          btn2.style.display = "none";
+          isReplayMode = true;
+          showChat(topicLabel, topicId);
+        };
+        btn2.onclick = () => {
+          document.getElementById("welcomeModal").classList.add("hidden");
+          btn2.style.display = "none";
+        };
+        return;
+      }
+      if (progress.inProgress.has(topicId)) {
+        showResumeModal(topicLabel, topicId);
+        return;
+      }
+      showChat(topicLabel, topicId);
+    });
   });
 }
 

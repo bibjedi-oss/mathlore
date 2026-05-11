@@ -236,6 +236,24 @@ header {
   color: #fff;
   font-size: 16px;
 }
+.grade-btn.special {
+  background: rgba(60, 30, 100, 0.88);
+  border-color: #9b6fff;
+  color: #d8b4fe;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 800;
+  box-shadow: 0 3px 14px rgba(100, 50, 200, 0.5);
+}
+.grade-btn.special:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 5px 20px rgba(100, 50, 200, 0.7);
+}
+.grade-btn.special.done {
+  background: rgba(76, 175, 125, 0.9);
+  border-color: #2a7a4f;
+  color: #fff;
+}
 /* Positions set dynamically by positionGradeButtons() in app.js */
 
 /* --- Lobby --- */
