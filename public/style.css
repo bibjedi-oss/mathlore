@@ -262,6 +262,19 @@ header {
   transform: translate(-50%, -50%) scale(1.15);
   box-shadow: 0 5px 20px rgba(30, 120, 60, 0.75);
 }
+.grade-btn.special.locked {
+  background: rgba(20, 50, 25, 0.6);
+  border-color: rgba(90, 170, 110, 0.3);
+  color: rgba(180, 240, 190, 0.35);
+  cursor: not-allowed;
+  font-size: 11px;
+  font-style: normal;
+  box-shadow: none;
+}
+.grade-btn.special.locked:hover {
+  transform: translate(-50%, -50%);
+  box-shadow: none;
+}
 .grade-btn.special.done {
   background: rgba(76, 175, 125, 0.9);
   border-color: #2a7a4f;

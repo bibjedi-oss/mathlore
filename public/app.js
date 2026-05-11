@@ -790,10 +790,12 @@ async function renderGradeSelect() {
         }).join("")}
         ${specialCourses.map(sc => {
           const [l, t] = sc.mapPos;
-          const allDone = sc.chapters.every(c => c.topics.every(tp => progress.completed.has(tp.id)));
-          const cls = allDone ? "grade-btn special done" : "grade-btn special";
-          const lbl = allDone ? "✓" : sc.btnIcon;
-          return `<button class="${cls}" data-special-id="${sc.id}" style="left:${l}%;top:${t}%">${lbl}</button>`;
+          const logicDone = specialCourses.find(c => c.id === "logic")?.chapters.every(c => c.topics.every(tp => progress.completed.has(tp.id))) ?? true;
+          const locked = sc.id === "triz" && !logicDone;
+          const allDone = !locked && sc.chapters.every(c => c.topics.every(tp => progress.completed.has(tp.id)));
+          const cls = locked ? "grade-btn special locked" : allDone ? "grade-btn special done" : "grade-btn special";
+          const lbl = locked ? "🔒" : allDone ? "✓" : sc.btnIcon;
+          return `<button class="${cls}" data-special-id="${sc.id}" style="left:${l}%;top:${t}%" ${locked ? "disabled" : ""}>${lbl}</button>`;
         }).join("")}
       </div>
     </div>`;
