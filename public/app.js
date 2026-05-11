@@ -1111,13 +1111,14 @@ doneBtn.addEventListener("click", async () => {
     updatePhaseUI();
     if (!isReplayMode) await saveSession("exercises");
     if (isSpecialCourseTopic(currentTopicId)) {
-      addMessage("bot", "Отлично! Теперь потренируемся. Я дам тебе несколько задач — пиши ответы прямо здесь.");
-      speak("Отлично! Теперь потренируемся. Я дам тебе несколько задач.");
-      messages.push({ role: "user", content: "Переходим к практике." });
+      // Новая сессия API — история теории не передаётся
+      messages = [{ role: "user", content: "Переходим к практике." }];
+      sendToAPI();
     } else {
       addMessage("bot", "Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне — проверю вместе с тобой.");
       speak("Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне.");
-      messages.push({ role: "user", content: "Переходим к заданиям из учебника." });
+      // Новая сессия API — история теории не передаётся
+      messages = [{ role: "user", content: "Переходим к заданиям из учебника." }];
     }
     return;
   }
@@ -1125,7 +1126,8 @@ doneBtn.addEventListener("click", async () => {
     currentPhase = "test";
     updatePhaseUI();
     if (!isReplayMode) await saveSession("test");
-    messages.push({ role: "user", content: "Дай мне финальное испытание — самое сложное задание на эту тему." });
+    // Новая сессия API — история упражнений не передаётся
+    messages = [{ role: "user", content: "Дай мне финальное испытание — самое сложное задание на эту тему." }];
     sendToAPI();
     return;
   }
