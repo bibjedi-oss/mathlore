@@ -91,6 +91,19 @@ header {
 .tts-btn:hover { border-color: #8b5e1a; }
 .tts-btn.active { background: #fdf0d0; border-color: #8b5e1a; }
 
+.header-credits {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8b5e1a;
+  background: #fdf0d0;
+  border: 1.5px solid #d4a853;
+  border-radius: 12px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+.header-credits.hc-low { color: #b85c00; border-color: #e07020; background: #fff3e0; }
+.header-credits.hc-zero { color: #c00; border-color: #c00; background: #fff0f0; }
+
 .tts-loading {
   width: 20px;
   height: 20px;

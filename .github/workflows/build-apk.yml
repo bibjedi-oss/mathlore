@@ -33,25 +33,20 @@ jobs:
       - name: Copy static assets from repo
         run: cp public/map.webp android/app/src/main/assets/mathlore-assets/map.webp
 
-      - name: Generate placeholder app icons
+      - name: Generate app icons from source
         run: |
+          pip3 install Pillow -q
           python3 - <<'EOF'
-          import struct, zlib, os
+          from PIL import Image
+          import os
 
-          def make_png(size, r=0x8b, g=0x5e, b=0x1a):
-              def chunk(name, data):
-                  crc = zlib.crc32(name + data) & 0xffffffff
-                  return struct.pack('>I', len(data)) + name + data + struct.pack('>I', crc)
-              ihdr = struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0)
-              raw = b''.join(b'\x00' + bytes([r, g, b] * size) for _ in range(size))
-              return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', ihdr) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
-
+          src = Image.open('android/icon-source.jpg').convert('RGBA')
           for density, size in [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]:
               path = f'android/app/src/main/res/mipmap-{density}'
               os.makedirs(path, exist_ok=True)
-              data = make_png(size)
-              open(f'{path}/ic_launcher.png', 'wb').write(data)
-              open(f'{path}/ic_launcher_round.png', 'wb').write(data)
+              img = src.resize((size, size), Image.LANCZOS)
+              img.save(f'{path}/ic_launcher.png')
+              img.save(f'{path}/ic_launcher_round.png')
           print('Icons generated')
           EOF
 

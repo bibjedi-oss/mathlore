@@ -62,7 +62,7 @@ app.post("/api/auth/parent-register", async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase
       .from("parents")
-      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name })
+      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name, message_credits: 40 })
       .select("id, email, name")
       .single();
     if (error) {

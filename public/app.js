@@ -18,6 +18,7 @@ const topicBanner   = document.getElementById("topicBanner");
 const phaseBar      = document.getElementById("phaseBar");
 const phaseLabel    = document.getElementById("phaseLabel");
 const logoutBtn     = document.getElementById("logoutBtn");
+const headerCredits = document.getElementById("headerCredits");
 
 // ── Контакт для оплаты (заполни перед запуском трафика) ───────────────────────
 // Telegram: "https://t.me/ВАШ_USERNAME?text=..."
@@ -177,6 +178,7 @@ function showLobby() {
   mainHeader.classList.remove("hidden");
   backBtn.classList.add("hidden");
   doneBtn.classList.add("hidden");
+  headerCredits.classList.add("hidden");
   lobbyScreen.classList.remove("hidden");
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   renderLobby();
@@ -188,6 +190,13 @@ const PHASE_TRIGGERS = [
   "Переходим к практике.",
   "Дай мне финальное испытание — самое сложное задание на эту тему."
 ];
+
+function updateHeaderCredits(n) {
+  if (n === null || n === undefined) { headerCredits.classList.add("hidden"); return; }
+  headerCredits.classList.remove("hidden");
+  headerCredits.textContent = `🪙 ${n}`;
+  headerCredits.className = "header-credits" + (n <= 0 ? " hc-zero" : n < 10 ? " hc-low" : "");
+}
 
 function isSpecialCourseTopic(topicId) {
   return specialCourses.some(c => c.chapters.some(ch => ch.topics.some(t => t.id === topicId)));
@@ -208,6 +217,8 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   topicBanner.textContent = topicLabelArg;
   const bg = selectedGrade ? gradeBg(selectedGrade) : GRADE_BG[1];
   chatScreen.style.backgroundImage = `url('${bg}')`;
+  fetch("/api/child/balance", { headers: apiHeaders() })
+    .then(r => r.ok ? r.json() : null).then(d => updateHeaderCredits(d?.credits ?? null)).catch(() => {});
   history.pushState({ screen: "chat" }, "");
 
   if (resumeData?.messages?.length > 0) {
@@ -1245,6 +1256,7 @@ async function sendToAPI() {
       } else if (!isReplayMode) {
         saveSession(currentPhase);
       }
+      updateHeaderCredits(data.creditsLeft);
       if (data.creditsLeft === 0) {
         showTrialEndedModal();
         return;
