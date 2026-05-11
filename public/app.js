@@ -756,7 +756,7 @@ async function renderGradeSelect() {
   lobbyScreen.innerHTML = `
     <div class="grade-screen">
       <div class="grade-map-frame">
-        <img class="grade-map" src="${MEDIA}map.webp" alt="" />
+        <img class="grade-map" src="/map.webp" alt="" />
         <div class="grade-screen-title">
           <div class="grade-title-box">
             <p class="welcome-sub">Выбери свой класс</p>
