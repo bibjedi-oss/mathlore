@@ -37,6 +37,7 @@ let transcript = "";
 let currentUser = null; // { role, id, name, grade, ... }
 let authToken = null;
 let selectedGrade = null;
+let selectedSubject = null;
 
 // ── Welcome modal ─────────────────────────────────────────────────────────────
 function showWelcomeModal(emoji, text, btnText) {
@@ -717,7 +718,8 @@ async function loadChildProgress(childId, childName) {
 // ── Lobby ─────────────────────────────────────────────────────────────────────
 function renderLobby() {
   if (!selectedGrade) renderGradeSelect();
-  else renderTopicLobby(selectedGrade);
+  else if (!selectedSubject) renderSubjectSelect(selectedGrade);
+  else renderTopicLobby(selectedGrade, selectedSubject);
 }
 
 function isGradeUnlocked(gradeNum) {
@@ -766,7 +768,8 @@ async function renderGradeSelect() {
           const [l, t] = ROAD_POS[i] ?? [50, 50];
           const permanentlyLocked = g.locked === true;
           const unlocked = !permanentlyLocked && isGradeUnlocked(g.grade);
-          const allDone = !permanentlyLocked && (g.themes ?? g.quarters).every(q => (q.paragraphs ?? q.topics).every(p => progress.completed.has(p.id)));
+          const subjects = g.subjects ?? [];
+          const allDone = !permanentlyLocked && subjects.length > 0 && subjects.every(s => s.chapters.every(c => c.topics.every(t => progress.completed.has(t.id))));
           const cls = !unlocked ? "grade-btn locked" : allDone ? "grade-btn done" : "grade-btn";
           const label = !unlocked ? "🔒" : allDone ? "✓" : g.grade;
           return `<button class="${cls}" data-grade="${g.grade}" style="left:${l}%;top:${t}%" ${!unlocked ? "disabled" : ""}>${label}</button>`;
@@ -774,7 +777,47 @@ async function renderGradeSelect() {
       </div>
     </div>`;
   lobbyScreen.querySelectorAll(".grade-btn:not(.locked)").forEach(btn => {
-    btn.addEventListener("click", () => { selectedGrade = parseInt(btn.dataset.grade); renderTopicLobby(selectedGrade); });
+    btn.addEventListener("click", () => { selectedGrade = parseInt(btn.dataset.grade); selectedSubject = null; renderSubjectSelect(selectedGrade); });
+  });
+}
+
+async function renderSubjectSelect(gradeNum) {
+  appDiv.classList.add("fullscreen-map");
+  const gradeData = curriculum.find(g => g.grade === gradeNum);
+  const progress = await getProgress();
+
+  lobbyScreen.innerHTML = `
+    <div class="cave-screen">
+      <img class="cave-bg" src="${gradeBg(gradeNum)}" alt="" />
+      <div class="cave-header">
+        <button class="cave-back-btn">← Классы</button>
+        <div class="cave-grade-title">${gradeData.label}</div>
+      </div>
+      <div class="subject-cards">
+        ${gradeData.subjects.map(s => {
+          const total = s.chapters.reduce((sum, c) => sum + c.topics.length, 0);
+          const done = s.chapters.reduce((sum, c) => sum + c.topics.filter(t => progress.completed.has(t.id)).length, 0);
+          const pct = total > 0 ? Math.round(done / total * 100) : 0;
+          return `
+            <button class="subject-card" data-subject-id="${s.id}">
+              <div class="subject-icon">${s.icon}</div>
+              <div class="subject-label">${s.label}</div>
+              <div class="subject-progress-bar"><div class="subject-progress-fill" style="width:${pct}%"></div></div>
+              <div class="subject-progress-label">${done} / ${total}</div>
+            </button>`;
+        }).join("")}
+      </div>
+    </div>`;
+
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => {
+    selectedGrade = null;
+    renderGradeSelect();
+  });
+  lobbyScreen.querySelectorAll(".subject-card").forEach(card => {
+    card.addEventListener("click", () => {
+      selectedSubject = card.dataset.subjectId;
+      renderTopicLobby(gradeNum, selectedSubject);
+    });
   });
 }
 
@@ -790,28 +833,29 @@ const GRADE_BG = {
 };
 function gradeBg(gradeNum) { return GRADE_BG[gradeNum] || GRADE_BG[7]; }
 
-async function renderTopicLobby(gradeNum) {
+async function renderTopicLobby(gradeNum, subjectId) {
   appDiv.classList.add("fullscreen-map");
   const gradeData = curriculum.find(g => g.grade === gradeNum);
+  const subjectData = gradeData.subjects.find(s => s.id === subjectId);
   const [progress, balanceData] = await Promise.all([
     getProgress(),
     fetch("/api/child/balance", { headers: apiHeaders() }).then(r => r.ok ? r.json() : { credits: null }).catch(() => ({ credits: null }))
   ]);
-  renderThemeMap(gradeData, progress, balanceData.credits);
+  renderThemeMap(gradeData, subjectData, progress, balanceData.credits);
 }
 
-function renderThemeMap(gradeData, progress, credits = null) {
-  const allItems = (gradeData.themes ?? gradeData.quarters);
-  const totalTopics = allItems.reduce((s, q) => s + (q.paragraphs ?? q.topics).length, 0);
-  const doneTopics = allItems.reduce((s, q) => s + (q.paragraphs ?? q.topics).filter(t => progress.completed.has(t.id)).length, 0);
+function renderThemeMap(gradeData, subjectData, progress, credits = null) {
+  const allItems = subjectData.chapters;
+  const totalTopics = allItems.reduce((s, q) => s + q.topics.length, 0);
+  const doneTopics = allItems.reduce((s, q) => s + q.topics.filter(t => progress.completed.has(t.id)).length, 0);
   const pct = Math.round(doneTopics / totalTopics * 100);
 
   lobbyScreen.innerHTML = `
     <div class="cave-screen">
       <img class="cave-bg" src="${gradeBg(gradeData.grade)}" alt="" />
       <div class="cave-header">
-        <button class="cave-back-btn">← Классы</button>
-        <div class="cave-grade-title">${gradeData.label}</div>
+        <button class="cave-back-btn">← ${gradeData.label}</button>
+        <div class="cave-grade-title">${subjectData.label}</div>
         <div class="cave-overall-progress">
           <div class="cave-overall-bar"><div class="cave-overall-fill" style="width:${pct}%"></div></div>
           <span class="cave-overall-label">${doneTopics}/${totalTopics}</span>
@@ -821,7 +865,7 @@ function renderThemeMap(gradeData, progress, credits = null) {
       <div class="cave-accordion">
         ${allItems.map((q, qi) => {
           const unlocked = isThemeUnlocked(gradeData.grade);
-          const items = (q.paragraphs ?? q.topics);
+          const items = q.topics;
           const qDone = items.filter(t => progress.completed.has(t.id)).length;
           const qPct = Math.round(qDone / items.length * 100);
           if (!unlocked) {
@@ -856,7 +900,7 @@ function renderThemeMap(gradeData, progress, credits = null) {
       </div>
     </div>`;
 
-  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedGrade = null; renderGradeSelect(); });
+  lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedSubject = null; renderSubjectSelect(selectedGrade); });
   lobbyScreen.querySelectorAll(".cave-theme:not(.locked) .cave-theme-header").forEach(h => {
     h.addEventListener("click", () => {
       const q = h.closest(".cave-theme");
