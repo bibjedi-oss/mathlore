@@ -170,7 +170,7 @@ app.get("/api/parent/me", requireAuth("parent"), async (req, res) => {
       .eq("id", req.user.id)
       .single();
     if (error) throw error;
-    res.json(data);
+    res.json({ ...data, token_balance: data.token_balance ?? 50000 });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Ошибка сервера" });

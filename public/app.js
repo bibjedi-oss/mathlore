@@ -198,8 +198,7 @@ function tokensToRubles(tokens) { return Math.round(tokens * TOKEN_RATE); }
 function updateHeaderBalance(tokens) {
   if (tokens === null || tokens === undefined) { headerCredits.classList.add("hidden"); return; }
   headerCredits.classList.remove("hidden");
-  const rub = tokensToRubles(tokens);
-  headerCredits.textContent = `₽ ${rub}`;
+  headerCredits.textContent = `🪙 ${Math.round(tokens / 1000)}к`;
   headerCredits.className = "header-credits" + (tokens <= 0 ? " hc-zero" : tokens < 25000 ? " hc-low" : "");
 }
 
@@ -523,8 +522,8 @@ async function renderDashboard() {
     const balanceRub = balance !== null ? tokensToRubles(balance) : null;
     const balanceCls = balance === null ? "" : balance <= 0 ? "dash-balance-zero" : balance < 25000 ? "dash-balance-low" : "dash-balance-ok";
     const balanceLabel = balance === null ? "" : balance <= 0
-      ? `<span class="${balanceCls}">Баланс исчерпан — <a href="#" id="buyCreditsLink">пополнить</a></span>`
-      : `<span class="${balanceCls}">Баланс: <b>₽${balanceRub}</b></span> <a href="#" id="pricingInfoLink" class="dash-pricing-link">Как считается?</a>`;
+      ? `<span class="${balanceCls}">Токены закончились — <a href="#" id="buyCreditsLink">пополнить</a></span>`
+      : `<span class="${balanceCls}">Токены: <b>${balance.toLocaleString("ru")}</b> <span style="color:#999;font-weight:400">(≈ ₽${balanceRub})</span></span> <a href="#" id="pricingInfoLink" class="dash-pricing-link">Как считается?</a>`;
 
     const balanceBar = balanceLabel
       ? `<div class="dash-balance-bar">${balanceLabel}</div>`
