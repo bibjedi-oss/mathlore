@@ -65,7 +65,23 @@ class MainActivity : AppCompatActivity() {
                         val stream = assets.open("$ASSETS_DIR/$filename")
                         WebResourceResponse(mimeType, "UTF-8", stream)
                     } catch (e: IOException) {
-                        // Файл не найден в assets — пропускаем в сеть
+                        super.shouldInterceptRequest(view, request)
+                    }
+                }
+                // Перехватываем статические картинки с сервера (map.webp и др.)
+                if (url.startsWith("$SERVER_URL/")) {
+                    val filename = url.removePrefix("$SERVER_URL/").substringBefore("?")
+                    val mimeType = when {
+                        filename.endsWith(".webp", ignoreCase = true) -> "image/webp"
+                        filename.endsWith(".jpg", ignoreCase = true) ||
+                        filename.endsWith(".jpeg", ignoreCase = true) -> "image/jpeg"
+                        filename.endsWith(".png", ignoreCase = true) -> "image/png"
+                        else -> return super.shouldInterceptRequest(view, request)
+                    }
+                    return try {
+                        val stream = assets.open("$ASSETS_DIR/$filename")
+                        WebResourceResponse(mimeType, "UTF-8", stream)
+                    } catch (e: IOException) {
                         super.shouldInterceptRequest(view, request)
                     }
                 }

@@ -30,6 +30,9 @@ jobs:
           curl -L "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-8.jpg" -o android/app/src/main/assets/mathlore-assets/bg-8.jpg
           curl -L "https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-9.jpg" -o android/app/src/main/assets/mathlore-assets/bg-9.jpg
 
+      - name: Copy static assets from repo
+        run: cp public/map.webp android/app/src/main/assets/mathlore-assets/map.webp
+
       - name: Generate placeholder app icons
         run: |
           python3 - <<'EOF'
