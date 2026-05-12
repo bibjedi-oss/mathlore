@@ -389,6 +389,17 @@ app.post("/api/sessions", requireAuth("child"), async (req, res) => {
 
 function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false) {
   const isConsolidation = topic.startsWith("Закрепление");
+  const isGeometry = /геометр|треугольник|окружност|угол|прямоугольник|параллелограмм|трапеци|ромб|теорем|теорема|вектор|координат|площадь|периметр|конус|цилиндр|пирамид|сфер|куб|призм/i.test(topic);
+
+  const svgHint = isGeometry ? `
+ЧЕРТЕЖИ: если объяснение требует геометрической иллюстрации — вставь SVG прямо в ответ (без markdown-обёртки):
+- Атрибуты тега svg: viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg"
+- Теги: line, circle, rect, polygon, path, text
+- Стиль линий: stroke="#4a2c08" stroke-width="2" fill="none"
+- Стиль текста: fill="#333" font-size="13" font-family="sans-serif"
+- Вспомогательные линии: stroke="#bbb" stroke-dasharray="4"
+- Подписывай ключевые точки и углы
+- Одно сообщение — максимум один SVG` : "";
 
   const base = `ТЕМА УРОКА: ${topic}
 КЛАСС: ${grade}
@@ -401,7 +412,7 @@ function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false) {
 
 ДЛИНА ОТВЕТОВ: 2-4 предложения. Дети не читают длинные тексты.
 ЯЗЫК: русский, простой, соответствующий ${grade} классу.
-ФОРМАТИРОВАНИЕ: обычный текст. Никаких **, ##, [], -.
+ФОРМАТИРОВАНИЕ: обычный текст. Никаких **, ##, [], -.${svgHint}
 
 ЗАПРЕТ: никогда не объясняй понятие через само себя. Объясняя "большие числа" — не используй большие числа. Объясняя "дроби" — не используй дроби. Используй только то, что ребёнок уже точно знает: знакомые предметы, бытовые ситуации.
 

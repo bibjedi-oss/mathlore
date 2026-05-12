@@ -1395,7 +1395,25 @@ async function resumeSession(topicLabel, topicId) {
 function addMessage(role, text) {
   const div = document.createElement("div");
   div.className = `message ${role === "user" ? "user" : "bot"}`;
-  div.textContent = text;
+
+  if (role === "bot" && text.includes("<svg")) {
+    const parts = text.split(/(<svg[\s\S]*?<\/svg>)/gi);
+    parts.forEach(part => {
+      if (/^<svg/i.test(part)) {
+        const wrap = document.createElement("div");
+        wrap.className = "chat-svg";
+        wrap.innerHTML = part;
+        div.appendChild(wrap);
+      } else if (part.trim()) {
+        const span = document.createElement("span");
+        span.textContent = part;
+        div.appendChild(span);
+      }
+    });
+  } else {
+    div.textContent = text;
+  }
+
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
