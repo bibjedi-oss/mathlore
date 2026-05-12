@@ -1315,7 +1315,7 @@ function showTrialEndedModal() {
     <div class="modal-emoji">⏸️</div>
     <div class="modal-text">
       <b>Занятие на паузе</b><br><br>
-      Токены закончились. Попроси маму или папу зайти в свой кабинет и пополнить баланс.
+      Сообщи родителям, что у тебя закончились токены.
     </div>`;
   modal.classList.remove("hidden");
 }
