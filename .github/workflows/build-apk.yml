@@ -53,19 +53,26 @@ jobs:
           print('Icons generated')
           EOF
 
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/archimath.jks
+      - name: Generate keystore
+        run: |
+          keytool -genkey -v \
+            -keystore android/archimath.jks \
+            -storetype JKS \
+            -alias archimathkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass archimath2024 -keypass archimath2024 \
+            -dname "CN=ArchiMath, O=ArchiMath, C=RU"
 
       - name: Build signed release APK
         working-directory: android
         run: |
           gradle assembleRelease \
             -Pandroid.injected.signing.store.file=$(pwd)/archimath.jks \
-            -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+            -Pandroid.injected.signing.store.password=archimath2024 \
+            -Pandroid.injected.signing.key.alias=archimathkey \
+            -Pandroid.injected.signing.key.password=archimath2024
 
-      - name: Upload signed APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ArchiMath-release
