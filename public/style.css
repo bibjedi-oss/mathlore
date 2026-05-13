@@ -948,6 +948,7 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
 }
 
 .modal-box {
+  position: relative;
   background: #fffdf5;
   border-radius: 20px;
   padding: 32px 28px;
@@ -1180,6 +1181,7 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
 }
 .pricing-row:last-child { border-bottom: none; }
 .pricing-row-summer { background: rgba(255,200,60,0.12); }
+.pricing-row-beta { background: rgba(100,200,100,0.15); font-weight: 600; }
 
 .pricing-price {
   font-weight: 700;

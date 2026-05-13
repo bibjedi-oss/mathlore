@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#8b5e1a" />
   <title>ArchiMath</title>
   <link rel="icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <div class="app">
@@ -92,7 +92,7 @@
       <div class="chat" id="chat"></div>
       <div class="input-area">
         <input type="text" id="input" placeholder="Напиши что-нибудь..." disabled autocomplete="off" />
-        <input type="file" id="photoInput" accept="image/*" style="display:none" />
+        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" />
         <button id="photoBtn" disabled title="Отправить фото">📷</button>
         <button id="micBtn" disabled title="Говори">🎤</button>
         <button id="sendBtn" disabled>→</button>
@@ -121,6 +121,10 @@
       <div class="pricing-section">
         <div class="pricing-section-title">📅 Месячная подписка</div>
         <div class="pricing-table">
+          <div class="pricing-row pricing-row-beta">
+            <span>Первые 100 участников тестирования</span>
+            <span class="pricing-price">298 ₽/мес</span>
+          </div>
           <div class="pricing-row">
             <span>Учебный год</span>
             <span class="pricing-price">998 ₽/мес</span>
@@ -132,24 +136,23 @@
         </div>
       </div>
       <div class="pricing-section">
-        <div class="pricing-section-title">🤖 Уроки с ИИ (по факту)</div>
-        <div class="pricing-desc">
-          Каждый урок использует ИИ-модель. Стоимость зависит от длины диалога.<br>
-          <b>В среднем 1 урок — 100–150 ₽.</b>
-        </div>
-        <div class="pricing-desc pricing-desc-muted">
-          Средний полный курс за класс (≈40 тем) — 4 000–6 000 ₽ за год.
-        </div>
+        <div class="pricing-section-title">🤖 Стоимость урока</div>
+        <div class="pricing-desc"><b>В среднем урок стоит 150–250 ₽.</b></div>
       </div>
       <div class="pricing-section">
         <div class="pricing-section-title">🎁 При регистрации</div>
-        <div class="pricing-desc">200 ₽ на баланс — попробуйте 1–2 урока бесплатно.</div>
+        <div class="pricing-desc">200 ₽ на баланс — попробуйте первый урок бесплатно.</div>
       </div>
-      <button class="auth-btn" onclick="document.getElementById('pricingModal').classList.add('hidden')">Понятно</button>
+      <div class="pricing-section">
+        <div class="pricing-section-title">⚡ Бонус для первых 100</div>
+        <div class="pricing-desc">+50% токенов к первым 3 пополнениям баланса.</div>
+      </div>
+      <button class="auth-btn" onclick="document.getElementById('pricingModal').classList.add('hidden');showPaymentModal()">Оплатить</button>
+      <button class="auth-btn auth-btn-secondary" style="margin-top:8px" onclick="document.getElementById('pricingModal').classList.add('hidden')">Закрыть</button>
     </div>
   </div>
 
   <script src="curriculum.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

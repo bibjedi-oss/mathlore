@@ -191,7 +191,7 @@ const PHASE_TRIGGERS = [
   "Дай мне финальное испытание — самое сложное задание на эту тему."
 ];
 
-const TOKEN_RATE = 0.004; // ₽ за 1 токен
+const TOKEN_RATE = 200 / 300_000; // ₽ за 1 токен (300к ≈ 200₽)
 
 function tokensToRubles(tokens) { return Math.round(tokens * TOKEN_RATE); }
 
@@ -199,7 +199,7 @@ function updateHeaderBalance(tokens) {
   if (tokens === null || tokens === undefined) { headerCredits.classList.add("hidden"); return; }
   headerCredits.classList.remove("hidden");
   headerCredits.textContent = `🪙 ${Math.round(tokens / 1000)}к`;
-  headerCredits.className = "header-credits" + (tokens <= 0 ? " hc-zero" : tokens < 25000 ? " hc-low" : "");
+  headerCredits.className = "header-credits" + (tokens <= 0 ? " hc-zero" : tokens < 75000 ? " hc-low" : "");
 }
 
 function isSpecialCourseTopic(topicId) {
@@ -520,7 +520,7 @@ async function renderDashboard() {
 
     const balance = me?.token_balance ?? null;
     const balanceRub = balance !== null ? tokensToRubles(balance) : null;
-    const balanceCls = balance === null ? "" : balance <= 0 ? "dash-balance-zero" : balance < 25000 ? "dash-balance-low" : "dash-balance-ok";
+    const balanceCls = balance === null ? "" : balance <= 0 ? "dash-balance-zero" : balance < 75000 ? "dash-balance-low" : "dash-balance-ok";
     const balanceLabel = balance === null ? "" : balance <= 0
       ? `<span class="${balanceCls}">Токены закончились — <a href="#" id="buyCreditsLink">пополнить</a></span>`
       : `<span class="${balanceCls}">Токены: <b>${balance.toLocaleString("ru")}</b> <span style="color:#999;font-weight:400">(≈ ₽${balanceRub})</span></span> <a href="#" id="pricingInfoLink" class="dash-pricing-link">Как считается?</a>`;
@@ -1281,6 +1281,13 @@ async function sendToAPI() {
 
     const data = await res.json();
     hideTyping();
+    if (data.imageDescription) {
+      const imgIdx = messages.map((m, i) => ({ m, i })).reverse()
+        .find(({ m }) => Array.isArray(m.content) && m.content.some(c => c.type === "image"))?.i;
+      if (imgIdx !== undefined) {
+        messages[imgIdx] = { role: "user", content: `[Фото задачи: ${data.imageDescription}]` };
+      }
+    }
     if (data.reply) {
       messages.push({ role: "assistant", content: data.reply });
       addMessage("bot", data.reply);
@@ -1328,26 +1335,16 @@ function showPaymentModal() {
     ? PAYMENT_CONTACT_URL + "&text=" + msg
     : PAYMENT_CONTACT_URL + "?text=" + msg;
   box.innerHTML = `
+    <button onclick="document.getElementById('trialModal').classList.add('hidden')" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:#888">×</button>
     <div class="modal-emoji">🪙</div>
-    <div class="modal-text"><b>Пополнение баланса</b><br><br>Чтобы продолжить занятия:</div>
-    <div class="payment-steps">
-      <div class="payment-step">
-        <span class="payment-num">1</span>
-        <div>Оформить подписку<br>
-          <b>998 ₽/мес</b> <span class="payment-hint">· летом 498 ₽/мес</span>
-        </div>
-      </div>
-      <div class="payment-step">
-        <span class="payment-num">2</span>
-        <div>Пополнить баланс токенов<br>
-          <span class="payment-hint">1 урок ≈ 100–150 ₽</span>
-        </div>
-      </div>
+    <div class="modal-text">
+      <b>Оплата</b><br><br>
+      Приложение сейчас на этапе тестирования.<br>Оплата — через менеджера.
     </div>
+    <div style="text-align:center;font-size:15px;margin:12px 0;color:#5a3a00">@bibikin</div>
     <a href="${contactUrl}" target="_blank" class="auth-btn" style="text-decoration:none;display:block;text-align:center">
       Написать в Telegram →
-    </a>
-    <div style="text-align:center;margin-top:10px;font-size:13px;color:#aaa">Отвечу в течение дня</div>`;
+    </a>`;
   modal.classList.remove("hidden");
 }
 

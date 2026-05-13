@@ -26,8 +26,8 @@ const APP_URL = process.env.APP_URL || "https://mathlore.ru";
 let currentModel = process.env.DEFAULT_MODEL || "claude-opus-4-6";
 
 // Курс токенов: 1 токен = TOKEN_RATE ₽ (блендированный, Opus ×2 при 90₽/$)
-const TOKEN_RATE = 0.004;
-const TRIAL_TOKENS = 50_000; // ≈ 200₽ при старте
+const TOKEN_RATE = 200 / 300_000; // ₽ за 1 токен (300к ≈ 200₽)
+const TRIAL_TOKENS = 300_000; // ≈ 200₽ при старте
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -170,7 +170,7 @@ app.get("/api/parent/me", requireAuth("parent"), async (req, res) => {
       .eq("id", req.user.id)
       .single();
     if (error) throw error;
-    res.json({ ...data, token_balance: data.token_balance ?? 50000 });
+    res.json({ ...data, token_balance: data.token_balance ?? TRIAL_TOKENS });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Ошибка сервера" });
@@ -585,8 +585,32 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       messages,
     });
 
-    const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
-    const newBalance = Math.max(0, (parent.token_balance || 0) - tokensUsed);
+    let totalTokens = response.usage.input_tokens + response.usage.output_tokens;
+
+    // Если в сообщениях есть изображение — получаем его текстовое описание,
+    // чтобы клиент заменил картинку текстом и не тащил её в каждый следующий запрос
+    let imageDescription = null;
+    const imageMsg = [...messages].reverse().find(m =>
+      Array.isArray(m.content) && m.content.some(c => c.type === "image")
+    );
+    if (imageMsg) {
+      const imageBlock = imageMsg.content.find(c => c.type === "image");
+      const descResponse = await anthropic.messages.create({
+        model: currentModel,
+        max_tokens: 500,
+        messages: [{
+          role: "user",
+          content: [
+            imageBlock,
+            { type: "text", text: "Перепиши содержимое изображения лаконично, без потери смыслов. Если это математическая задача — перепиши полностью всё условие, все числа, формулы и вопрос. Если есть чертёж, схема или таблица — опиши их структуру и все данные. Не сокращай ничего важного." }
+          ]
+        }]
+      });
+      imageDescription = descResponse.content[0]?.text ?? null;
+      totalTokens += descResponse.usage.input_tokens + descResponse.usage.output_tokens;
+    }
+
+    const newBalance = Math.max(0, (parent.token_balance || 0) - totalTokens);
     await supabase.from("parents").update({ token_balance: newBalance }).eq("id", req.user.parentId);
 
     let text = response.content.find(b => b.type === "text")?.text ?? "";
@@ -595,7 +619,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const isFiction = text.startsWith("[ВЫМЫСЕЛ]");
     text = text.replace(/^\[ВЫМЫСЕЛ\]\s*/g, "");
     if (isFiction) text = "(Выдуманная история, но она хорошо объясняет тему)\n\n" + text;
-    res.json({ reply: text, testPassed, tokenBalance: newBalance });
+    res.json({ reply: text, testPassed, tokenBalance: newBalance, imageDescription });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "API error" });
