@@ -6,6 +6,11 @@
   <meta name="theme-color" content="#8b5e1a" />
   <title>ArchiMath</title>
   <link rel="icon" href="favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ArchiMath" />
   <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
@@ -154,5 +159,10 @@
 
   <script src="curriculum.js?v=5"></script>
   <script src="app.js?v=6"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  </script>
 </body>
 </html>

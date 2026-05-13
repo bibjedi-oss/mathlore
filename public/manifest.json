@@ -1,0 +1,16 @@
+{
+  "name": "ArchiMath",
+  "short_name": "ArchiMath",
+  "description": "ИИ-репетитор по математике для 7–9 класса",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#4a2c08",
+  "theme_color": "#8b5e1a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}
