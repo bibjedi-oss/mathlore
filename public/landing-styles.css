@@ -1,0 +1,128 @@
+/* ArchiMath — shared design tokens & primitives */
+
+:root {
+  /* Pergament + bronze palette, extracted from current landing */
+  --brown:    #8b5e1a;
+  --brown-2:  #a87030;
+  --brown-d:  #6b4612;
+  --ink:      #2a1a08;
+  --ink-2:    #5a3e10;
+  --gold:     #c8a870;
+  --gold-d:   #a88a4e;
+
+  --parch:    #fdf6e8;
+  --parch-2:  #fdf0d0;
+  --parch-3:  #f7e8c0;
+  --parch-4:  #ede1bb;
+  --border:   #e8d5a0;
+  --border-d: #c9b380;
+
+  --night:    #1a0e04;
+  --night-2:  #2a1a08;
+  --night-3:  #3d2410;
+
+  --ok:       #4a7a3a;
+  --warn:     #b86b22;
+
+  /* Type system */
+  --f-display: "Cormorant Garamond", "Hoefler Text", "Times New Roman", serif;
+  --f-body:    "Spectral", "Iowan Old Style", Georgia, serif;
+  --f-ui:      "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --f-num:     "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Subtle paper texture — used by .paper-bg */
+.paper-bg {
+  background-color: var(--parch);
+  background-image:
+    radial-gradient(circle at 25% 30%, rgba(139, 94, 26, 0.04) 0, transparent 35%),
+    radial-gradient(circle at 70% 80%, rgba(139, 94, 26, 0.05) 0, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(139, 94, 26, 0.02) 0, transparent 60%);
+}
+
+.paper-bg-dark {
+  background-color: var(--night);
+  background-image:
+    radial-gradient(ellipse at 50% 20%, rgba(200, 168, 112, 0.10) 0, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 94, 26, 0.12) 0, transparent 50%);
+}
+
+/* Wax-seal-like circular badge */
+.wax-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.4) 0%, transparent 45%),
+    radial-gradient(circle at 70% 75%, rgba(0,0,0,0.18) 0%, transparent 50%),
+    linear-gradient(135deg, #a8702c 0%, #6b4612 100%);
+  box-shadow:
+    inset 0 -2px 4px rgba(0,0,0,0.25),
+    inset 0 2px 2px rgba(255,255,255,0.2),
+    0 4px 10px rgba(60, 30, 0, 0.3);
+  color: #fdf0d0;
+  font-family: var(--f-display);
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.25);
+}
+
+/* Old-style horizontal divider — small diamond on a line */
+.rule-flourish {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gold-d);
+  font-family: var(--f-display);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.rule-flourish::before,
+.rule-flourish::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+/* "Stamped" badge — for status / counts */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* iOS scroll containers should not show scrollbars */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Animation for new chat bubbles */
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.bubble-in { animation: bubble-in 0.35s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 168, 112, 0.55), inset 0 -2px 4px rgba(0,0,0,0.25), inset 0 2px 2px rgba(255,255,255,0.2); }
+  50%      { box-shadow: 0 0 0 10px rgba(200, 168, 112, 0),    inset 0 -2px 4px rgba(0,0,0,0.25), inset 0 2px 2px rgba(255,255,255,0.2); }
+}
+.pulse { animation: pulse-glow 2.4s ease-out infinite; }
+
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+  30%           { transform: translateY(-4px); opacity: 1; }
+}
+.typing-dot { animation: typing-dot 1.2s ease-in-out infinite; display: inline-block; }
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }

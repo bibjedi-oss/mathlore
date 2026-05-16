@@ -1,451 +1,1064 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ArchiMath — математика через историю</title>
-  <meta name="description" content="ИИ-репетитор по алгебре и геометрии для 7–9 класса. Каждая тема начинается с живой истории открытия." />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ArchiMath — математика через открытие</title>
+<meta name="description" content="Архи задаёт вопросы — ребёнок сам приходит к пониманию. Не репетитор. Не ChatGPT. Геометрия и алгебра для 7–9 класса." />
+<link rel="stylesheet" href="landing-styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
 
-    :root {
-      --brown:   #8b5e1a;
-      --brown2:  #a87030;
-      --dark:    #2a1a08;
-      --parch:   #fdf6e8;
-      --parch2:  #fdf0d0;
-      --parch3:  #f7e8c0;
-      --border:  #e8d5a0;
-    }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--f-body);
+    color: var(--ink);
+    line-height: 1.6;
+    background: var(--parch);
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--dark);
-      color: var(--dark);
-      line-height: 1.6;
-    }
+  /* ─────────── Type system ─────────── */
+  .display { font-family: var(--f-display); font-weight: 600; line-height: 1.05; letter-spacing: -0.005em; }
+  .display em, .display .accent { font-style: italic; font-weight: 500; color: var(--brown); }
+  .ui { font-family: var(--f-ui); }
+  .eyebrow {
+    font-family: var(--f-ui);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brown);
+  }
+  .eyebrow-dark { color: var(--gold); }
 
-    /* ── HERO ── */
-    .hero {
-      min-height: 100vh;
-      background: linear-gradient(160deg, #1a0e04 0%, #2e1a06 60%, #3d2410 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 60px 24px 80px;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: "";
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 40%, rgba(139,94,26,0.18) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .hero-eyebrow {
-      font-size: 13px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #c8a870;
-      margin-bottom: 20px;
-    }
-    .hero-title {
-      font-size: clamp(36px, 8vw, 64px);
-      font-weight: 800;
-      color: #fdf6e8;
-      line-height: 1.12;
-      max-width: 780px;
-      margin-bottom: 20px;
-    }
-    .hero-title span { color: #c8a870; }
-    .hero-sub {
-      font-size: clamp(16px, 2.5vw, 20px);
-      color: #c8a870;
-      max-width: 560px;
-      margin-bottom: 40px;
-    }
-    .hero-btns {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .btn-primary {
-      background: var(--brown);
-      color: #fffdf5;
-      padding: 16px 32px;
-      border-radius: 12px;
-      font-size: 17px;
-      font-weight: 600;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.15s;
-      display: inline-block;
-    }
-    .btn-primary:hover { background: var(--brown2); transform: translateY(-1px); }
-    .btn-secondary {
-      background: rgba(255,253,245,0.08);
-      color: #fdf6e8;
-      padding: 16px 32px;
-      border-radius: 12px;
-      font-size: 17px;
-      font-weight: 600;
-      text-decoration: none;
-      border: 1.5px solid rgba(200,168,112,0.3);
-      cursor: pointer;
-      transition: background 0.2s;
-      display: inline-block;
-    }
-    .btn-secondary:hover { background: rgba(255,253,245,0.13); }
-    .hero-hint {
-      margin-top: 20px;
-      font-size: 13px;
-      color: rgba(200,168,112,0.6);
-    }
+  /* ─────────── Layout primitives ─────────── */
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  .wrap-narrow { max-width: 760px; margin: 0 auto; padding: 0 24px; }
 
-    /* ── SECTIONS ── */
-    section {
-      background: var(--parch);
-      padding: 80px 24px;
-    }
-    section:nth-child(odd) { background: var(--parch2); }
-    .section-inner {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    .section-label {
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--brown);
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-    .section-title {
-      font-size: clamp(26px, 5vw, 40px);
-      font-weight: 800;
-      color: var(--dark);
-      line-height: 1.2;
-      margin-bottom: 16px;
-    }
-    .section-sub {
-      font-size: 18px;
-      color: #5a3e10;
-      max-width: 620px;
-      margin-bottom: 48px;
-    }
+  section { padding: 88px 0; }
+  @media (max-width: 720px) { section { padding: 64px 0; } }
 
-    /* ── HOW IT WORKS ── */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 24px;
-    }
-    .step-card {
-      background: #fffdf5;
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      padding: 28px 24px;
-    }
-    .step-num {
-      font-size: 32px;
-      font-weight: 800;
-      color: var(--border);
-      line-height: 1;
-      margin-bottom: 12px;
-    }
-    .step-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--dark);
-      margin-bottom: 8px;
-    }
-    .step-text { font-size: 14px; color: #5a3e10; line-height: 1.55; }
+  /* Background tones for rhythm */
+  .bg-parch  { background: var(--parch); }
+  .bg-parch2 { background: var(--parch-2); }
+  .bg-night  { background: var(--night); color: #fdf6e8; }
+  .bg-night .display { color: #fdf6e8; }
+  .bg-night .display em, .bg-night .display .accent { color: var(--gold); }
 
-    /* ── DEMO BLOCK ── */
-    .demo-wrap {
-      background: #1a0e04;
-      border-radius: 20px;
-      overflow: hidden;
-      max-width: 680px;
-      margin: 0 auto;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
-    }
-    .demo-topbar {
-      background: #2a1a08;
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid #3d2410;
-    }
-    .demo-topbar-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #c8a870;
-    }
-    .demo-topbar-badge {
-      font-size: 11px;
-      background: rgba(200,168,112,0.15);
-      color: #c8a870;
-      padding: 2px 8px;
-      border-radius: 20px;
-      margin-left: auto;
-    }
-    .demo-iframe-wrap {
-      position: relative;
-      height: 560px;
-    }
-    .demo-iframe-wrap iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
-    .demo-cta-below {
-      padding: 20px;
-      background: #2a1a08;
-      text-align: center;
-      border-top: 1px solid #3d2410;
-    }
-    .demo-cta-below p {
-      color: #c8a870;
-      font-size: 14px;
-      margin-bottom: 14px;
-    }
+  .bg-night-grad {
+    background: linear-gradient(170deg, #1a0e04 0%, #2e1a06 60%, #3d2410 100%);
+    color: #fdf6e8;
+  }
+  .bg-night-grad::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 35%, rgba(200,168,112,0.16) 0%, transparent 60%);
+    pointer-events: none;
+  }
 
-    /* ── FEATURES ── */
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-    }
-    .feature-card {
-      background: #fffdf5;
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      padding: 24px 22px;
-      display: flex;
-      gap: 16px;
-    }
-    .feature-icon { font-size: 28px; flex-shrink: 0; }
-    .feature-title { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
-    .feature-text { font-size: 14px; color: #5a3e10; line-height: 1.55; }
+  /* ─────────── Sticky header (kicks in after hero) ─────────── */
+  header.nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s;
+    background: transparent;
+    border-bottom: 1px solid transparent;
+  }
+  header.nav.scrolled {
+    background: rgba(253, 246, 232, 0.88);
+    backdrop-filter: blur(12px) saturate(160%);
+    border-bottom-color: rgba(139, 94, 26, 0.12);
+  }
+  .wordmark {
+    font-family: var(--f-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: #fdf6e8;
+    letter-spacing: 0.5px;
+    transition: color 0.25s ease;
+  }
+  .wordmark em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold);
+  }
+  header.nav.scrolled .wordmark { color: var(--ink); }
+  header.nav.scrolled .wordmark em { color: var(--brown); }
 
-    /* ── FOR PARENTS ── */
-    .parent-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    @media (max-width: 600px) { .parent-grid { grid-template-columns: 1fr; } }
-    .parent-item {
-      background: #fffdf5;
-      border: 1.5px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      font-size: 15px;
-      color: var(--dark);
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-    .parent-item-icon { font-size: 22px; flex-shrink: 0; }
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 26px;
+    border-radius: 10px;
+    font-family: var(--f-ui);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--brown);
+    color: #fdf6e8;
+    border-color: var(--brown);
+  }
+  .btn-primary:hover { background: var(--brown-d); border-color: var(--brown-d); transform: translateY(-1px); box-shadow: 0 6px 14px rgba(60,30,0,0.18); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--border-d);
+  }
+  .btn-ghost-dark {
+    background: rgba(253,246,232,0.06);
+    color: #fdf6e8;
+    border-color: rgba(200,168,112,0.3);
+  }
+  .btn-ghost-dark:hover { background: rgba(253,246,232,0.12); }
+  .btn-small { padding: 9px 16px; font-size: 13px; }
 
-    /* ── CTA ── */
-    .cta-section {
-      background: #1a0e04 !important;
-      text-align: center;
-      padding: 80px 24px !important;
-    }
-    .cta-section .section-title { color: #fdf6e8; }
-    .cta-section .section-sub { color: #c8a870; margin: 0 auto 40px; }
-    .cta-section .hero-hint { color: rgba(200,168,112,0.5); }
+  /* ─────────── HERO ─────────── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    padding: 120px 24px 80px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero-eyebrow { margin-bottom: 24px; }
+  .hero-headline {
+    font-family: var(--f-display);
+    font-size: clamp(42px, 7.5vw, 86px);
+    font-weight: 600;
+    line-height: 1.02;
+    color: #fdf6e8;
+    max-width: 14ch;
+    letter-spacing: -0.015em;
+    margin-bottom: 20px;
+  }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--gold);
+    font-weight: 500;
+  }
+  .hero-sub {
+    font-family: var(--f-body);
+    font-size: clamp(17px, 2.2vw, 22px);
+    color: rgba(253, 246, 232, 0.78);
+    max-width: 36ch;
+    margin: 0 auto 40px;
+    line-height: 1.5;
+  }
+  .hero-cta {
+    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 16px;
+    position: relative; z-index: 2;
+  }
+  .hero-cta .btn { padding: 18px 32px; font-size: 17px; }
+  .hero-hint {
+    font-size: 13px; color: var(--gold);
+    opacity: 0.75;
+    position: relative; z-index: 2;
+  }
 
-    /* ── FOOTER ── */
-    footer {
-      background: #110a02;
-      padding: 28px 24px;
-      text-align: center;
-      font-size: 13px;
-      color: rgba(200,168,112,0.4);
-    }
-    footer a { color: rgba(200,168,112,0.6); text-decoration: none; }
-    footer a:hover { color: #c8a870; }
+  /* Scroll cue */
+  .scroll-cue {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    font-family: var(--f-ui); font-size: 11px; letter-spacing: 0.15em;
+    color: rgba(200, 168, 112, 0.5);
+    text-transform: uppercase;
+    animation: cue 2.4s ease-in-out infinite;
+  }
+  @keyframes cue {
+    0%, 100% { transform: translate(-50%, 0); opacity: 0.5; }
+    50%      { transform: translate(-50%, 6px); opacity: 1; }
+  }
 
-    @media (max-width: 480px) {
-      .hero-btns { flex-direction: column; align-items: center; }
-      .btn-primary, .btn-secondary { width: 100%; max-width: 320px; text-align: center; }
-    }
-  </style>
+  /* ─────────── Section heads ─────────── */
+  .section-eyebrow { display: block; margin-bottom: 14px; }
+  .section-title {
+    font-family: var(--f-display);
+    font-size: clamp(30px, 4.5vw, 48px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 18px;
+    max-width: 20ch;
+  }
+  .section-title em { font-style: italic; color: var(--brown); font-weight: 500; }
+  .section-lede {
+    font-size: 18px;
+    color: var(--ink-2);
+    max-width: 56ch;
+    margin-bottom: 48px;
+  }
+  .center { text-align: center; }
+  .center .section-title, .center .section-lede { margin-left: auto; margin-right: auto; }
+
+  /* ─────────── BLOCK 2: PAIN ─────────── */
+  .pain-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  @media (max-width: 820px) { .pain-grid { grid-template-columns: 1fr; gap: 14px; } }
+
+  .pain-card {
+    background: #fffdf5;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+  }
+  .pain-icon {
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 18px;
+    color: var(--brown);
+  }
+  .pain-headline {
+    font-family: var(--f-display);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    color: var(--ink);
+  }
+  .pain-body { font-size: 15px; color: var(--ink-2); line-height: 1.55; }
+
+  /* ─────────── BLOCK 3: HOW ─────────── */
+  .steps {
+    display: grid;
+    gap: 14px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 28px 0;
+    border-top: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: 1px solid var(--border); }
+  .step-num {
+    font-family: var(--f-display);
+    font-size: 48px;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--brown);
+    line-height: 1;
+  }
+  .step-title {
+    font-family: var(--f-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .step-body { font-size: 15.5px; color: var(--ink-2); line-height: 1.5; }
+  @media (max-width: 600px) {
+    .step { grid-template-columns: 56px 1fr; gap: 16px; padding: 22px 0; }
+    .step-num { font-size: 36px; }
+    .step-title { font-size: 19px; }
+  }
+
+  .callout {
+    margin-top: 36px;
+    padding: 24px 28px;
+    background: rgba(139, 94, 26, 0.05);
+    border-left: 3px solid var(--brown);
+    border-radius: 0 12px 12px 0;
+    font-size: 16px;
+    color: var(--ink);
+    max-width: 720px;
+    margin-left: auto; margin-right: auto;
+  }
+  .callout b { font-family: var(--f-ui); font-weight: 600; }
+
+  .accent-line {
+    margin-top: 36px;
+    padding: 20px 0 0;
+    font-family: var(--f-display);
+    font-style: italic;
+    font-size: clamp(20px, 2.5vw, 26px);
+    color: var(--ink);
+    line-height: 1.3;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    max-width: 720px;
+    margin-left: auto; margin-right: auto;
+  }
+  .accent-line b { font-style: normal; color: var(--brown); }
+
+  /* ─────────── BLOCK 4: DEMO ─────────── */
+  .demo-frame {
+    margin: 24px auto 0;
+    max-width: 380px;
+    background: var(--night);
+    border-radius: 36px;
+    padding: 10px;
+    box-shadow: 0 28px 60px rgba(0,0,0,0.25),
+                0 0 0 1px rgba(0,0,0,0.08);
+  }
+  .demo-screen {
+    aspect-ratio: 9 / 19;
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--parch);
+    background-image:
+      linear-gradient(135deg, transparent 0 9px, rgba(139,94,26,0.04) 9px 10px, transparent 10px 19px, rgba(139,94,26,0.04) 19px 20px, transparent 20px),
+      var(--paper-bg, transparent);
+    background-size: 20px 20px;
+    position: relative;
+    display: flex; flex-direction: column;
+    padding: 28px 18px;
+  }
+  .demo-tag {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    font-family: var(--f-ui); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--brown);
+    background: rgba(255, 253, 245, 0.95);
+    padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .demo-content {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-num);
+    font-size: 11px;
+    color: var(--ink-2);
+    opacity: 0.6;
+    text-align: center;
+  }
+  .demo-cta-below { text-align: center; margin-top: 32px; }
+  .demo-cta-below p { color: var(--ink-2); font-size: 15px; margin-bottom: 16px; }
+
+  /* ─────────── BLOCK 5: FOR KID ─────────── */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 820px) { .features { grid-template-columns: 1fr; } }
+
+  .feat-card {
+    background: #fffdf5;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 22px;
+  }
+  .feat-icon { font-size: 26px; margin-bottom: 14px; color: var(--brown); }
+  .feat-title {
+    font-family: var(--f-display);
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .feat-body { font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
+
+  /* Mock visual placeholder */
+  .visual-slot {
+    margin: 48px auto 0;
+    max-width: 760px;
+    aspect-ratio: 16 / 9;
+    border: 1.5px dashed var(--border-d);
+    border-radius: 16px;
+    background:
+      repeating-linear-gradient(45deg, transparent 0 12px, rgba(139,94,26,0.04) 12px 13px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--brown);
+    font-family: var(--f-num);
+    font-size: 12.5px;
+    gap: 4px;
+    padding: 24px;
+    text-align: center;
+  }
+  .visual-slot b { font-weight: 600; }
+  .visual-slot span { color: var(--ink-2); opacity: 0.7; font-size: 11px; }
+
+  /* ─────────── BLOCK 7: PRICE ─────────── */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: rgba(253, 246, 232, 0.04);
+    border: 1px solid rgba(200, 168, 112, 0.2);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  @media (max-width: 720px) { .compare { grid-template-columns: 1fr; } }
+
+  .compare-col { padding: 32px 28px; }
+  .compare-col + .compare-col { border-left: 1px solid rgba(200, 168, 112, 0.2); }
+  @media (max-width: 720px) {
+    .compare-col + .compare-col { border-left: none; border-top: 1px solid rgba(200, 168, 112, 0.2); }
+  }
+  .compare-col.win { background: rgba(200, 168, 112, 0.08); }
+
+  .compare-head {
+    font-family: var(--f-display);
+    font-size: 26px; font-weight: 600;
+    color: #fdf6e8;
+    margin-bottom: 20px;
+  }
+  .compare-col.win .compare-head { color: var(--gold); }
+
+  .compare-row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 10px 0;
+    font-family: var(--f-body);
+    font-size: 15px;
+    color: rgba(253, 246, 232, 0.75);
+    border-top: 1px solid rgba(200, 168, 112, 0.12);
+  }
+  .compare-row:first-of-type { border-top: none; padding-top: 0; }
+  .compare-row b { color: #fdf6e8; font-weight: 500; font-family: var(--f-display); font-size: 17px; }
+  .compare-col.win .compare-row b { color: var(--gold); }
+
+  .price-tiers {
+    margin-top: 48px;
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    max-width: 720px;
+    margin-left: auto; margin-right: auto;
+  }
+  @media (max-width: 720px) { .price-tiers { grid-template-columns: 1fr; } }
+
+  .tier {
+    padding: 18px 20px;
+    background: rgba(253, 246, 232, 0.04);
+    border: 1px solid rgba(200, 168, 112, 0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px;
+  }
+  .tier.featured {
+    background: rgba(200, 168, 112, 0.1);
+    border-color: var(--gold-d);
+  }
+  .tier-label {
+    font-family: var(--f-ui); font-size: 13.5px;
+    color: rgba(253, 246, 232, 0.8);
+    font-weight: 500;
+  }
+  .tier-label em { color: var(--gold); font-style: normal; font-weight: 600; font-size: 11px; display: block; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .tier-price {
+    font-family: var(--f-num);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+
+  /* ─────────── BLOCK 7B: PRICING EXPLAINER ─────────── */
+  .pricing-detail {
+    margin-top: 64px;
+    padding-top: 56px;
+    border-top: 1px solid rgba(200, 168, 112, 0.18);
+    max-width: 920px;
+    margin-left: auto; margin-right: auto;
+  }
+  .pricing-detail-head {
+    font-family: var(--f-display);
+    font-size: clamp(26px, 3.6vw, 34px);
+    font-weight: 600;
+    color: #fdf6e8;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+  }
+  .pricing-detail-sub {
+    font-size: 16px;
+    color: rgba(253, 246, 232, 0.65);
+    text-align: center;
+    margin: 0 auto 36px;
+    max-width: 52ch;
+  }
+  .pricing-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 760px) { .pricing-detail-grid { grid-template-columns: 1fr; } }
+
+  .pricing-detail-card {
+    position: relative;
+    background: rgba(253, 246, 232, 0.04);
+    border: 1px solid rgba(200, 168, 112, 0.18);
+    border-radius: 16px;
+    padding: 28px 26px 24px;
+    display: flex; flex-direction: column;
+  }
+  .pricing-detail-num {
+    position: absolute;
+    top: 18px; right: 22px;
+    font-family: var(--f-display);
+    font-style: italic;
+    font-size: 44px;
+    font-weight: 500;
+    color: var(--gold);
+    opacity: 0.32;
+    line-height: 1;
+  }
+  .pricing-detail-title {
+    font-family: var(--f-display);
+    font-size: 26px;
+    font-weight: 600;
+    color: #fdf6e8;
+    margin-bottom: 4px;
+  }
+  .pricing-detail-caption {
+    font-family: var(--f-body);
+    font-style: italic;
+    font-size: 14.5px;
+    color: var(--gold);
+    margin-bottom: 22px;
+    opacity: 0.9;
+  }
+
+  /* Subscription mini-tiers list inside card 1 */
+  .sub-tiers {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .sub-tier {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: rgba(253, 246, 232, 0.04);
+    border: 1px solid rgba(200, 168, 112, 0.12);
+    font-family: var(--f-ui);
+    font-size: 13.5px;
+    color: rgba(253, 246, 232, 0.82);
+  }
+  .sub-tier.featured {
+    background: rgba(200, 168, 112, 0.12);
+    border-color: rgba(200, 168, 112, 0.45);
+  }
+  .sub-tier > span:first-child { min-width: 0; }
+  .sub-tier-price {
+    font-family: var(--f-num);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+
+  .pricing-footnote {
+    font-size: 12.5px;
+    font-style: italic;
+    color: rgba(253, 246, 232, 0.5);
+    margin-top: auto;
+  }
+
+  /* Lesson price block in card 2 */
+  .lesson-price-block { margin: 4px 0 18px; }
+  .lesson-big-price {
+    font-family: var(--f-display);
+    font-size: clamp(40px, 6vw, 54px);
+    font-weight: 500;
+    color: var(--gold);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .lesson-price-unit {
+    font-family: var(--f-ui);
+    font-size: 13px;
+    color: rgba(253, 246, 232, 0.6);
+    margin-top: 6px;
+    letter-spacing: 0.02em;
+  }
+  .pricing-lesson-explainer {
+    font-size: 14.5px;
+    color: rgba(253, 246, 232, 0.72);
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+
+  /* Bonus highlight box */
+  .bonus-box {
+    margin-top: auto;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(200, 168, 112, 0.10);
+    border: 1px dashed rgba(200, 168, 112, 0.45);
+    display: flex; align-items: baseline; gap: 12px;
+    font-size: 13.5px;
+    color: rgba(253, 246, 232, 0.85);
+    line-height: 1.45;
+  }
+  .bonus-amount {
+    font-family: var(--f-num);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+
+  /* ─────────── BLOCK 8: RISK ─────────── */
+  .risk-list {
+    list-style: none;
+    max-width: 580px;
+    margin: 0 auto;
+    display: grid;
+    gap: 14px;
+  }
+  .risk-item {
+    display: grid; grid-template-columns: 28px 1fr; align-items: flex-start;
+    gap: 14px;
+    padding: 18px 22px;
+    background: #fffdf5;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 15.5px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .risk-check {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--brown);
+    color: #fdf6e8;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+  }
+
+  /* ─────────── BLOCK 9: FINAL CTA ─────────── */
+  .final-cta { text-align: center; padding: 110px 24px; position: relative; overflow: hidden; }
+  .final-cta .section-title { color: #fdf6e8; max-width: none; margin-bottom: 16px; }
+  .final-cta .section-lede { color: var(--gold); margin: 0 auto 36px; opacity: 0.85; }
+  .final-cta .btn { padding: 18px 36px; font-size: 18px; }
+  .install-hint {
+    margin-top: 24px;
+    font-family: var(--f-ui);
+    font-size: 13px;
+    color: rgba(200, 168, 112, 0.7);
+    display: inline-flex; gap: 18px; flex-wrap: wrap; justify-content: center;
+  }
+  .install-hint span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* ─────────── FOOTER ─────────── */
+  footer {
+    background: #110a02;
+    padding: 28px 24px;
+    text-align: center;
+    color: rgba(200, 168, 112, 0.5);
+    font-size: 13px;
+  }
+  footer a { color: rgba(200, 168, 112, 0.75); }
+  footer a:hover { color: var(--gold); }
+
+  /* ─────────── Decorative flourishes ─────────── */
+  .flourish {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px;
+    margin: 32px 0;
+    color: var(--brown);
+    opacity: 0.4;
+  }
+  .flourish::before, .flourish::after {
+    content: ""; flex: 1; max-width: 80px;
+    height: 1px;
+    background: currentColor;
+  }
+  .flourish-glyph { font-family: var(--f-display); font-size: 14px; }
+
+</style>
 </head>
 <body>
 
-<!-- ── HERO ── -->
-<section class="hero">
-  <div class="hero-eyebrow">🔭 Репетитор по математике</div>
-  <h1 class="hero-title">
-    Математика через<br /><span>живую историю</span>
+<!-- ─────────────────── STICKY HEADER ─────────────────── -->
+<header class="nav" id="nav">
+  <div class="wordmark">Archi<em>Math</em></div>
+  <a href="#register" class="btn btn-primary btn-small">Попробовать бесплатно</a>
+</header>
+
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 1 — HERO                                       -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="hero bg-night-grad">
+  <div class="hero-eyebrow eyebrow eyebrow-dark">Математика · 7–9 класс</div>
+  <h1 class="hero-headline">
+    Ребёнок не учит математику. <em>Он её открывает.</em>
   </h1>
-  <p class="hero-sub">
-    ИИ-персонаж Архи объясняет алгебру и геометрию так, как её открывали — через загадки, которые решали реальные люди.
-  </p>
-  <div class="hero-btns">
-    <a href="#demo" class="btn-primary">Попробовать бесплатно</a>
-    <a href="/#parent-register" class="btn-secondary">Создать аккаунт →</a>
+  <p class="hero-sub">Архи задаёт вопросы — ребёнок сам приходит к пониманию через свои ответы, самостоятельно пытаясь решить задачу.
+</p>
+  <div class="hero-cta">
+    <a href="#demo" class="btn btn-primary">Попробуй бесплатно →</a>
   </div>
-  <p class="hero-hint">Демо без регистрации · 7–9 класс</p>
+  <p class="hero-hint">Проверь методику обучения через открытие с ИИ</p>
+
+  <div class="scroll-cue">↓ как это работает</div>
 </section>
 
-<!-- ── КАК РАБОТАЕТ ── -->
-<section>
-  <div class="section-inner">
-    <div class="section-label">Как это работает</div>
-    <h2 class="section-title">Три шага к каждой теме</h2>
-    <p class="section-sub">Ребёнок не читает учебник. Он решает задачу вместе с Архи.</p>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 2 — PAIN                                       -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-parch">
+  <div class="wrap">
+    <span class="section-eyebrow eyebrow">Знакомо?</span>
+    <h2 class="section-title">Почему школьная математика не работает<em>.</em></h2>
+    <p class="section-lede">Три причины, по которым ребёнок «вроде учит», но на контрольной разводит руками.</p>
+
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon" style="font-family: var(--f-num); font-size: 22px;">1 : 20</div>
+        <h3 class="pain-headline">Один преподаватель на 20 учеников</h3>
+        <p class="pain-body">Школьный учитель при всем желании не сможет гарантировать, что Ваш ребенок получит знания. У него еще 20-30 других учеников, которых ему нужно "подтянуть". </p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">∼</div>
+        <h3 class="pain-headline">Кивает, но не понимает</h3>
+        <p class="pain-body">Слушает объяснение учителя или репетитора, кивает — а потом не может решить задачу, так как нет настоящего понимания темы.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">⌘</div>
+        <h3 class="pain-headline">ChatGPT и ГДЗ дают ответ — но не могут научить</h3>
+        <p class="pain-body">Ребёнок копирует готовое решение и закрывает тетрадь. Мозг не работал. На контрольной — ноль.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">↻</div>
+        <h3 class="pain-headline">Учат решать, не думать</h3>
+        <p class="pain-body">В школьной программе нет системы научения мышлению — только тренировка типовых задач по образцу. Без понимания причин и следствий. Поэтому математика и становится «скучным предметом».</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 3 — HOW IT WORKS                               -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-parch2">
+  <div class="wrap-narrow center">
+    <span class="section-eyebrow eyebrow">Как это работает</span>
+    <h2 class="section-title">Архи не объясняет. <em>Архи ставит вопрос.</em></h2>
+    <p class="section-lede">Метод древних учителей: ученик приходит к открытию своим умом — только так он учится мыслить и понимает предмет.</p>
+  </div>
+
+  <div class="wrap">
     <div class="steps">
-      <div class="step-card">
-        <div class="step-num">01</div>
-        <div class="step-title">История</div>
-        <div class="step-text">Архи рассказывает, как эту тему открыли — в Древней Греции, арабском халифате или эпохе Просвещения. Ребёнок сам приходит к открытию через вопросы.</div>
+
+      <div class="step">
+        <div class="step-num">I</div>
+        <div>
+          <div class="step-title">Выбирает тему из школьной программы</div>
+          <p class="step-body">Алгебра и геометрия 7–9 класс. Ребёнок открывает карту тем и выбирает следующую.</p>
+        </div>
       </div>
-      <div class="step-card">
-        <div class="step-num">02</div>
-        <div class="step-title">Задания из учебника</div>
-        <div class="step-text">Ребёнок решает задачи в тетради, фотографирует и отправляет. Архи проверяет, указывает на ошибки и объясняет — не решая за него.</div>
+
+      <div class="step">
+        <div class="step-num">II</div>
+        <div>
+          <div class="step-title">Архи задаёт вопросы — ребёнок думает</div>
+          <p class="step-body">Не объяснение, а диалог. Через цепочку вопросов ребёнок сам приходит к открытию — как когда-то это сделали Архимед, Пифагор, ал-Хорезми.</p>
+        </div>
       </div>
-      <div class="step-card">
-        <div class="step-num">03</div>
-        <div class="step-title">Финальный тест</div>
-        <div class="step-text">Одна задача, которая проверяет понимание. Тема считается пройденной только при самостоятельном и верном решении.</div>
+
+      <div class="step">
+        <div class="step-num">III</div>
+        <div>
+          <div class="step-title">Решает задачи и проходит финальный тест</div>
+          <p class="step-body">Задачи из учебника — ребёнок решает в тетради, фотографирует, Архи проверяет. Без выбора из вариантов. Думать приходится самому.</p>
+        </div>
       </div>
+
+      <div class="step">
+        <div class="step-num">IV</div>
+        <div>
+          <div class="step-title">Открывает следующую тему</div>
+          <p class="step-body">Тема считается пройденной только если ребёнок решил тест сам. После этого открывается следующее занятие.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout">
+      <b>Плюс — Логика и ТРИЗ.</b> В программе есть отдельные блоки тренировки мышления и решения нестандартных задач. После них математика перестаёт быть «непонятным предметом» и превращается в понятный, приятный процесс.
+    </div>
+
+    <div class="accent-line">
+      Это <b>не ChatGPT.</b> Архи не даёт ответы — она задаёт вопросы так, чтобы ребёнок думал сам.
     </div>
   </div>
 </section>
 
-<!-- ── ДЕМО ── -->
-<section id="demo">
-  <div class="section-inner">
-    <div class="section-label">Демо</div>
-    <h2 class="section-title">Попробуй прямо сейчас</h2>
-    <p class="section-sub">История про Архимеда и корону царя Гиерона — одна из самых известных задач на сообразительность в истории. Занимает 5–10 минут.</p>
-    <div class="demo-wrap">
-      <div class="demo-topbar">
-        <span class="demo-topbar-title">🔭 Архи — демо</span>
-        <span class="demo-topbar-badge">без регистрации</span>
-      </div>
-      <div class="demo-iframe-wrap">
-        <iframe src="/#demo" title="Демо — Архимед и корона царя Гиерона" allow="microphone"></iframe>
-      </div>
-      <div class="demo-cta-below">
-        <p>Понравилось? Первые 40 сообщений — бесплатно.</p>
-        <a href="/#parent-register" class="btn-primary">Зарегистрироваться →</a>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 4 — DEMO                                       -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-parch" id="demo">
+  <div class="wrap-narrow center">
+    <span class="section-eyebrow eyebrow">Демо · без регистрации</span>
+    <h2 class="section-title">Попробуйте прямо сейчас<em>.</em></h2>
+    <p class="section-lede">Та же технология, что в основном продукте. Тема: <i>как Архимед открыл закон плавучести</i>. Занимает 5–10 минут.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="demo-frame">
+      <div class="demo-screen">
+        <div class="demo-tag">Архи · демо</div>
+        <div class="demo-content">
+          <iframe src="/#demo" title="Демо — Архимед и корону царя Гиерона" allow="microphone" style="width:100%;height:520px;border:none;border-radius:12px;"></iframe>
+        </div>
       </div>
     </div>
+
+    <div class="demo-cta-below">
+      <p>Понравилось?</p>
+      <a href="#register" class="btn btn-primary">Попробуйте с реальной математикой →</a>
+    </div>
+
+    <p style="text-align: center; margin-top: 36px; font-size: 13px; color: var(--ink-2); opacity: 0.6; max-width: 50ch; margin-left: auto; margin-right: auto; font-style: italic;">
+      Демо — на исторической теме, не на математике. Так мы показываем метод, не давая возможности им злоупотреблять.
+    </p>
   </div>
 </section>
 
-<!-- ── ПРЕИМУЩЕСТВА ── -->
-<section>
-  <div class="section-inner">
-    <div class="section-label">Почему это работает</div>
-    <h2 class="section-title">Не зубрёжка, а понимание</h2>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 5 — FOR KID                                    -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-parch2">
+  <div class="wrap">
+    <span class="section-eyebrow eyebrow">Ребёнку интересно</span>
+    <h2 class="section-title">Это не скучный тренажёр<em>.</em></h2>
+    <p class="section-lede">Мы строили это с подростками. И вот что работает.</p>
+
     <div class="features">
-      <div class="feature-card">
-        <div class="feature-icon">📖</div>
-        <div>
-          <div class="feature-title">Нарратив повышает мотивацию</div>
-          <div class="feature-text">Ребёнок хочет узнать, чем закончится история — и незаметно изучает математику.</div>
-        </div>
+      <div class="feat-card">
+        <div class="feat-icon">⌖</div>
+        <h3 class="feat-title">Прогресс как карта</h3>
+        <p class="feat-body">Темы открываются по очереди — как уровни в игре. Видно, что пройдено, что впереди.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📸</div>
-        <div>
-          <div class="feature-title">Решает в тетради, не кликает</div>
-          <div class="feature-text">Фото решения вместо выбора из вариантов. Ребёнок думает сам, а не угадывает.</div>
-        </div>
+      <div class="feat-card">
+        <div class="feat-icon">⌜⌝</div>
+        <h3 class="feat-title">Через историю открытия</h3>
+        <p class="feat-body">Каждая тема начинается с истории — Древняя Греция, арабский халифат, эпоха Просвещения. Математика как приключение.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <div>
-          <div class="feature-title">Мгновенная обратная связь</div>
-          <div class="feature-text">Архи видит ошибку в фото и объясняет именно то место, где что-то пошло не так.</div>
-        </div>
+      <div class="feat-card">
+        <div class="feat-icon">★</div>
+        <h3 class="feat-title">Хвалит, не ругает</h3>
+        <p class="feat-body">Архи поддерживает ребёнка, показывает прогресс, празднует открытия. Ошибки — это часть пути, не повод стыдиться.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">💾</div>
-        <div>
-          <div class="feature-title">Прогресс сохраняется</div>
-          <div class="feature-text">Можно прерваться и вернуться в любой момент — урок продолжится с того же места.</div>
-        </div>
+    </div>
+
+    <div class="visual-slot">
+      <b>[ Скриншот лобби — карта тем с прогрессом ]</b>
+      <span>драфт интерфейса в работе</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 6 — SAFETY                                     -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-parch">
+  <div class="wrap-narrow">
+    <span class="section-eyebrow eyebrow">Под вашим контролем</span>
+    <h2 class="section-title">Вы видите всё<em>.</em></h2>
+
+    <div class="features" style="margin-top: 24px;">
+      <div class="feat-card">
+        <div class="feat-icon">◷</div>
+        <h3 class="feat-title">Кабинет родителя</h3>
+        <p class="feat-body">Видите прогресс по каждой теме. Что пройдено, что в процессе, где ребёнок застрял.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📚</div>
-        <div>
-          <div class="feature-title">Полная программа 7–9 класс</div>
-          <div class="feature-text">Алгебра и геометрия по школьному учебнику. Ребёнок двигается в своём темпе.</div>
-        </div>
+      <div class="feat-card">
+        <div class="feat-icon">⊘</div>
+        <h3 class="feat-title">Только про учёбу</h3>
+        <p class="feat-body">Архи отвечает только на вопросы по теме. Не уходит в посторонние разговоры, не отвлекает.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔒</div>
-        <div>
-          <div class="feature-title">Контроль родителя</div>
-          <div class="feature-text">Кабинет с прогрессом ребёнка, балансом и историей занятий. Всегда знаете, что изучается.</div>
-        </div>
+      <div class="feat-card">
+        <div class="feat-icon">⏱</div>
+        <h3 class="feat-title">Лимит занятий</h3>
+        <p class="feat-body">Вы решаете, сколько времени ребёнок проводит в приложении. Баланс токенов в кабинете.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── ДЛЯ РОДИТЕЛЕЙ ── -->
-<section>
-  <div class="section-inner">
-    <div class="section-label">Для родителей</div>
-    <h2 class="section-title">Вы контролируете процесс</h2>
-    <p class="section-sub">Всё, что нужно знать о занятиях ребёнка — в одном кабинете.</p>
-    <div class="parent-grid">
-      <div class="parent-item">
-        <div class="parent-item-icon">📊</div>
-        <div>Прогресс по темам — что пройдено, что в процессе, что не начато</div>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 7 — PRICE                                      -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-night">
+  <div class="wrap-narrow center">
+    <span class="section-eyebrow eyebrow eyebrow-dark">Цена</span>
+    <h2 class="section-title" style="color: #fdf6e8;">В <em style="color: var(--gold);">10 раз</em> дешевле репетитора<em style="color: var(--gold);">.</em></h2>
+    <p class="section-lede" style="color: rgba(253,246,232,0.7);">И доступнее — занятия 24/7, когда ребёнку удобно.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="compare">
+      <div class="compare-col">
+        <div class="compare-head">Репетитор</div>
+        <div class="compare-row"><span>Цена</span> <b>1 000–5 000 ₽</b></div>
+        <div class="compare-row"><span>Частота</span> <b>1 раз в неделю</b></div>
+        <div class="compare-row"><span>Доступность</span> <b>По расписанию</b></div>
       </div>
-      <div class="parent-item">
-        <div class="parent-item-icon">🧠</div>
-        <div>AI-анализ занятий — сильные стороны и пробелы ребёнка по теме</div>
+      <div class="compare-col win">
+        <div class="compare-head">ArchiMath</div>
+        <div class="compare-row"><span>Цена</span> <b>150–250 ₽ за тему</b></div>
+        <div class="compare-row"><span>Частота</span> <b>Когда удобно</b></div>
+        <div class="compare-row"><span>Доступность</span> <b>24/7</b></div>
       </div>
-      <div class="parent-item">
-        <div class="parent-item-icon">🪙</div>
-        <div>Баланс токенов — вы видите, сколько занятий осталось</div>
-      </div>
-      <div class="parent-item">
-        <div class="parent-item-icon">👤</div>
-        <div>Ребёнок входит по своему имени и паролю — вы создаёте профиль</div>
+    </div>
+
+    <!-- ────────── PRICING EXPLAINER ────────── -->
+    <div class="pricing-detail">
+      <h3 class="pricing-detail-head">Как устроена оплата</h3>
+      <p class="pricing-detail-sub">Две части: подписка на доступ к программе + оплата за пройденные темы.</p>
+
+      <div class="pricing-detail-grid">
+
+        <!-- Card 1: Subscription -->
+        <article class="pricing-detail-card">
+          <span class="pricing-detail-num">1</span>
+          <h4 class="pricing-detail-title">Подписка</h4>
+          <p class="pricing-detail-caption">Доступ к программе и всем темам</p>
+
+          <ul class="sub-tiers">
+            <li class="sub-tier featured">
+              <span>Первые 100 участников тестирования</span>
+              <span class="sub-tier-price">298 ₽/мес</span>
+            </li>
+            <li class="sub-tier">
+              <span>Учебный год · сентябрь–май</span>
+              <span class="sub-tier-price">998 ₽/мес</span>
+            </li>
+            <li class="sub-tier">
+              <span>Лето · июнь–август</span>
+              <span class="sub-tier-price">498 ₽/мес</span>
+            </li>
+          </ul>
+
+          <p class="pricing-footnote">Без автопродления. Отменить можно в любой момент.</p>
+        </article>
+
+        <!-- Card 2: Lesson -->
+        <article class="pricing-detail-card">
+          <span class="pricing-detail-num">2</span>
+          <h4 class="pricing-detail-title">Урок</h4>
+          <p class="pricing-detail-caption">1 урок = 1 пройденная тема из учебника</p>
+
+          <div class="lesson-price-block">
+            <div class="lesson-big-price">150 — 250 ₽</div>
+            <div class="lesson-price-unit">за пройденную тему</div>
+          </div>
+
+          <p class="pricing-lesson-explainer">
+            Цена зависит от количества сообщений с Архи в ходе занятия. Чем точнее отвечает ребёнок — тем дешевле.
+          </p>
+
+          <div class="bonus-box">
+            <span class="bonus-amount">+ 200 ₽</span>
+            <span>на баланс при регистрации — хватит на первый урок бесплатно</span>
+          </div>
+        </article>
+
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── CTA ── -->
-<section class="cta-section">
-  <div class="section-inner">
-    <h2 class="section-title">Первые 40 сообщений — бесплатно</h2>
-    <p class="section-sub">Создайте аккаунт, добавьте ребёнка и начните первый урок сегодня. Без карты.</p>
-    <div class="hero-btns">
-      <a href="/#parent-register" class="btn-primary">Зарегистрироваться →</a>
-      <a href="#demo" class="btn-secondary">Сначала попробовать</a>
-    </div>
-    <p class="hero-hint">Для учеников 7, 8 и 9 класса</p>
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 8 — RISK REVERSAL                              -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-parch2">
+  <div class="wrap-narrow center">
+    <span class="section-eyebrow eyebrow">Без риска</span>
+    <h2 class="section-title">Попробуйте — ничего не теряете<em>.</em></h2>
+    <p class="section-lede">Серьёзно. Никаких карт, никаких подписок, никаких скрытых условий.</p>
+
+    <ul class="risk-list">
+      <li class="risk-item">
+        <span class="risk-check">✓</span>
+        <span><b style="font-family: var(--f-ui); font-weight: 600;">Первый урок — бесплатно.</b> При регистрации даём 200 ₽ на баланс. Хватает на первое занятие, чтобы убедиться, что подходит.</span>
+      </li>
+      <li class="risk-item">
+        <span class="risk-check">✓</span>
+        <span><b style="font-family: var(--f-ui); font-weight: 600;">Не понравится — просто не платите.</b> Никакой автоматической подписки. Платите вы — за то, что используете.</span>
+      </li>
+      <li class="risk-item">
+        <span class="risk-check">✓</span>
+        <span><b style="font-family: var(--f-ui); font-weight: 600;">Приложение на этапе тестирования.</b> Принимаем обратную связь, чиним и улучшаем еженедельно. Ваши идеи попадут в продукт.</span>
+      </li>
+    </ul>
   </div>
 </section>
 
-<!-- ── FOOTER ── -->
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- BLOCK 9 — FINAL CTA                                  -->
+<!-- ═════════════════════════════════════════════════════ -->
+<section class="bg-night-grad final-cta" id="register">
+  <div class="flourish" style="color: var(--gold); opacity: 0.4; max-width: 500px; margin: 0 auto 32px;">
+    <span class="flourish-glyph">◆</span>
+  </div>
+
+  <h2 class="section-title display center" style="color: #fdf6e8;">
+    Начните <em style="color: var(--gold);">сегодня.</em>
+  </h2>
+  <p class="section-lede" style="color: var(--gold); opacity: 0.8;">
+    Зарегистрируйтесь за 2 минуты. Первый урок — бесплатно.
+  </p>
+
+  <a href="/#parent-register" class="btn btn-primary">Создать аккаунт →</a>
+
+  <div class="install-hint">
+    <span>▼ Android — скачать APK</span>
+    <span>•</span>
+    <span>iPhone — открыть в Safari</span>
+  </div>
+</section>
+
+
+<!-- ═════════════════════════════════════════════════════ -->
+<!-- FOOTER                                               -->
+<!-- ═════════════════════════════════════════════════════ -->
 <footer>
-  <p>© 2026 ArchiMath &nbsp;·&nbsp; <a href="/privacy">Политика конфиденциальности</a> &nbsp;·&nbsp; <a href="mailto:bib.jedi@gmail.com">Написать нам</a></p>
+  <p>
+    © 2026 ArchiMath &nbsp;·&nbsp;
+    <a href="/privacy">Политика конфиденциальности</a> &nbsp;·&nbsp;
+    <a href="mailto:bib.jedi@gmail.com">Написать нам</a>
+  </p>
 </footer>
+
+
+<script>
+  // Sticky header transition after hero scroll-out
+  const nav = document.getElementById('nav');
+  const onScroll = () => {
+    if (window.scrollY > 80) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
 
 </body>
 </html>
