@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Архи — демо</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #2a1800;
+      overflow: hidden;
+    }
+
+    #demo-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background-image: url('https://mklrocckfuoymqvunsmr.supabase.co/storage/v1/object/public/mathlore-assets/bg-3.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+
+    #demo-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(20, 10, 0, 0.45);
+      pointer-events: none;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .message {
+      max-width: 82%;
+      padding: 11px 15px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message.bot {
+      align-self: flex-start;
+      background: rgba(255, 248, 225, 0.95);
+      color: #2a1400;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: #7a4a10;
+      color: #fff8e8;
+      border-bottom-right-radius: 4px;
+    }
+
+    .typing {
+      align-self: flex-start;
+      background: rgba(255, 248, 225, 0.85);
+      color: #7a5c30;
+      padding: 10px 16px;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      font-size: 20px;
+      letter-spacing: 3px;
+    }
+
+    #input-area {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(30, 14, 0, 0.75);
+      backdrop-filter: blur(8px);
+      position: relative;
+      z-index: 1;
+    }
+
+    #input {
+      flex: 1;
+      padding: 11px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(200, 160, 80, 0.4);
+      background: rgba(255, 248, 220, 0.12);
+      color: #fff8e8;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    #input::placeholder { color: rgba(255, 235, 180, 0.45); }
+    #input:disabled { opacity: 0.5; }
+
+    #send-btn {
+      padding: 11px 18px;
+      border-radius: 20px;
+      border: none;
+      background: #8b5e1a;
+      color: #fff8e8;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    #send-btn:hover:not(:disabled) { background: #a06d22; }
+    #send-btn:disabled { opacity: 0.4; cursor: default; }
+
+    #cta-block {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 16px;
+      background: rgba(30, 14, 0, 0.85);
+      position: relative;
+      z-index: 1;
+    }
+
+    #cta-block p {
+      color: rgba(255, 235, 180, 0.8);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    #cta-btn {
+      padding: 14px 28px;
+      background: #8b5e1a;
+      color: #fff8e8;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    #cta-btn:hover { background: #a06d22; }
+  </style>
+</head>
+<body>
+  <div id="demo-wrap">
+    <div id="chat"></div>
+    <div id="input-area">
+      <input id="input" type="text" placeholder="Напиши что-нибудь..." disabled autocomplete="off" />
+      <button id="send-btn" disabled>→</button>
+    </div>
+    <div id="cta-block">
+      <p>Вот так Архи объясняет каждую тему — через вопросы, а не готовые ответы.</p>
+      <button id="cta-btn" onclick="window.top.location.href='/#parent-register'">
+        Попробовать с математикой →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const chat    = document.getElementById("chat");
+    const input   = document.getElementById("input");
+    const sendBtn = document.getElementById("send-btn");
+    const ctaBlock = document.getElementById("cta-block");
+
+    let messages = [];
+    let isWaiting = false;
+    let demoEnded = false;
+
+    function addMessage(role, text) {
+      const div = document.createElement("div");
+      div.className = "message " + (role === "bot" ? "bot" : "user");
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showTyping() {
+      const t = document.createElement("div");
+      t.className = "typing";
+      t.id = "typing";
+      t.textContent = "...";
+      chat.appendChild(t);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function hideTyping() {
+      const t = document.getElementById("typing");
+      if (t) t.remove();
+    }
+
+    function setControls(enabled) {
+      input.disabled = !enabled || demoEnded;
+      sendBtn.disabled = !enabled || demoEnded;
+    }
+
+    async function sendMessage(userText) {
+      if (isWaiting || demoEnded) return;
+      setControls(false);
+      isWaiting = true;
+      if (userText) {
+        messages.push({ role: "user", content: userText });
+        addMessage("user", userText);
+        input.value = "";
+      }
+      showTyping();
+      try {
+        const res = await fetch("/api/demo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages })
+        });
+        const data = await res.json();
+        hideTyping();
+        if (data.reply) {
+          messages.push({ role: "assistant", content: data.reply });
+          addMessage("bot", data.reply);
+          if (data.demoEnded) {
+            demoEnded = true;
+            document.getElementById("input-area").style.display = "none";
+            ctaBlock.style.display = "flex";
+            return;
+          }
+        }
+      } catch {
+        hideTyping();
+        addMessage("bot", "Не могу связаться с сервером.");
+      }
+      isWaiting = false;
+      setControls(true);
+      input.focus();
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const t = input.value.trim();
+      if (t) sendMessage(t);
+    });
+
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const t = input.value.trim();
+        if (t) sendMessage(t);
+      }
+    });
+
+    // Автозапуск
+    messages = [{ role: "user", content: "Начни историю прямо сейчас, с первого предложения." }];
+    sendMessage(null);
+  </script>
+</body>
+</html>
