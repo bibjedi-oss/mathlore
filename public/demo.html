@@ -404,7 +404,7 @@
           messages.push({ role: "assistant", content: data.reply });
           addMessage("bot", data.reply);
           speak(data.reply);
-          if (data.demoEnded) {
+          if (data.eurekaReached) {
             demoEnded = true;
             document.getElementById("input-area").style.display = "none";
             victoryOverlay.classList.add("visible");
