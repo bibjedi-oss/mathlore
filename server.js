@@ -632,6 +632,11 @@ app.get("/admin",   (req, res) => res.sendFile("admin.html",   { root: "public" 
 app.get("/privacy", (req, res) => res.sendFile("privacy.html", { root: "public" }));
 app.get("/landing", (req, res) => res.sendFile("landing.html", { root: "public" }));
 app.get("/health", (req, res) => res.json({ ok: true }));
+app.get("/apk", (req, res) => {
+  const url = process.env.APK_URL;
+  if (!url) return res.status(404).send("APK не настроен");
+  res.redirect(url);
+});
 app.get("/demo",    (req, res) => res.sendFile("demo.html",    { root: "public" }));
 app.get("/app",     (req, res) => res.sendFile("index.html",   { root: "public" }));
 

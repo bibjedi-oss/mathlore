@@ -53,19 +53,31 @@ document.getElementById("welcomeModalBtn").addEventListener("click", () => {
 });
 
 function showChildCredentials(name, password) {
-  const appUrl = window.location.origin;
+  const apkUrl = window.location.origin + "/apk";
+  const tgText = `ArchiMath — профиль для ${name}\nПароль: ${password}\nСкачать приложение: ${apkUrl}`;
+  const tgLink = `https://t.me/share/url?url=${encodeURIComponent(apkUrl)}&text=${encodeURIComponent(`ArchiMath — профиль для ${name}\nПароль: ${password}`)}`;
+
   document.getElementById("welcomeModalEmoji").textContent = "🎉";
   document.getElementById("welcomeModalText").innerHTML = `
-    <div style="text-align:left;font-size:14px;line-height:1.8">
-      <b>Профиль создан!</b><br><br>
-      Имя для входа: <b>${name}</b><br>
-      Пароль: <b>${password}</b><br><br>
-      Ссылка для ребёнка:<br>
-      <a href="${appUrl}" style="color:#ffd080;word-break:break-all">${appUrl}</a><br><br>
-      <small style="opacity:0.7">Письмо с этими данными отправлено на ваш email</small>
+    <div style="text-align:left;font-size:14px;line-height:1.7">
+      <b>Профиль создан!</b><br>
+      Имя: <b>${name}</b> · Пароль: <b>${password}</b><br><br>
+      Установите приложение на телефон ребёнка:
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        <a href="${apkUrl}" class="auth-btn" style="text-align:center;text-decoration:none;display:block">📥 Скачать APK для Android</a>
+        <a href="${tgLink}" target="_blank" class="auth-btn auth-btn-secondary" style="text-align:center;text-decoration:none;display:block">✈️ Отправить ссылку в Telegram</a>
+        <button id="copyApkBtn" class="auth-btn auth-btn-secondary">📋 Скопировать ссылку</button>
+      </div>
+      <small style="opacity:0.6;margin-top:10px;display:block">Данные для входа также отправлены на ваш email</small>
     </div>`;
-  document.getElementById("welcomeModalBtn").textContent = "Понятно";
+  document.getElementById("welcomeModalBtn").textContent = "Готово";
   document.getElementById("welcomeModal").classList.remove("hidden");
+
+  document.getElementById("copyApkBtn").addEventListener("click", () => {
+    navigator.clipboard.writeText(tgText).then(() => {
+      document.getElementById("copyApkBtn").textContent = "✓ Скопировано";
+    });
+  });
 }
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
