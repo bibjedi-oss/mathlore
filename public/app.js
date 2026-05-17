@@ -639,12 +639,14 @@ function showIphoneModal() {
 
 function showAndroidModal() {
   const apkUrl = window.location.origin + "/apk";
+  const gdriveUrl = "https://drive.google.com/uc?export=download&id=1SGOtm2ZrOH9SaW_RDhLlTp10TDVFTH3t";
   document.getElementById("welcomeModalEmoji").textContent = "🤖";
   document.getElementById("welcomeModalText").innerHTML = `
     <div style="text-align:left;font-size:14px;line-height:1.7">
       <b>Установка на Android</b><br><br>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
-        <a href="${apkUrl}" target="_blank" rel="noopener" class="auth-btn" style="text-align:center;text-decoration:none;display:block">📥 Скачать APK с Яндекс-диска</a>
+        <a href="${apkUrl}" target="_blank" rel="noopener" class="auth-btn" style="text-align:center;text-decoration:none;display:block">📥 Скачать с Яндекс-диска</a>
+        <a href="${gdriveUrl}" target="_blank" rel="noopener" class="auth-btn" style="text-align:center;text-decoration:none;display:block">📥 Скачать с Google Drive</a>
         <a href="https://t.me/bibikin" target="_blank" rel="noopener" class="auth-btn auth-btn-secondary" style="text-align:center;text-decoration:none;display:block">✈️ Если не получается — напишите нам в Telegram</a>
       </div>
       <div style="font-size:12px;opacity:0.6;margin-top:12px;line-height:1.5">
