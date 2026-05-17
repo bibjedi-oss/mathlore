@@ -84,6 +84,16 @@ function showChildCredentials(name, password) {
   });
 }
 
+// ── Achievements ─────────────────────────────────────────────────────────────
+function showAchievement(emoji, title) {
+  const popup = document.getElementById("achievement-popup");
+  document.getElementById("ach-emoji").textContent = emoji;
+  document.getElementById("ach-title").textContent = title;
+  popup.classList.add("visible");
+  clearTimeout(popup._t);
+  popup._t = setTimeout(() => popup.classList.remove("visible"), 3500);
+}
+
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 function saveToken(token) {
   authToken = token;
@@ -1143,6 +1153,7 @@ doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
     currentPhase = "exercises";
     updatePhaseUI();
+    showAchievement("🧠", "Тема понята!");
     if (!isReplayMode) await saveSession("exercises");
     if (isSpecialCourseTopic(currentTopicId)) {
       // Новая сессия API — история теории не передаётся
@@ -1159,6 +1170,7 @@ doneBtn.addEventListener("click", async () => {
   if (currentPhase === "exercises") {
     currentPhase = "test";
     updatePhaseUI();
+    showAchievement("✏️", "Задания решены!");
     if (!isReplayMode) await saveSession("test");
     // Новая сессия API — история упражнений не передаётся
     messages = [{ role: "user", content: "Дай мне финальное испытание — самое сложное задание на эту тему." }];
@@ -1316,6 +1328,7 @@ async function sendToAPI() {
       if (data.testPassed && currentPhase === "test") {
         currentPhase = "done";
         if (currentTopicId) await markCompleted(currentTopicId);
+        showAchievement("🏆", "Тема завершена!");
         showFinishBtn();
       } else if (!isReplayMode) {
         saveSession(currentPhase);
