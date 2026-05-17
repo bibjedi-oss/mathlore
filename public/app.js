@@ -63,7 +63,11 @@ function showChildCredentials(name, password) {
       <b>Профиль создан!</b><br>
       Имя: <b>${name}</b> · Пароль: <b>${password}</b><br><br>
       Установите приложение на телефон ребёнка:
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+      <div style="text-align:center;margin:12px 0 4px">
+        <img src="/qr.jpg" alt="QR для скачивания" style="width:140px;height:140px;border-radius:8px;border:2px solid rgba(255,208,128,0.3)" />
+        <div style="font-size:11px;opacity:0.55;margin-top:4px">Наведи камеру для скачивания</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
         <a href="${apkUrl}" class="auth-btn" style="text-align:center;text-decoration:none;display:block">📥 Скачать APK для Android</a>
         <a href="${tgLink}" target="_blank" class="auth-btn auth-btn-secondary" style="text-align:center;text-decoration:none;display:block">✈️ Отправить ссылку в Telegram</a>
         <button id="copyApkBtn" class="auth-btn auth-btn-secondary">📋 Скопировать ссылку</button>
