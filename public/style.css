@@ -1635,8 +1635,8 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 12px;
-  color: rgba(255, 232, 176, 0.65);
+  font-size: 13px;
+  color: #fff8e8;
   line-height: 1.5;
   padding: 2px 0;
   cursor: pointer;
@@ -1649,4 +1649,4 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
   cursor: pointer;
   accent-color: #8b5e1a;
 }
-.auth-consent a { color: rgba(255, 200, 100, 0.8); }
+.auth-consent a { color: #ffc844; }
