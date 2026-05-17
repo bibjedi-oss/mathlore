@@ -670,7 +670,7 @@ app.get("/api/admin/users", requireAuth("admin"), async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("parents")
-      .select("id, email, name, token_balance, telegram, created_at")
+      .select("id, email, name, token_balance, telegram, notes, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json(data);
@@ -695,14 +695,32 @@ app.get("/api/admin/leads", requireAuth("admin"), async (req, res) => {
 });
 
 app.post("/api/admin/users/:id/credits", requireAuth("admin"), async (req, res) => {
-  const { credits } = req.body;
-  if (typeof credits !== "number" || credits < 0)
-    return res.status(400).json({ error: "credits: число >= 0" });
+  const { credits, add } = req.body;
   try {
-    const { error } = await supabase
-      .from("parents")
-      .update({ token_balance: credits })
-      .eq("id", req.params.id);
+    if (typeof add === "number" && add > 0) {
+      const { data: parent } = await supabase.from("parents").select("token_balance").eq("id", req.params.id).single();
+      const current = parent?.token_balance || 0;
+      const { error } = await supabase.from("parents").update({ token_balance: current + add }).eq("id", req.params.id);
+      if (error) throw error;
+      return res.json({ ok: true, newBalance: current + add });
+    }
+    if (typeof credits === "number" && credits >= 0) {
+      const { error } = await supabase.from("parents").update({ token_balance: credits }).eq("id", req.params.id);
+      if (error) throw error;
+      return res.json({ ok: true, newBalance: credits });
+    }
+    res.status(400).json({ error: "Укажите credits (установить) или add (добавить)" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+app.post("/api/admin/users/:id/notes", requireAuth("admin"), async (req, res) => {
+  const { notes } = req.body;
+  if (typeof notes !== "string") return res.status(400).json({ error: "notes required" });
+  try {
+    const { error } = await supabase.from("parents").update({ notes: notes.trim().slice(0, 500) }).eq("id", req.params.id);
     if (error) throw error;
     res.json({ ok: true });
   } catch (err) {
