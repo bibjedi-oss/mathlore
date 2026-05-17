@@ -523,20 +523,13 @@ document.getElementById("dashFeedbackBtn").addEventListener("click", () => {
   panel.classList.toggle("hidden");
 });
 
-document.getElementById("dashFeedbackSend").addEventListener("click", async () => {
+document.getElementById("dashFeedbackSend").addEventListener("click", () => {
   const text = document.getElementById("dashFeedbackText").value.trim();
   if (!text) return;
-  const btn = document.getElementById("dashFeedbackSend");
-  btn.disabled = true; btn.textContent = "Отправляем...";
-  try {
-    await fetch("/api/parent/feedback", {
-      method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ text })
-    });
-  } catch {}
+  const msg = encodeURIComponent("Отзыв об ArchiMath:\n" + text);
+  window.open("https://t.me/bibikin?text=" + msg, "_blank");
   document.getElementById("dashFeedbackText").value = "";
   document.getElementById("dashFeedbackOk").classList.remove("hidden");
-  btn.disabled = false; btn.textContent = "Отправить";
   setTimeout(() => document.getElementById("dashFeedbackOk").classList.add("hidden"), 3000);
 });
 
