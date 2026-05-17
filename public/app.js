@@ -71,6 +71,7 @@ function showChildCredentials(name, password) {
         <a href="${apkUrl}" class="auth-btn" style="text-align:center;text-decoration:none;display:block">📥 Скачать APK для Android</a>
         <a href="${tgLink}" target="_blank" class="auth-btn auth-btn-secondary" style="text-align:center;text-decoration:none;display:block">✈️ Отправить ссылку в Telegram</a>
         <button id="copyApkBtn" class="auth-btn auth-btn-secondary">📋 Скопировать ссылку</button>
+        <button class="auth-btn auth-btn-secondary" onclick="document.getElementById('welcomeModal').classList.add('hidden');showIphoneModal()">🍎 Инструкция для iPhone</button>
       </div>
       <small style="opacity:0.6;margin-top:10px;display:block">Данные для входа также отправлены на ваш email</small>
     </div>`;
@@ -465,7 +466,9 @@ document.getElementById("parentAuthBtn").addEventListener("click", async () => {
     errEl.textContent = "Необходимо дать согласие на обработку данных"; errEl.classList.remove("hidden"); return;
   }
 
-  const url = parentMode === "login" ? "/api/auth/parent-login" : "/api/auth/parent-register";
+  const url = parentMode === "login"
+    ? "/api/auth/parent-login"
+    : "https://archimath.ru/proxy/register.php";
   const body = parentMode === "login" ? { email, password } : { email, password, name };
 
   try {
@@ -632,6 +635,26 @@ function showPricingModal() {
 
 function showIphoneModal() {
   document.getElementById("iphoneModal").classList.remove("hidden");
+}
+
+function showAndroidModal() {
+  const apkUrl = window.location.origin + "/apk";
+  document.getElementById("welcomeModalEmoji").textContent = "🤖";
+  document.getElementById("welcomeModalText").innerHTML = `
+    <div style="text-align:left;font-size:14px;line-height:1.7">
+      <b>Установка на Android</b><br><br>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <a href="${apkUrl}" target="_blank" rel="noopener" class="auth-btn" style="text-align:center;text-decoration:none;display:block">📥 Скачать APK с Яндекс-диска</a>
+        <a href="https://t.me/bibikin" target="_blank" rel="noopener" class="auth-btn auth-btn-secondary" style="text-align:center;text-decoration:none;display:block">✈️ Если не получается — напишите нам в Telegram</a>
+      </div>
+      <div style="font-size:12px;opacity:0.6;margin-top:12px;line-height:1.5">
+        После скачивания разрешите установку из неизвестных источников<br>в настройках Android.
+      </div>
+    </div>`;
+  document.getElementById("welcomeModalBtn").textContent = "Закрыть";
+  document.getElementById("welcomeModalBtn").onclick = null;
+  document.getElementById("welcomeModalBtn2").style.display = "none";
+  document.getElementById("welcomeModal").classList.remove("hidden");
 }
 
 

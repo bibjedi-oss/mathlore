@@ -57,6 +57,7 @@
         <div class="dash-title">Кабинет родителя</div>
         <div class="dash-header-actions">
           <button id="dashPricingBtn" class="dash-feedback-btn" onclick="showPricingModal()">₽ Стоимость</button>
+          <button id="dashAndroidBtn" class="dash-feedback-btn" onclick="showAndroidModal()">🤖 Android</button>
           <button id="dashIphoneBtn" class="dash-feedback-btn" onclick="showIphoneModal()">🍎 iPhone</button>
           <button id="dashFeedbackBtn" class="dash-feedback-btn">💬 Отзыв</button>
           <button id="dashLogoutBtn" class="dash-logout">Выйти</button>
@@ -153,6 +154,14 @@
   <div id="pricingModal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
     <div class="pricing-box">
       <div class="pricing-title">Стоимость ArchiMath</div>
+      <div class="pricing-section">
+        <div class="pricing-section-title">💡 Из чего состоит стоимость</div>
+        <div class="pricing-desc" style="font-size:14px;line-height:1.7">
+          Стоимость складывается из двух частей:<br>
+          <b>1. Месячная подписка</b> — фиксированный доступ к сервису.<br>
+          <b>2. Токены</b> — расходуются на каждый ответ Архи. Пополняются отдельно по мере использования.
+        </div>
+      </div>
       <div class="pricing-section">
         <div class="pricing-section-title">📅 Месячная подписка</div>
         <div class="pricing-table">
