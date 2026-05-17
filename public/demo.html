@@ -23,9 +23,9 @@
       flex-direction: column;
       position: relative;
       background-color: #3a1f00;
-      background-image: url('/bg-3-demo.jpg');
+      background-image: url('/bg-logic.jpg');
       background-size: cover;
-      background-position: center;
+      background-position: center top;
       min-height: 0;
     }
 
@@ -33,16 +33,68 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(20, 10, 0, 0.5);
+      background: rgba(15, 7, 0, 0.52);
       pointer-events: none;
+      z-index: 0;
     }
 
+    /* ── Шапка ── */
+    #demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      padding-top: max(10px, env(safe-area-inset-top));
+      background: rgba(15, 7, 0, 0.6);
+      backdrop-filter: blur(8px);
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+
+    #back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255, 235, 180, 0.85);
+      font-size: 15px;
+      font-family: inherit;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 4px;
+      text-decoration: none;
+    }
+
+    #back-btn:hover { color: #fff8e8; }
+
+    #demo-title {
+      color: rgba(255, 235, 180, 0.7);
+      font-size: 13px;
+      letter-spacing: 0.05em;
+    }
+
+    #tts-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      opacity: 0.7;
+      transition: opacity 0.15s;
+      line-height: 1;
+    }
+
+    #tts-btn:hover { opacity: 1; }
+    #tts-btn.active { opacity: 1; }
+
+    /* ── Чат ── */
     #chat {
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      padding: 16px 14px 8px;
+      padding: 14px 14px 8px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -59,10 +111,6 @@
       line-height: 1.6;
       white-space: pre-wrap;
       word-break: break-word;
-    }
-
-    @media (max-width: 480px) {
-      .message { font-size: 15px; max-width: 92%; }
     }
 
     .message.bot {
@@ -82,20 +130,25 @@
     .typing {
       align-self: flex-start;
       background: rgba(255, 248, 225, 0.85);
-      color: #7a5c30;
-      padding: 10px 16px;
-      border-radius: 16px;
+      color: #9a7c50;
+      padding: 12px 18px;
+      border-radius: 18px;
       border-bottom-left-radius: 4px;
-      font-size: 20px;
-      letter-spacing: 3px;
+      font-size: 22px;
+      letter-spacing: 4px;
     }
 
+    @media (max-width: 480px) {
+      .message { font-size: 15px; max-width: 92%; }
+    }
+
+    /* ── Ввод ── */
     #input-area {
       display: flex;
       gap: 8px;
       padding: 10px 12px;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
-      background: rgba(20, 10, 0, 0.85);
+      background: rgba(15, 7, 0, 0.82);
       backdrop-filter: blur(10px);
       position: relative;
       z-index: 2;
@@ -104,10 +157,10 @@
 
     #input {
       flex: 1;
-      padding: 12px 14px;
+      padding: 12px 16px;
       border-radius: 22px;
-      border: 1px solid rgba(200, 160, 80, 0.4);
-      background: rgba(255, 248, 220, 0.14);
+      border: 1px solid rgba(200, 160, 80, 0.35);
+      background: rgba(255, 248, 220, 0.1);
       color: #fff8e8;
       font-size: 16px;
       font-family: inherit;
@@ -115,8 +168,8 @@
       -webkit-appearance: none;
     }
 
-    #input::placeholder { color: rgba(255, 235, 180, 0.4); }
-    #input:disabled { opacity: 0.5; }
+    #input::placeholder { color: rgba(255, 235, 180, 0.38); }
+    #input:disabled { opacity: 0.45; }
 
     #send-btn {
       padding: 12px 20px;
@@ -131,23 +184,27 @@
     }
 
     #send-btn:hover:not(:disabled) { background: #a06d22; }
-    #send-btn:disabled { opacity: 0.4; cursor: default; }
+    #send-btn:disabled { opacity: 0.38; cursor: default; }
 
+    /* ── CTA после демо ── */
     #cta-block {
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       padding: 20px 16px;
-      background: rgba(30, 14, 0, 0.85);
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      background: rgba(15, 7, 0, 0.88);
       position: relative;
-      z-index: 1;
+      z-index: 2;
+      flex-shrink: 0;
     }
 
     #cta-block p {
-      color: rgba(255, 235, 180, 0.8);
+      color: rgba(255, 235, 180, 0.75);
       font-size: 14px;
       text-align: center;
+      max-width: 34ch;
     }
 
     #cta-btn {
@@ -168,29 +225,67 @@
 </head>
 <body>
   <div id="demo-wrap">
+
+    <div id="demo-header">
+      <a id="back-btn" href="/landing">← Назад</a>
+      <span id="demo-title">Архи · демо</span>
+      <button id="tts-btn" title="Включить озвучку" class="active">🔊</button>
+    </div>
+
     <div id="chat"></div>
+
     <div id="input-area">
       <input id="input" type="text" placeholder="Напиши что-нибудь..." disabled autocomplete="off" />
       <button id="send-btn" disabled>→</button>
     </div>
+
     <div id="cta-block">
-      <p>Вот так Архи объясняет каждую тему — через вопросы, а не готовые ответы.</p>
-      <button id="cta-btn" onclick="window.top.location.href='/#parent-register'">
+      <p>Вот так Архи ведёт каждое занятие — через вопросы, а не готовые ответы.</p>
+      <button id="cta-btn" onclick="location.href='/#parent-register'">
         Попробовать с математикой →
       </button>
     </div>
+
   </div>
 
   <script>
-    const chat    = document.getElementById("chat");
-    const input   = document.getElementById("input");
-    const sendBtn = document.getElementById("send-btn");
+    const chat     = document.getElementById("chat");
+    const input    = document.getElementById("input");
+    const sendBtn  = document.getElementById("send-btn");
     const ctaBlock = document.getElementById("cta-block");
+    const ttsBtn   = document.getElementById("tts-btn");
 
-    let messages = [];
-    let isWaiting = false;
-    let demoEnded = false;
+    let messages   = [];
+    let isWaiting  = false;
+    let demoEnded  = false;
+    let ttsEnabled = true;
+    let currentAudio = null;
 
+    // ── TTS ──
+    ttsBtn.addEventListener("click", () => {
+      ttsEnabled = !ttsEnabled;
+      ttsBtn.textContent = ttsEnabled ? "🔊" : "🔇";
+      ttsBtn.classList.toggle("active", ttsEnabled);
+      if (!ttsEnabled && currentAudio) { currentAudio.pause(); currentAudio = null; }
+    });
+
+    async function speak(text) {
+      if (!ttsEnabled) return;
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        if (!res.ok) return;
+        const blob = await res.blob();
+        if (currentAudio) currentAudio.pause();
+        currentAudio = new Audio(URL.createObjectURL(blob));
+        currentAudio.play().catch(() => {});
+      } catch { /* без озвучки */ }
+    }
+
+    // ── Чат ──
     function addMessage(role, text) {
       const div = document.createElement("div");
       div.className = "message " + (role === "bot" ? "bot" : "user");
@@ -201,9 +296,7 @@
 
     function showTyping() {
       const t = document.createElement("div");
-      t.className = "typing";
-      t.id = "typing";
-      t.textContent = "...";
+      t.className = "typing"; t.id = "typing"; t.textContent = "...";
       chat.appendChild(t);
       chat.scrollTop = chat.scrollHeight;
     }
@@ -214,7 +307,7 @@
     }
 
     function setControls(enabled) {
-      input.disabled = !enabled || demoEnded;
+      input.disabled  = !enabled || demoEnded;
       sendBtn.disabled = !enabled || demoEnded;
     }
 
@@ -239,6 +332,7 @@
         if (data.reply) {
           messages.push({ role: "assistant", content: data.reply });
           addMessage("bot", data.reply);
+          speak(data.reply);
           if (data.demoEnded) {
             demoEnded = true;
             document.getElementById("input-area").style.display = "none";
@@ -248,7 +342,7 @@
         }
       } catch {
         hideTyping();
-        addMessage("bot", "Не могу связаться с сервером.");
+        addMessage("bot", "Не могу связаться с сервером. Попробуй позже.");
       }
       isWaiting = false;
       setControls(true);
