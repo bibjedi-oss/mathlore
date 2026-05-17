@@ -229,7 +229,7 @@
     <div id="demo-header">
       <a id="back-btn" href="/landing">← Назад</a>
       <span id="demo-title">Архи · демо</span>
-      <button id="tts-btn" title="Включить озвучку" class="active">🔊</button>
+      <button id="tts-btn" title="Включить озвучку">🔇</button>
     </div>
 
     <div id="chat"></div>
@@ -258,15 +258,24 @@
     let messages   = [];
     let isWaiting  = false;
     let demoEnded  = false;
-    let ttsEnabled = true;
+    let ttsEnabled = false;
     let currentAudio = null;
+    let lastBotText = null;
+
+    window.addEventListener("pagehide", () => {
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    });
 
     // ── TTS ──
     ttsBtn.addEventListener("click", () => {
       ttsEnabled = !ttsEnabled;
       ttsBtn.textContent = ttsEnabled ? "🔊" : "🔇";
       ttsBtn.classList.toggle("active", ttsEnabled);
-      if (!ttsEnabled && currentAudio) { currentAudio.pause(); currentAudio = null; }
+      if (!ttsEnabled && currentAudio) {
+        currentAudio.pause(); currentAudio = null;
+      } else if (ttsEnabled && lastBotText) {
+        speak(lastBotText);
+      }
     });
 
     async function speak(text) {
@@ -292,6 +301,7 @@
       div.textContent = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+      if (role === "bot") lastBotText = text;
     }
 
     function showTyping() {
