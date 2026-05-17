@@ -631,6 +631,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
 app.get("/admin",   (req, res) => res.sendFile("admin.html",   { root: "public" }));
 app.get("/privacy", (req, res) => res.sendFile("privacy.html", { root: "public" }));
 app.get("/landing", (req, res) => res.sendFile("landing.html", { root: "public" }));
+app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/demo",    (req, res) => res.sendFile("demo.html",    { root: "public" }));
 app.get("/app",     (req, res) => res.sendFile("index.html",   { root: "public" }));
 
