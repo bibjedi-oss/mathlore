@@ -1630,3 +1630,23 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
 .demo-skip { text-align: center; margin-top: 10px; }
 .demo-skip a { color: rgba(255, 232, 176, 0.4); font-size: 13px; text-decoration: none; }
 .demo-skip a:hover { color: rgba(255, 232, 176, 0.7); }
+
+.auth-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255, 232, 176, 0.65);
+  line-height: 1.5;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.auth-consent input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #8b5e1a;
+}
+.auth-consent a { color: rgba(255, 200, 100, 0.8); }

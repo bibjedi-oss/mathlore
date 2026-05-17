@@ -385,6 +385,7 @@ let parentMode = "login";
     document.getElementById("childAuthPanel").classList.add("hidden");
     document.getElementById("parentToggleBtn").textContent = "← Назад";
     document.getElementById("parentName").classList.remove("hidden");
+    document.getElementById("consentLabel").classList.remove("hidden");
     document.getElementById("parentAuthBtn").textContent = "Зарегистрироваться";
     document.querySelectorAll(".auth-mode").forEach(b => {
       b.classList.toggle("active", b.dataset.mode === "register");
@@ -422,6 +423,7 @@ document.querySelectorAll(".auth-mode").forEach(btn => {
     btn.classList.add("active");
     parentMode = btn.dataset.mode;
     document.getElementById("parentName").classList.toggle("hidden", parentMode !== "register");
+    document.getElementById("consentLabel").classList.toggle("hidden", parentMode !== "register");
     document.getElementById("parentAuthBtn").textContent = parentMode === "login" ? "Войти" : "Зарегистрироваться";
   });
 });
@@ -433,6 +435,9 @@ document.getElementById("parentAuthBtn").addEventListener("click", async () => {
   const errEl = document.getElementById("parentAuthError");
   errEl.classList.add("hidden");
   if (!email || !password) { errEl.textContent = "Введите email и пароль"; errEl.classList.remove("hidden"); return; }
+  if (parentMode === "register" && !document.getElementById("consentCheck").checked) {
+    errEl.textContent = "Необходимо дать согласие на обработку данных"; errEl.classList.remove("hidden"); return;
+  }
 
   const url = parentMode === "login" ? "/api/auth/parent-login" : "/api/auth/parent-register";
   const body = parentMode === "login" ? { email, password } : { email, password, name };
