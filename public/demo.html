@@ -417,7 +417,7 @@
       }
       isWaiting = false;
       setControls(true);
-      input.focus();
+      input.focus({ preventScroll: true });
     }
 
     sendBtn.addEventListener("click", () => {
