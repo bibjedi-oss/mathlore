@@ -476,7 +476,7 @@ document.getElementById("parentAuthBtn").addEventListener("click", async () => {
     currentUser = parseToken(data.token);
     showDashboard();
     if (parentMode === "register") {
-      showWelcomeModal("👋", "Добро пожаловать в ArchiMath! Создайте профиль ребёнка — придумайте ему имя и пароль. Ребёнок сможет входить самостоятельно, а вы будете следить за его прогрессом здесь, в кабинете.", "Перейти в кабинет");
+      showWelcomeModal("👋", "Добро пожаловать в ArchiMath! Добавьте ребёнка в кабинете — задайте имя и пароль для его входа. Прогресс будет виден вам здесь в любое время.", "Перейти в кабинет");
     }
   } catch {
     errEl.textContent = "Нет связи с сервером"; errEl.classList.remove("hidden");
@@ -628,6 +628,10 @@ function setupPricingInfoLink(container) {
 
 function showPricingModal() {
   document.getElementById("pricingModal").classList.remove("hidden");
+}
+
+function showIphoneModal() {
+  document.getElementById("iphoneModal").classList.remove("hidden");
 }
 
 
