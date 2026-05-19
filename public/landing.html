@@ -920,24 +920,9 @@
 <section class="bg-night">
   <div class="wrap-narrow center">
     <span class="section-eyebrow eyebrow eyebrow-dark">Цена</span>
-    <h2 class="section-title" style="color: #fdf6e8;">В <em style="color: var(--gold);">10 раз</em> дешевле репетитора<em style="color: var(--gold);">.</em></h2>
-    <p class="section-lede" style="color: rgba(253,246,232,0.7);">И доступнее — занятия 24/7, когда ребёнку удобно.</p>
   </div>
 
   <div class="wrap">
-    <div class="compare">
-      <div class="compare-col">
-        <div class="compare-head">Репетитор</div>
-        <div class="compare-row"><span>Цена</span> <b style="text-decoration:underline;font-size:1.05em;">1 000–5 000 ₽</b></div>
-        <div class="compare-row"><span>Доступность</span> <b>По расписанию</b></div>
-      </div>
-      <div class="compare-col win">
-        <div class="compare-head">ArchiMath</div>
-        <div class="compare-row"><span>Цена</span> <b>150–250 ₽ за тему</b></div>
-        <div class="compare-row"><span>Доступность</span> <b>24/7</b></div>
-      </div>
-    </div>
-
     <!-- ────────── PRICING EXPLAINER ────────── -->
     <div class="pricing-detail">
       <h3 class="pricing-detail-head">Как устроена оплата</h3>
@@ -1056,6 +1041,21 @@
 
 
 <script>
+  // Метрика: десктоп открыл демо (iframe стал виден на 60%)
+  (function() {
+    var fired = false;
+    var wrap = document.querySelector('.demo-iframe-wrap');
+    if (!wrap || window.innerWidth <= 720) return;
+    var observer = new IntersectionObserver(function(entries) {
+      if (!fired && entries[0].isIntersecting) {
+        fired = true;
+        if (typeof ym !== 'undefined') ym(109269582, 'reachGoal', 'demo_try_desktop');
+        observer.disconnect();
+      }
+    }, { threshold: 0.6 });
+    observer.observe(wrap);
+  })();
+
   // Sticky header transition after hero scroll-out
   const nav = document.getElementById('nav');
   const onScroll = () => {

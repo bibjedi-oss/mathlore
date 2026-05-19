@@ -437,9 +437,16 @@
       }
     });
 
-    // Автозапуск
-    messages = [{ role: "user", content: "Начни историю прямо сейчас, с первого предложения." }];
-    sendMessage(null);
+    // Автозапуск — первое сообщение из шаблона, без API-запроса
+    const FIRST_BOT_MESSAGE = "Давным-давно царь Гиерон заказал себе золотую корону. Но когда мастер принёс готовую работу, царь засомневался: а вдруг тот подмешал серебро и присвоил часть золота? Корону нельзя плавить или ломать. Как бы ты проверил — настоящее это золото или нет?";
+    messages = [
+      { role: "user", content: "Начни историю." },
+      { role: "assistant", content: FIRST_BOT_MESSAGE }
+    ];
+    addMessage("bot", FIRST_BOT_MESSAGE);
+    speak(FIRST_BOT_MESSAGE);
+    setControls(true);
+    input.focus({ preventScroll: true });
   </script>
 </body>
 </html>
