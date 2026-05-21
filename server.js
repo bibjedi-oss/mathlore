@@ -313,6 +313,73 @@ app.post("/api/parent/session/:id/summary", requireAuth("parent"), async (req, r
   }
 });
 
+// ── OGE Diagnostic ────────────────────────────────────────────────────────────
+
+const OGE_CATEGORIES = {
+  "Алгебраические выражения и тождества": ["7-1-1","7-2-1","7-2-2","7-2-3","7-2-4","7-3-1","7-3-2","7-3-3","7-3-4"],
+  "Линейные уравнения и функции":         ["7-1-2","7-1-3","7-1-4","7-1-5","7-1-6"],
+  "Системы линейных уравнений":           ["7-4-1","7-4-2","7-4-3","7-4-4"],
+  "Вероятность и статистика":             ["7-9-1","7-9-2","7-9-3","7-9-4","7-9-5","9-5-1","9-5-2"],
+  "Начальная геометрия и параллельные прямые": ["7-5-1","7-5-2","7-7-1","7-7-2"],
+  "Треугольники":                         ["7-6-1","7-6-2","7-6-3","7-8-1","7-8-2","7-8-3"],
+  "Рациональные дроби":                   ["8-1-1","8-1-2","8-1-3","8-1-4"],
+  "Квадратные корни":                     ["8-2-1","8-2-2","8-2-3"],
+  "Квадратные уравнения":                 ["8-3-1","8-3-2","8-3-3","8-3-4"],
+  "Неравенства":                          ["8-4-1","8-4-2","8-4-3"],
+  "Квадратичная функция":                 ["8-4-4","9-1-1","9-1-2","9-1-3"],
+  "Степени":                              ["8-4-5","9-4-1","9-4-2"],
+  "Четырёхугольники":                     ["8-5-1","8-5-2","8-5-3","8-5-4","8-5-5"],
+  "Площади и теорема Пифагора":           ["8-6-1","8-6-2"],
+  "Подобие треугольников":                ["8-7-1","8-7-2","8-7-3"],
+  "Окружность":                           ["8-8-1","8-8-2","8-8-3","8-8-4"],
+  "Прогрессии":                           ["9-3-1","9-3-2"],
+  "Уравнения высших степеней и системы":  ["9-2-1","9-2-2"],
+  "Тригонометрия":                        ["9-8-1","9-8-2","9-8-3"],
+  "Координаты и векторы":                 ["9-6-1","9-6-2","9-6-3","9-7-1","9-7-2"],
+  "Правильные многоугольники и длина окружности": ["9-9-1","9-9-2"],
+};
+
+app.post("/api/child/oge-diagnostic", requireAuth("child"), async (req, res) => {
+  const { images } = req.body;
+  if (!Array.isArray(images) || !images.length) return res.status(400).json({ error: "Нет фотографий" });
+  const imgs = images.slice(0, 6);
+  const categoryNames = Object.keys(OGE_CATEGORIES);
+  const content = [
+    ...imgs.map(img => ({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: img.startsWith("data:image/png") ? "image/png" : "image/jpeg",
+        data: img.replace(/^data:image\/[a-z]+;base64,/, "")
+      }
+    })),
+    {
+      type: "text",
+      text: `На фотографиях — выполненная контрольная работа по математике (уровень ОГЭ, 7–9 класс). Определи, в каких из следующих тем ученик допустил ошибки или не справился с заданиями:\n${categoryNames.map((c, i) => `${i + 1}. ${c}`).join("\n")}\n\nВерни строго JSON: {"weak": ["название темы 1", "название темы 2"]}. Если ошибок нет — {"weak": []}. Только JSON, без пояснений.`
+    }
+  ];
+  try {
+    const response = await anthropic.messages.create({ model: currentModel, max_tokens: 400, messages: [{ role: "user", content }] });
+    const text = response.content.find(b => b.type === "text")?.text ?? "{}";
+    let weakCategories = [];
+    try { weakCategories = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}").weak ?? []; } catch {}
+    const weakTopicIds = [...new Set(weakCategories.flatMap(cat => OGE_CATEGORIES[cat] ?? []))];
+    await supabase.from("oge_diagnostics").upsert(
+      { child_id: req.user.id, weak_topic_ids: weakTopicIds, updated_at: new Date() },
+      { onConflict: "child_id" }
+    );
+    res.json({ weakTopicIds, weakCategories });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Ошибка анализа" }); }
+});
+
+app.get("/api/child/oge-diagnostic", requireAuth("child"), async (req, res) => {
+  try {
+    const { data } = await supabase.from("oge_diagnostics")
+      .select("weak_topic_ids, updated_at").eq("child_id", req.user.id).maybeSingle();
+    res.json(data ? { weakTopicIds: data.weak_topic_ids, updatedAt: data.updated_at } : { weakTopicIds: null });
+  } catch (err) { res.status(500).json({ error: "Ошибка сервера" }); }
+});
+
 // ── Child progress & sessions ─────────────────────────────────────────────────
 
 app.get("/api/child/balance", requireAuth("child"), async (req, res) => {

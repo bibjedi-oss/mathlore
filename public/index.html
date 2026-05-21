@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ArchiMath" />
-  <link rel="stylesheet" href="style.css?v=6" />
+  <link rel="stylesheet" href="style.css?v=7" />
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=109269582','ym');ym(109269582,'init',{webvisor:true,clickmap:true,trackLinks:true,accurateTrackBounce:true});</script>
 <noscript><div><img src="https://mc.yandex.ru/watch/109269582" style="position:absolute;left:-9999px;" alt="" /></div></noscript>
@@ -116,6 +116,7 @@
       <div class="input-area">
         <input type="text" id="input" placeholder="Напиши что-нибудь..." disabled autocomplete="off" />
         <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" />
+        <input type="file" id="ogePhotoInput" accept="image/*" multiple style="display:none" />
         <button id="photoBtn" disabled title="Отправить фото">📷</button>
         <button id="micBtn" disabled title="Говори">🎤</button>
         <button id="sendBtn" disabled>→</button>
@@ -222,7 +223,7 @@
   </div>
 
   <script src="curriculum.js?v=5"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js");

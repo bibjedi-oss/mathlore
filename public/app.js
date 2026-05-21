@@ -40,6 +40,7 @@ let authToken = null;
 let selectedGrade = null;
 let selectedSubject = null;
 let selectedSpecialCourse = null;
+let ogeWeakTopics = null;
 
 // ── Welcome modal ─────────────────────────────────────────────────────────────
 function showWelcomeModal(emoji, text, btnText) {
@@ -888,12 +889,210 @@ async function renderGradeSelect() {
           return `<button class="${cls}" data-special-id="${sc.id}" style="left:${l}%;top:${t}%" ${locked ? "disabled" : ""}>${lbl}</button>`;
         }).join("")}
       </div>
+      ${currentUser && currentUser.grade >= 9 ? `
+      <div class="oge-lobby-card" id="ogeLobbyCard">
+        <div class="oge-lobby-card-inner">
+          <div class="oge-lobby-emoji">📝</div>
+          <div class="oge-lobby-info">
+            <div class="oge-lobby-title">Подготовка к ОГЭ</div>
+            <div class="oge-lobby-sub">Диагностика по фото работы → план изучения</div>
+          </div>
+          <button class="oge-lobby-btn" id="ogeLobbyBtn">${ogeWeakTopics ? "К плану →" : "Начать →"}</button>
+        </div>
+      </div>` : ""}
     </div>`;
   lobbyScreen.querySelectorAll(".grade-btn:not(.locked):not(.special)").forEach(btn => {
     btn.addEventListener("click", () => { selectedGrade = parseInt(btn.dataset.grade); selectedSubject = null; renderSubjectSelect(selectedGrade); });
   });
   lobbyScreen.querySelectorAll(".grade-btn.special").forEach(btn => {
     btn.addEventListener("click", () => { selectedSpecialCourse = btn.dataset.specialId; renderSpecialCourseTopics(selectedSpecialCourse); });
+  });
+  const ogeLobbyBtn = document.getElementById("ogeLobbyBtn");
+  if (ogeLobbyBtn) {
+    ogeLobbyBtn.addEventListener("click", () => {
+      if (ogeWeakTopics) renderOgePrepScreen();
+      else renderOgeSetup();
+    });
+  }
+}
+
+async function renderOgeSetup() {
+  appDiv.classList.add("fullscreen-map");
+  let uploadedFiles = [];
+
+  lobbyScreen.innerHTML = `
+    <div class="oge-setup-screen">
+      <div class="oge-setup-header">
+        <button class="cave-back-btn" id="ogeBackBtn">← Назад</button>
+        <div class="oge-setup-title">Диагностика ОГЭ</div>
+      </div>
+      <div class="oge-setup-body">
+        <div class="oge-setup-step">
+          <div class="oge-step-num">1</div>
+          <div class="oge-step-text">
+            <b>Найди и реши вариант ОГЭ</b><br>
+            Демо-варианты есть на сайте ФИПИ.<br>
+            <a href="https://fipi.ru/oge" target="_blank" class="oge-fipi-link">Открыть ФИПИ →</a>
+          </div>
+        </div>
+        <div class="oge-setup-step">
+          <div class="oge-step-num">2</div>
+          <div class="oge-step-text">
+            <b>Сфотографируй работу</b><br>
+            Загрузи фото листа с заданиями и листа с ответами.
+          </div>
+        </div>
+        <div class="oge-photos-area">
+          <button class="oge-add-photo-btn" id="ogeAddPhotoBtn">📷 Добавить фото</button>
+          <div class="oge-thumbs" id="ogeThumbs"></div>
+        </div>
+        <button class="auth-btn oge-analyze-btn" id="ogeAnalyzeBtn" disabled>Анализировать</button>
+        <div class="oge-analyze-hint" id="ogeAnalyzeHint">Загрузи хотя бы 1 фото</div>
+      </div>
+    </div>`;
+
+  document.getElementById("ogeBackBtn").addEventListener("click", () => renderGradeSelect());
+
+  document.getElementById("ogeAddPhotoBtn").addEventListener("click", () => {
+    document.getElementById("ogePhotoInput").click();
+  });
+
+  document.getElementById("ogePhotoInput").addEventListener("change", (e) => {
+    uploadedFiles = uploadedFiles.concat(Array.from(e.target.files));
+    e.target.value = "";
+    renderThumbs();
+  });
+
+  function renderThumbs() {
+    const thumbsDiv = document.getElementById("ogeThumbs");
+    const analyzeBtn = document.getElementById("ogeAnalyzeBtn");
+    const hint = document.getElementById("ogeAnalyzeHint");
+    if (!thumbsDiv) return;
+    thumbsDiv.innerHTML = uploadedFiles.map((f, i) => `
+      <div class="oge-thumb-wrap">
+        <img class="oge-thumb" src="${URL.createObjectURL(f)}" />
+        <button class="oge-thumb-remove" data-idx="${i}">✕</button>
+      </div>`).join("");
+    thumbsDiv.querySelectorAll(".oge-thumb-remove").forEach(btn => {
+      btn.addEventListener("click", () => { uploadedFiles.splice(parseInt(btn.dataset.idx), 1); renderThumbs(); });
+    });
+    analyzeBtn.disabled = uploadedFiles.length === 0;
+    hint.textContent = uploadedFiles.length > 0 ? `${uploadedFiles.length} фото загружено` : "Загрузи хотя бы 1 фото";
+  }
+
+  document.getElementById("ogeAnalyzeBtn").addEventListener("click", async () => {
+    const analyzeBtn = document.getElementById("ogeAnalyzeBtn");
+    const hint = document.getElementById("ogeAnalyzeHint");
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = "Анализирую...";
+    hint.textContent = "Это займёт около минуты";
+    try {
+      const base64Images = await Promise.all(uploadedFiles.map(f => fileToBase64(f)));
+      const mediaTypes = uploadedFiles.map(f => f.type || "image/jpeg");
+      const res = await fetch("/api/child/oge-diagnostic", {
+        method: "POST",
+        headers: apiHeaders(),
+        body: JSON.stringify({ images: base64Images.map((d, i) => ({ data: d, mediaType: mediaTypes[i] })) })
+      });
+      if (!res.ok) throw new Error("server error");
+      const data = await res.json();
+      ogeWeakTopics = data.weakTopicIds;
+      renderOgePrepScreen();
+    } catch {
+      if (analyzeBtn) {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = "Анализировать";
+      }
+      if (hint) hint.textContent = "Ошибка. Попробуй ещё раз.";
+    }
+  });
+}
+
+async function renderOgePrepScreen() {
+  appDiv.classList.add("fullscreen-map");
+  const progress = await getProgress();
+
+  if (!ogeWeakTopics) {
+    try {
+      const res = await fetch("/api/child/oge-diagnostic", { headers: apiHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        ogeWeakTopics = data.weakTopicIds;
+      }
+    } catch {}
+  }
+
+  if (!ogeWeakTopics || ogeWeakTopics.length === 0) {
+    renderOgeSetup();
+    return;
+  }
+
+  const weakSet = new Set(ogeWeakTopics);
+  const remaining = ogeWeakTopics.filter(id => !progress.completed.has(id));
+
+  let gradesHtml = "";
+  for (const gradeData of curriculum.filter(g => g.grade >= 7 && g.grade <= 9)) {
+    let subjectsHtml = "";
+    for (const subj of gradeData.subjects ?? []) {
+      let chaptersHtml = "";
+      for (const ch of subj.chapters) {
+        const chTopics = ch.topics.filter(t => weakSet.has(t.id));
+        if (!chTopics.length) continue;
+        const topicsHtml = chTopics.map(t => {
+          const done = progress.completed.has(t.id);
+          return `<button class="oge-topic${done ? " done" : ""}" data-id="${t.id}" data-label="${t.label}">${done ? "✓" : "🔥"} ${t.label}</button>`;
+        }).join("");
+        chaptersHtml += `<div class="oge-chapter"><div class="oge-chapter-title">${ch.label}</div>${topicsHtml}</div>`;
+      }
+      if (!chaptersHtml) continue;
+      subjectsHtml += `<div class="oge-subject"><div class="oge-subject-title">${subj.label}</div>${chaptersHtml}</div>`;
+    }
+    if (!subjectsHtml) continue;
+    gradesHtml += `<div class="oge-grade"><div class="oge-grade-title">${gradeData.grade} класс</div>${subjectsHtml}</div>`;
+  }
+
+  lobbyScreen.innerHTML = `
+    <div class="oge-prep-screen">
+      <div class="oge-prep-header">
+        <button class="cave-back-btn" id="ogePrepBackBtn">← Карта</button>
+        <div class="oge-prep-title">Подготовка к ОГЭ</div>
+      </div>
+      <div class="oge-prep-legend">
+        <span>🔥 нужно проработать</span>
+        <span>✓ пройдено</span>
+      </div>
+      <div class="oge-prep-topics">${gradesHtml}</div>
+      <div class="oge-prep-cost">
+        Примерная стоимость курса:<br>
+        <b>${remaining.length} тем × ~200 ₽ ≈ ${remaining.length * 200} ₽</b>
+      </div>
+      <button class="auth-btn auth-btn-secondary oge-refresh-btn" id="ogeRefreshBtn">↺ Обновить диагностику</button>
+    </div>`;
+
+  document.getElementById("ogePrepBackBtn").addEventListener("click", () => renderGradeSelect());
+  document.getElementById("ogeRefreshBtn").addEventListener("click", () => renderOgeSetup());
+
+  lobbyScreen.querySelectorAll(".oge-topic").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      const label = btn.dataset.label;
+      const p = await getProgress();
+      if (p.completed.has(id)) {
+        document.getElementById("welcomeModalEmoji").textContent = "✓";
+        document.getElementById("welcomeModalText").textContent = `Тема "${label}" уже пройдена. Хочешь пройти её заново?`;
+        document.getElementById("welcomeModalBtn").textContent = "Пройти заново";
+        const btn2 = document.getElementById("welcomeModalBtn2");
+        btn2.textContent = "Отмена"; btn2.style.display = "";
+        document.getElementById("welcomeModal").classList.remove("hidden");
+        document.getElementById("welcomeModalBtn").onclick = () => {
+          document.getElementById("welcomeModal").classList.add("hidden");
+          btn2.style.display = "none"; isReplayMode = true; showChat(label, id);
+        };
+        btn2.onclick = () => { document.getElementById("welcomeModal").classList.add("hidden"); btn2.style.display = "none"; };
+      } else {
+        showChat(label, id);
+      }
+    });
   });
 }
 
