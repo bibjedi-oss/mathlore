@@ -895,7 +895,6 @@ async function renderGradeSelect() {
           <div class="oge-lobby-emoji">📝</div>
           <div class="oge-lobby-info">
             <div class="oge-lobby-title">Подготовка к ОГЭ</div>
-            <div class="oge-lobby-sub">Диагностика по фото работы → план изучения</div>
           </div>
           <button class="oge-lobby-btn" id="ogeLobbyBtn">${ogeWeakTopics ? "К плану →" : "Начать →"}</button>
         </div>
@@ -939,7 +938,7 @@ async function renderOgeSetup() {
           <div class="oge-step-num">2</div>
           <div class="oge-step-text">
             <b>Сфотографируй работу</b><br>
-            Загрузи фото листа с заданиями и листа с ответами.
+            Загрузи фото всех листов с выполненной работой — их может быть несколько.
           </div>
         </div>
         <div class="oge-photos-area">
