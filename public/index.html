@@ -66,6 +66,14 @@
           <button id="dashFeedbackBtn" class="dash-feedback-btn">💬 Отзыв</button>
           <button id="dashLogoutBtn" class="dash-logout">Выйти</button>
         </div>
+        <button id="dashMenuBtn" class="dash-menu-btn" aria-label="Меню">☰</button>
+      </div>
+      <div id="dashMenu" class="dash-menu hidden">
+        <button class="dash-menu-item" onclick="showPricingModal();closeDashMenu()">₽ Стоимость</button>
+        <button class="dash-menu-item" onclick="showAndroidModal();closeDashMenu()">🤖 Android</button>
+        <button class="dash-menu-item" onclick="showIphoneModal();closeDashMenu()">🍎 iPhone</button>
+        <button class="dash-menu-item" id="dashFeedbackBtnMobile">💬 Отзыв</button>
+        <button class="dash-menu-item dash-menu-logout" id="dashLogoutBtnMobile">Выйти</button>
       </div>
       <div id="dashFeedbackPanel" class="dash-feedback-panel hidden">
         <div class="dash-feedback-title">Оставьте отзыв</div>

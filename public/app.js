@@ -516,11 +516,35 @@ document.getElementById("childAuthBtn").addEventListener("click", async () => {
 logoutBtn.addEventListener("click", () => { clearToken(); currentUser = null; showAuth(); });
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
+function closeDashMenu() {
+  document.getElementById("dashMenu").classList.add("hidden");
+}
+
+document.getElementById("dashMenuBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  document.getElementById("dashMenu").classList.toggle("hidden");
+});
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("dashMenu");
+  if (!menu.classList.contains("hidden") && !menu.contains(e.target)) {
+    menu.classList.add("hidden");
+  }
+});
+
 document.getElementById("dashLogoutBtn").addEventListener("click", () => { clearToken(); currentUser = null; showAuth(); });
+document.getElementById("dashLogoutBtnMobile").addEventListener("click", () => { clearToken(); currentUser = null; showAuth(); });
 
 document.getElementById("dashFeedbackBtn").addEventListener("click", () => {
   const panel = document.getElementById("dashFeedbackPanel");
   panel.classList.toggle("hidden");
+});
+
+document.getElementById("dashFeedbackBtnMobile").addEventListener("click", () => {
+  closeDashMenu();
+  const panel = document.getElementById("dashFeedbackPanel");
+  panel.classList.remove("hidden");
+  panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 });
 
 document.getElementById("dashFeedbackSend").addEventListener("click", () => {
