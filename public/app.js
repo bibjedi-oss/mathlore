@@ -938,7 +938,7 @@ async function renderOgeSetup() {
           <div class="oge-step-num">2</div>
           <div class="oge-step-text">
             <b>Сфотографируй работу</b><br>
-            Загрузи фото всех листов с выполненной работой — их может быть несколько.
+            Загрузи фото всех листов с заданиями и все листы с твоими ответами.
           </div>
         </div>
         <div class="oge-photos-area">
