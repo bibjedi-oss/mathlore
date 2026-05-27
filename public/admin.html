@@ -208,8 +208,9 @@
           <td><span class="credit-badge ${creditClass(u.token_balance ?? 0)}">${formatTokens(u.token_balance ?? 0)}</span></td>
           <td>
             <div class="credit-row">
-              <input class="credit-input" type="number" min="0" value="300000" id="ci-${u.id}" />
+              <input class="credit-input" type="number" min="0" value="${u.token_balance ?? 0}" id="ci-${u.id}" />
               <button class="top-up-btn" onclick="topUp('${u.id}')">+ Добавить</button>
+              <button class="top-up-btn" style="background:#5a7a3a" onclick="setBalance('${u.id}')">= Задать</button>
               <span class="top-up-ok" id="ok-${u.id}">✓</span>
             </div>
           </td>
@@ -286,6 +287,26 @@
         }
       } catch {}
       btn.disabled = false; btn.textContent = "+ Добавить";
+    }
+
+    async function setBalance(userId) {
+      const input = document.getElementById(`ci-${userId}`);
+      const ok = document.getElementById(`ok-${userId}`);
+      const credits = parseInt(input.value);
+      if (isNaN(credits) || credits < 0) return;
+      const btns = input.parentElement.querySelectorAll(".top-up-btn");
+      btns.forEach(b => b.disabled = true);
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/credits`, {
+          method: "POST", headers: authHeaders(),
+          body: JSON.stringify({ credits })
+        });
+        if (res.ok) {
+          ok.style.display = "inline";
+          setTimeout(() => { ok.style.display = "none"; loadUsers(); }, 1200);
+        }
+      } catch {}
+      btns.forEach(b => b.disabled = false);
     }
 
     async function saveNote(userId) {
