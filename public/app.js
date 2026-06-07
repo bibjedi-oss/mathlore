@@ -265,9 +265,16 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
     updatePhaseUI();
     setControls(true);
   } else {
-    updatePhaseUI();
+    const isMotivational = topicIdArg === "log0-1";
+    if (isMotivational) {
+      currentPhase = "test";
+      phaseBar.classList.add("hidden");
+      doneBtn.classList.add("hidden");
+    } else {
+      updatePhaseUI();
+    }
     setControls(true);
-    messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
+    messages.push({ role: "user", content: isMotivational ? "Начни." : "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
     sendToAPI();
   }
 }
