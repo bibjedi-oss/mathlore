@@ -270,12 +270,17 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
       currentPhase = "test";
       phaseBar.classList.add("hidden");
       doneBtn.classList.add("hidden");
+      const firstMsg = "Привет! Я — Архи. Я здесь, чтобы помочь тебе освоить логику. Но... для чего тебе это? Чего ты хочешь на самом деле?";
+      messages.push({ role: "user", content: "Начни." });
+      messages.push({ role: "assistant", content: firstMsg });
+      addMessage("bot", firstMsg);
+      setControls(true);
     } else {
       updatePhaseUI();
+      setControls(true);
+      messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
+      sendToAPI();
     }
-    setControls(true);
-    messages.push({ role: "user", content: isMotivational ? "Начни." : "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
-    sendToAPI();
   }
 }
 
