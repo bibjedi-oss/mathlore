@@ -234,6 +234,22 @@ function isSpecialCourseTopic(topicId) {
   return specialCourses.some(c => c.chapters.some(ch => ch.topics.some(t => t.id === topicId)));
 }
 
+function findTopicById(id) {
+  for (const grade of curriculum) {
+    for (const subj of (grade.subjects || [])) {
+      for (const ch of (subj.chapters || [])) {
+        for (const t of (ch.topics || [])) { if (t.id === id) return t; }
+      }
+    }
+  }
+  for (const course of specialCourses) {
+    for (const ch of (course.chapters || [])) {
+      for (const t of (ch.topics || [])) { if (t.id === id) return t; }
+    }
+  }
+  return null;
+}
+
 function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   hideAll();
   appDiv.classList.remove("fullscreen-map");
@@ -265,19 +281,21 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
     updatePhaseUI();
     setControls(true);
   } else {
+    const topicData = findTopicById(topicIdArg);
     const isMotivational = topicIdArg === "log0-1";
     if (isMotivational) {
       currentPhase = "test";
       phaseBar.classList.add("hidden");
       doneBtn.classList.add("hidden");
-      const firstMsg = "Привет! Я — Архи. Я здесь, чтобы помочь тебе освоить логику. Но... для чего тебе это? Чего ты хочешь на самом деле?";
-      messages.push({ role: "user", content: "Начни." });
-      messages.push({ role: "assistant", content: firstMsg });
-      addMessage("bot", firstMsg);
-      setControls(true);
     } else {
       updatePhaseUI();
-      setControls(true);
+    }
+    setControls(true);
+    if (topicData?.firstMessage) {
+      messages.push({ role: "user", content: "Начни." });
+      messages.push({ role: "assistant", content: topicData.firstMessage });
+      addMessage("bot", topicData.firstMessage);
+    } else {
       messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
       sendToAPI();
     }
