@@ -1448,7 +1448,13 @@ doneBtn.addEventListener("click", async () => {
     if (!isReplayMode) await saveSession("test");
     // Новая сессия API — история упражнений не передаётся
     messages = [{ role: "user", content: "Дай мне финальное испытание — самое сложное задание на эту тему." }];
-    sendToAPI();
+    const testTask = findTopicById(currentTopicId)?.testTask;
+    if (testTask) {
+      messages.push({ role: "assistant", content: testTask });
+      addMessage("bot", testTask);
+    } else {
+      sendToAPI();
+    }
     return;
   }
   if (currentPhase === "test" || currentPhase === "done") {
