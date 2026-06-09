@@ -484,7 +484,7 @@ function buildMotivationalPrompt() {
 - Никогда не говоришь "неправильно"`;
 }
 
-function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false) {
+function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = []) {
   if (topic === "Зачем мне логика?") return buildMotivationalPrompt();
   const isConsolidation = topic.startsWith("Закрепление");
   const isGeometry = /геометр|треугольник|окружност|угол|прямоугольник|параллелограмм|трапеци|ромб|теорем|теорема|вектор|координат|площадь|периметр|конус|цилиндр|пирамид|сфер|куб|призм/i.test(topic);
@@ -515,6 +515,24 @@ function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false) {
 ЗАПРЕТ: никогда не объясняй понятие через само себя. Объясняя "большие числа" — не используй большие числа. Объясняя "дроби" — не используй дроби. Используй только то, что ребёнок уже точно знает: знакомые предметы, бытовые ситуации.
 
 БЕЗОПАСНОСТЬ: никогда не предлагай ребёнку физически что-либо делать со своим телом (трогать, считать части тела и т.п.) или с предметами вокруг для проверки математической идеи. Только воображаемые примеры.`;
+
+  if (phase === "easy" || phase === "medium" || phase === "hard") {
+    const levelName = { easy: "лёгкого", medium: "среднего", hard: "сложного" }[phase];
+    const tasksList = tasks.length > 0
+      ? `Задания для этого уровня — давай строго по очереди:\n${tasks.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+      : `Придумай 4 задания ${levelName} уровня по теме "${topic}" для ${grade} класса.`;
+    return `Ты — Архи, проводишь задания ${levelName} уровня по теме: ${topic} (${grade} класс).
+
+${tasksList}
+
+ПРАВИЛА — соблюдай строго:
+1. Начни с первого задания прямо сейчас — без вступлений
+2. Верный ответ → коротко похвали (1 предложение) → следующее задание
+3. Ошибка → мягко укажи где, дай подсказку уровня ${grade} класса, жди повтора. Не решай сам.
+4. После верного ответа на последнее (4-е) задание — напиши короткую похвалу и добавь [УРОВЕНЬ_ПРОЙДЕН] в самый конец
+
+${base}`;
+  }
 
   if (phase === "exercises") {
     if (noTextbook) {
@@ -660,10 +678,31 @@ app.post("/api/demo", async (req, res) => {
   }
 });
 
+// ── Tasks ─────────────────────────────────────────────────────────────────────
+
+app.get("/api/tasks/:topicId/:difficulty", requireAuth("child"), async (req, res) => {
+  const { topicId, difficulty } = req.params;
+  if (!["easy", "medium", "hard"].includes(difficulty))
+    return res.status(400).json({ error: "Invalid difficulty" });
+  try {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, task_text")
+      .eq("topic_id", topicId)
+      .eq("difficulty", difficulty);
+    if (error) throw error;
+    const shuffled = (data || []).sort(() => Math.random() - 0.5).slice(0, 4);
+    res.json(shuffled.map(t => t.task_text));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
 app.post("/api/chat", requireAuth("child"), async (req, res) => {
-  const { messages, topic, phase, noTextbook } = req.body;
+  const { messages, topic, phase, noTextbook, tasks } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages required" });
   try {
     const { data: parent } = await supabase
@@ -679,7 +718,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const response = await anthropic.messages.create({
       model: currentModel,
       max_tokens: 1024,
-      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook),
+      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : []),
       messages,
     });
 
@@ -713,11 +752,12 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
 
     let text = response.content.find(b => b.type === "text")?.text ?? "";
     const testPassed = text.includes("[ТЕСТ_ПРОЙДЕН]");
-    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").trim();
+    const levelPassed = text.includes("[УРОВЕНЬ_ПРОЙДЕН]");
+    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").replace(/\[УРОВЕНЬ_ПРОЙДЕН\]/g, "").trim();
     const isFiction = text.startsWith("[ВЫМЫСЕЛ]");
     text = text.replace(/^\[ВЫМЫСЕЛ\]\s*/g, "");
     if (isFiction) text = "(Выдуманная история, но она хорошо объясняет тему)\n\n" + text;
-    res.json({ reply: text, testPassed, tokenBalance: newBalance, imageDescription });
+    res.json({ reply: text, testPassed, levelPassed, tokenBalance: newBalance, imageDescription });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "API error" });

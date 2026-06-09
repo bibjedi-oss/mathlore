@@ -29,7 +29,8 @@ const PAYMENT_CONTACT_URL = "https://t.me/bibikin";
 let messages = [];
 let topic = "";
 let currentTopicId = null;
-let currentPhase = "theory"; // theory | exercises | test | done
+let currentPhase = "theory"; // theory | easy | medium | hard | test | done
+let currentTasks = [];
 let isWaiting = false;
 let ttsEnabled = true;
 let currentAudio = null;
@@ -304,16 +305,16 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
 
 function updatePhaseUI() {
   const exercisesLabel = isSpecialCourseTopic(currentTopicId) ? "Практика" : "Задания из учебника";
-  const labels = { theory: "Теория", exercises: exercisesLabel, test: "Финальный тест", done: "Завершено" };
-  const btnLabels = { theory: "→ Задания", exercises: "→ Финальный тест" };
+  const labels = { theory: "Теория", exercises: exercisesLabel, test: "Финальный тест", easy: "⭐ Лёгкий", medium: "⭐⭐ Средний", hard: "⭐⭐⭐ Сложный", done: "Завершено" };
   phaseLabel.textContent = labels[currentPhase] || "";
   phaseBar.classList.remove("hidden");
   phaseBar.className = `phase-bar phase-${currentPhase}`;
-  if (currentPhase === "test" || currentPhase === "done") {
+  const diffPhase = ["easy", "medium", "hard"].includes(currentPhase);
+  if (currentPhase === "test" || currentPhase === "done" || diffPhase) {
     doneBtn.classList.add("hidden");
   } else {
     doneBtn.classList.remove("hidden");
-    doneBtn.textContent = btnLabels[currentPhase] || "→";
+    doneBtn.textContent = currentPhase === "theory" ? "→ Выбрать задания" : "→ Финальный тест";
   }
 }
 
@@ -1425,36 +1426,9 @@ window.addEventListener("popstate", async () => {
 
 doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
-    currentPhase = "exercises";
-    updatePhaseUI();
     showAchievement("🧠", "Тема понята!");
-    if (!isReplayMode) await saveSession("exercises");
-    if (isSpecialCourseTopic(currentTopicId)) {
-      // Новая сессия API — история теории не передаётся
-      messages = [{ role: "user", content: "Переходим к практике." }];
-      sendToAPI();
-    } else {
-      addMessage("bot", "Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне — проверю вместе с тобой.");
-      speak("Отлично! Теперь возьми учебник и реши несколько задач на эту тему. Сфоткай решение и отправь мне.");
-      // Новая сессия API — история теории не передаётся
-      messages = [{ role: "user", content: "Переходим к заданиям из учебника." }];
-    }
-    return;
-  }
-  if (currentPhase === "exercises") {
-    currentPhase = "test";
-    updatePhaseUI();
-    showAchievement("✏️", "Задания решены!");
-    if (!isReplayMode) await saveSession("test");
-    // Новая сессия API — история упражнений не передаётся
-    messages = [{ role: "user", content: "Дай мне финальное испытание — самое сложное задание на эту тему." }];
-    const testTask = findTopicById(currentTopicId)?.testTask;
-    if (testTask) {
-      messages.push({ role: "assistant", content: testTask });
-      addMessage("bot", testTask);
-    } else {
-      sendToAPI();
-    }
+    if (!isReplayMode) await saveSession("theory");
+    showDifficultySelector();
     return;
   }
   if (currentPhase === "test" || currentPhase === "done") {
@@ -1582,7 +1556,7 @@ async function sendToAPI() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId) })
+      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId), tasks: currentTasks })
     });
 
     if (res.status === 402) {
@@ -1605,7 +1579,18 @@ async function sendToAPI() {
       messages.push({ role: "assistant", content: data.reply });
       addMessage("bot", data.reply);
       speak(data.reply);
-      if (data.testPassed && currentPhase === "test") {
+      if (data.levelPassed) {
+        const icons = { easy: "⭐", medium: "⭐⭐", hard: "🏆" };
+        const texts = { easy: "Лёгкий уровень пройден!", medium: "Средний уровень пройден!", hard: "Сложный уровень пройден!" };
+        showAchievement(icons[currentPhase] || "✓", texts[currentPhase] || "Уровень пройден!");
+        if (currentPhase === "hard") {
+          currentPhase = "done";
+          if (currentTopicId) await markCompleted(currentTopicId);
+          showFinishBtn();
+        } else {
+          setTimeout(() => showDifficultySelector(), 1500);
+        }
+      } else if (data.testPassed && (currentPhase === "test" || currentTopicId === "log0-1")) {
         currentPhase = "done";
         if (currentTopicId) await markCompleted(currentTopicId);
         showAchievement("🏆", "Тема завершена!");
@@ -1660,6 +1645,35 @@ function showPaymentModal() {
       Написать в Telegram →
     </a>`;
   modal.classList.remove("hidden");
+}
+
+function showDifficultySelector() {
+  document.querySelectorAll(".diff-select-card").forEach(el => el.remove());
+  const card = document.createElement("div");
+  card.className = "diff-select-card";
+  card.innerHTML = `
+    <div class="diff-select-title">Выбери уровень заданий:</div>
+    <button class="diff-btn diff-easy" onclick="startDifficulty('easy')">⭐ Лёгкий</button>
+    <button class="diff-btn diff-medium" onclick="startDifficulty('medium')">⭐⭐ Средний</button>
+    <button class="diff-btn diff-hard" onclick="startDifficulty('hard')">⭐⭐⭐ Сложный</button>
+  `;
+  chat.appendChild(card);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function startDifficulty(level) {
+  document.querySelectorAll(".diff-select-card").forEach(el => el.remove());
+  currentPhase = level;
+  currentTasks = [];
+  updatePhaseUI();
+  if (!isReplayMode) await saveSession(level);
+  try {
+    const res = await fetch(`/api/tasks/${currentTopicId}/${level}`, { headers: apiHeaders() });
+    if (res.ok) currentTasks = await res.json();
+  } catch {}
+  const levelLabel = { easy: "лёгкого", medium: "среднего", hard: "сложного" }[level];
+  messages = [{ role: "user", content: `Начинаем задания ${levelLabel} уровня.` }];
+  sendToAPI();
 }
 
 function showFinishBtn() {

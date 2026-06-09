@@ -1616,6 +1616,36 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
 }
 .understood-btn:hover { background: #3a9669; }
 
+/* --- Difficulty selector --- */
+.diff-select-card {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,200,100,0.25);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeIn 0.3s ease;
+  max-width: 280px;
+}
+.diff-select-title { font-size: 14px; color: #ffe8b0; font-weight: 600; }
+.diff-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  text-align: left;
+}
+.diff-btn:hover { opacity: 0.85; }
+.diff-easy   { background: #4caf7d; color: white; }
+.diff-medium { background: #e09b3a; color: white; }
+.diff-hard   { background: #c0392b; color: white; }
+
 .logout-icon {
   background: none;
   border: 1.5px solid #ddd;
