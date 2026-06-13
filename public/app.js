@@ -1695,8 +1695,15 @@ async function startDifficulty(level) {
   updatePhaseUI();
   if (!isReplayMode) await saveSession(level);
   try {
-    const res = await fetch(`/api/tasks/${currentTopicId}/${level}`, { headers: apiHeaders() });
-    if (res.ok) currentTasks = await res.json();
+    const offsetKey = `archi_task_offset_${currentTopicId}_${level}`;
+    const offset = parseInt(localStorage.getItem(offsetKey) || "0");
+    const res = await fetch(`/api/tasks/${currentTopicId}/${level}?offset=${offset}`, { headers: apiHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      currentTasks = data.tasks || data;
+      const total = data.total ?? currentTasks.length;
+      if (total > 0) localStorage.setItem(offsetKey, String((offset + 4) % total));
+    }
   } catch {}
   const levelLabel = { easy: "лёгкого", medium: "среднего", hard: "сложного" }[level];
   messages = [{ role: "user", content: `Начинаем задания ${levelLabel} уровня.` }];

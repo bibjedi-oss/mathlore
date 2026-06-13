@@ -720,6 +720,7 @@ app.post("/api/demo", async (req, res) => {
 
 app.get("/api/tasks/:topicId/:difficulty", requireAuth("child"), async (req, res) => {
   const { topicId, difficulty } = req.params;
+  const offset = Math.max(0, parseInt(req.query.offset) || 0);
   if (!["easy", "medium", "hard"].includes(difficulty))
     return res.status(400).json({ error: "Invalid difficulty" });
   try {
@@ -727,10 +728,15 @@ app.get("/api/tasks/:topicId/:difficulty", requireAuth("child"), async (req, res
       .from("tasks")
       .select("id, task_text")
       .eq("topic_id", topicId)
-      .eq("difficulty", difficulty);
+      .eq("difficulty", difficulty)
+      .order("order_num");
     if (error) throw error;
-    const shuffled = (data || []).sort(() => Math.random() - 0.5).slice(0, 4);
-    res.json(shuffled.map(t => t.task_text));
+    const all = data || [];
+    const total = all.length;
+    if (total === 0) return res.json({ tasks: [], total: 0 });
+    const tasks = [];
+    for (let i = 0; i < 4; i++) tasks.push(all[(offset + i) % total].task_text);
+    res.json({ tasks, total });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Ошибка сервера" });
