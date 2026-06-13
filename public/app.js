@@ -19,6 +19,7 @@ const phaseBar      = document.getElementById("phaseBar");
 const phaseLabel    = document.getElementById("phaseLabel");
 const logoutBtn     = document.getElementById("logoutBtn");
 const headerCredits = document.getElementById("headerCredits");
+const headerStars   = document.getElementById("headerStars");
 
 // ── Контакт для оплаты (заполни перед запуском трафика) ───────────────────────
 // Telegram: "https://t.me/ВАШ_USERNAME?text=..."
@@ -208,6 +209,7 @@ function showLobby() {
   backBtn.classList.add("hidden");
   doneBtn.classList.add("hidden");
   headerCredits.classList.add("hidden");
+  headerStars.classList.add("hidden");
   lobbyScreen.classList.remove("hidden");
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   renderLobby();
@@ -229,6 +231,27 @@ function updateHeaderBalance(tokens) {
   headerCredits.classList.remove("hidden");
   headerCredits.textContent = `🪙 ${Math.round(tokens / 1000)}к`;
   headerCredits.className = "header-credits" + (tokens <= 0 ? " hc-zero" : tokens < 75000 ? " hc-low" : "");
+}
+
+function updateHeaderStars(stars) {
+  if (stars === null || stars === undefined || currentUser?.role !== "child") { headerStars.classList.add("hidden"); return; }
+  headerStars.classList.remove("hidden");
+  headerStars.textContent = `⭐ ${stars}`;
+}
+
+async function addStars(amount) {
+  if (currentUser?.role !== "child") return;
+  try {
+    const res = await fetch("/api/child/stars/add", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({ amount })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      updateHeaderStars(data.stars);
+    }
+  } catch (e) { console.error("addStars error:", e); }
 }
 
 function isSpecialCourseTopic(topicId) {
@@ -268,6 +291,8 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   chatScreen.style.backgroundImage = `url('${bg}')`;
   fetch("/api/child/balance", { headers: apiHeaders() })
     .then(r => r.ok ? r.json() : null).then(d => updateHeaderBalance(d?.tokenBalance ?? null)).catch(() => {});
+  fetch("/api/child/stars", { headers: apiHeaders() })
+    .then(r => r.ok ? r.json() : null).then(d => updateHeaderStars(d?.stars ?? null)).catch(() => {});
   history.pushState({ screen: "chat" }, "");
 
   if (resumeData?.messages?.length > 0) {
@@ -1427,7 +1452,7 @@ window.addEventListener("popstate", async () => {
 doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
     showAchievement("🧠", "Тема понята!");
-    if (!isReplayMode) await saveSession("theory");
+    if (!isReplayMode) { await saveSession("theory"); await addStars(9); }
     showDifficultySelector();
     return;
   }
@@ -1582,7 +1607,9 @@ async function sendToAPI() {
       if (data.levelPassed) {
         const icons = { easy: "⭐", medium: "⭐⭐", hard: "🏆" };
         const texts = { easy: "Лёгкий уровень пройден!", medium: "Средний уровень пройден!", hard: "Сложный уровень пройден!" };
+        const starAmounts = { easy: 9, medium: 18, hard: 27 };
         showAchievement(icons[currentPhase] || "✓", texts[currentPhase] || "Уровень пройден!");
+        await addStars(starAmounts[currentPhase] || 0);
         if (currentPhase === "hard") {
           currentPhase = "done";
           if (currentTopicId) await markCompleted(currentTopicId);

@@ -397,6 +397,44 @@ app.get("/api/child/balance", requireAuth("child"), async (req, res) => {
   }
 });
 
+app.get("/api/child/stars", requireAuth("child"), async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("children")
+      .select("stars")
+      .eq("id", req.user.id)
+      .single();
+    if (error) throw error;
+    res.json({ stars: data.stars ?? 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+app.post("/api/child/stars/add", requireAuth("child"), async (req, res) => {
+  const amount = parseInt(req.body.amount);
+  if (!amount || amount <= 0) return res.status(400).json({ error: "Некорректное количество звёзд" });
+  try {
+    const { data: child, error: fetchErr } = await supabase
+      .from("children")
+      .select("stars")
+      .eq("id", req.user.id)
+      .single();
+    if (fetchErr) throw fetchErr;
+    const newStars = (child.stars ?? 0) + amount;
+    const { error: updateErr } = await supabase
+      .from("children")
+      .update({ stars: newStars })
+      .eq("id", req.user.id);
+    if (updateErr) throw updateErr;
+    res.json({ stars: newStars });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 app.get("/api/progress", requireAuth("child"), async (req, res) => {
   try {
     const { data, error } = await supabase

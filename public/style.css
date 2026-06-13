@@ -104,6 +104,17 @@ header {
 .header-credits.hc-low { color: #b85c00; border-color: #e07020; background: #fff3e0; }
 .header-credits.hc-zero { color: #c00; border-color: #c00; background: #fff0f0; }
 
+.header-stars {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b4c00;
+  background: #fffacd;
+  border: 1.5px solid #f0c040;
+  border-radius: 12px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
 .tts-loading {
   width: 20px;
   height: 20px;
