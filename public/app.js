@@ -1767,7 +1767,10 @@ sendBtn.addEventListener("click", () => {
   } else { sendMessage(t); }
 });
 input.addEventListener("keydown", e => {
-  if (e.key !== "Enter") return;
+  if (e.key !== "Enter" || e.shiftKey) return;
+  const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (isMobile) return;
+  e.preventDefault();
   const t = input.value.trim(); if (!t) return;
   if (isDemoMode) {
     addMessage("user", t); input.value = "";
