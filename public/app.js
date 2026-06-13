@@ -1063,7 +1063,7 @@ async function renderOgePrepScreen() {
   let gradesHtml = "";
   for (const gradeData of curriculum.filter(g => g.grade >= 7 && g.grade <= 9)) {
     let subjectsHtml = "";
-    for (const subj of gradeData.subjects ?? []) {
+    for (const subj of (gradeData.subjects ?? []).filter(s => !s.hidden)) {
       let chaptersHtml = "";
       for (const ch of subj.chapters) {
         const chTopics = ch.topics.filter(t => weakSet.has(t.id));
@@ -1260,7 +1260,7 @@ async function renderSubjectSelect(gradeNum) {
         <div class="cave-grade-title">${gradeData.label}</div>
       </div>
       <div class="subject-cards">
-        ${gradeData.subjects.map(s => {
+        ${gradeData.subjects.filter(s => !s.hidden).map(s => {
           const total = s.chapters.reduce((sum, c) => sum + c.topics.length, 0);
           const done = s.chapters.reduce((sum, c) => sum + c.topics.filter(t => progress.completed.has(t.id)).length, 0);
           const pct = total > 0 ? Math.round(done / total * 100) : 0;

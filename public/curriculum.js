@@ -44,7 +44,7 @@ const curriculum = [
         ]
       },
       {
-        id: "geometry", label: "Геометрия", icon: "△",
+        id: "geometry", label: "Геометрия", icon: "△", hidden: true,
         chapters: [
           { id: "7g1", label: "Начальные геометрические сведения", topics: [
             { id: "7-5-1", label: "Основные геометрические фигуры: прямая, отрезок, луч, угол. Сравнение и измерение", requires: [] },
@@ -124,7 +124,7 @@ const curriculum = [
         ]
       },
       {
-        id: "geometry", label: "Геометрия", icon: "△",
+        id: "geometry", label: "Геометрия", icon: "△", hidden: true,
         chapters: [
           { id: "8g1", label: "Четырёхугольники", topics: [
             { id: "8-5-1", label: "Многоугольники. Сумма углов выпуклого многоугольника", requires: ["7-8-1"] },
@@ -191,7 +191,7 @@ const curriculum = [
         ]
       },
       {
-        id: "geometry", label: "Геометрия", icon: "△",
+        id: "geometry", label: "Геометрия", icon: "△", hidden: true,
         chapters: [
           { id: "9g1", label: "Векторы", topics: [
             { id: "9-6-1", label: "Вектор: понятие, равенство, откладывание. Сложение и вычитание векторов", requires: ["7-5-1"] },
