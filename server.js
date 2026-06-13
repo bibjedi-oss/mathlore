@@ -5,6 +5,10 @@ import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { Resend } from "resend";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -1027,5 +1031,27 @@ app.post("/api/tts", async (req, res) => {
   }
 });
 
+async function seedTasks() {
+  try {
+    const seed = JSON.parse(readFileSync(join(__dirname, "tasks-seed.json"), "utf8"));
+    const topicIds = [...new Set(seed.map(t => t.topic_id))];
+    for (const topicId of topicIds) {
+      const { count } = await supabase
+        .from("tasks").select("*", { count: "exact", head: true }).eq("topic_id", topicId);
+      if (!count) {
+        const tasks = seed.filter(t => t.topic_id === topicId);
+        const { error } = await supabase.from("tasks").insert(tasks);
+        if (error) console.error(`Seed error [${topicId}]:`, error.message);
+        else console.log(`Seeded ${tasks.length} tasks for ${topicId}`);
+      }
+    }
+  } catch (e) {
+    console.error("seedTasks error:", e.message);
+  }
+}
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`MathLore: http://localhost:${PORT}`));
+app.listen(PORT, async () => {
+  console.log(`MathLore: http://localhost:${PORT}`);
+  await seedTasks();
+});
