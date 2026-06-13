@@ -1330,7 +1330,7 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
       </div>
       <div class="cave-accordion">
         ${allItems.map((q, qi) => {
-          const unlocked = isThemeUnlocked(gradeData.grade);
+          const unlocked = isThemeUnlocked(gradeData.grade) && !q.locked;
           const items = q.topics;
           const qDone = items.filter(t => progress.completed.has(t.id)).length;
           const qPct = Math.round(qDone / items.length * 100);
