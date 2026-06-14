@@ -321,6 +321,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
       messages.push({ role: "user", content: "Начни." });
       messages.push({ role: "assistant", content: topicData.firstMessage });
       addMessage("bot", topicData.firstMessage);
+      speak(topicData.firstMessage);
     } else {
       messages.push({ role: "user", content: "Начни историю прямо сейчас, с первого предложения. Без вступлений." });
       sendToAPI();
@@ -1830,17 +1831,21 @@ async function sendMessage(userText) {
   if (isWaiting) return;
   messages.push({ role: "user", content: userText });
   addMessage("user", userText);
-  input.value = "";
+  input.value = ""; input.style.height = "auto";
   await sendToAPI();
 }
 
 sendBtn.addEventListener("click", () => {
   const t = input.value.trim(); if (!t) return;
   if (isDemoMode) {
-    addMessage("user", t); input.value = "";
+    addMessage("user", t); input.value = ""; input.style.height = "auto";
     demoMessages.push({ role: "user", content: t });
     sendDemoMessage();
   } else { sendMessage(t); }
+});
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 140) + "px";
 });
 input.addEventListener("keydown", e => {
   if (e.key !== "Enter" || e.shiftKey) return;
@@ -1849,7 +1854,7 @@ input.addEventListener("keydown", e => {
   e.preventDefault();
   const t = input.value.trim(); if (!t) return;
   if (isDemoMode) {
-    addMessage("user", t); input.value = "";
+    addMessage("user", t); input.value = ""; input.style.height = "auto";
     demoMessages.push({ role: "user", content: t });
     sendDemoMessage();
   } else { sendMessage(t); }

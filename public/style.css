@@ -941,20 +941,27 @@ header {
   flex-shrink: 0;
 }
 
-input[type="text"] {
+#input {
   flex: 1;
   border: 1.5px solid rgba(255, 210, 120, 0.35);
-  border-radius: 24px;
+  border-radius: 18px;
   padding: 12px 18px;
   font-size: 15px;
+  font-family: inherit;
   outline: none;
   background: rgba(10, 5, 1, 0.55);
   color: #ffe8b0;
   transition: border-color 0.2s;
+  resize: none;
+  overflow: hidden;
+  min-height: 46px;
+  max-height: 140px;
+  line-height: 1.4;
+  align-self: flex-end;
 }
-input[type="text"]::placeholder { color: rgba(255, 220, 150, 0.4); }
-input[type="text"]:focus { border-color: rgba(255, 180, 60, 0.7); }
-input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,150,0.3); }
+#input::placeholder { color: rgba(255, 220, 150, 0.4); }
+#input:focus { border-color: rgba(255, 180, 60, 0.7); }
+#input:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,150,0.3); }
 
 #photoBtn {
   background: rgba(10, 5, 1, 0.55);
@@ -1002,7 +1009,7 @@ input[type="text"]:disabled { background: rgba(10,5,1,0.3); color: rgba(255,220,
 @media (max-width: 480px) {
   .input-area { padding: 10px 12px; gap: 6px; }
   #photoBtn, #micBtn, #sendBtn { width: 38px; height: 38px; font-size: 16px; }
-  input[type="text"] { padding: 10px 14px; font-size: 14px; }
+  #input { padding: 10px 14px; font-size: 14px; }
 }
 
 /* --- Welcome modal --- */
