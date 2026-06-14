@@ -1341,6 +1341,70 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
   const doneTopics = allItems.reduce((s, q) => s + q.topics.filter(t => progress.completed.has(t.id)).length, 0);
   const pct = Math.round(doneTopics / totalTopics * 100);
 
+  // Group paragraphs by chapter
+  const chapterMap = new Map();
+  allItems.forEach((q, qi) => {
+    const ch = q.chapter || "Без главы";
+    if (!chapterMap.has(ch)) chapterMap.set(ch, []);
+    chapterMap.get(ch).push({ ...q, _qi: qi });
+  });
+
+  const chaptersHtml = [...chapterMap.entries()].map(([chTitle, sections]) => {
+    const chDone = sections.reduce((s, q) => s + q.topics.filter(t => progress.completed.has(t.id)).length, 0);
+    const chTotal = sections.reduce((s, q) => s + q.topics.length, 0);
+    const chPct = Math.round(chDone / chTotal * 100);
+    const chLocked = sections.every(q => q.locked || !isThemeUnlocked(gradeData.grade));
+
+    const sectionsHtml = sections.map((q, qi) => {
+      const unlocked = isThemeUnlocked(gradeData.grade) && !q.locked;
+      const items = q.topics;
+      const qDone = items.filter(t => progress.completed.has(t.id)).length;
+      const qPct = Math.round(qDone / items.length * 100);
+      if (!unlocked) {
+        return `<div class="cave-theme locked">
+          <div class="cave-theme-header">
+            <span class="cave-panel-lock">🔒</span>
+            <span class="cave-panel-label">${q.label}</span>
+          </div>
+        </div>`;
+      }
+      return `
+        <div class="cave-theme" data-qi="${q._qi}">
+          <div class="cave-theme-header">
+            <span class="cave-panel-label">${q.label}</span>
+            <span class="cave-panel-progress">${qDone} из ${items.length}</span>
+            <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
+            <span class="cave-theme-arrow">▼</span>
+          </div>
+          <div class="cave-theme-topics">
+            ${items.map((t, ti) => {
+              const done = progress.completed.has(t.id);
+              const resume = !done && progress.inProgress.has(t.id);
+              const topicUnlocked = isTopicUnlocked(items, ti, progress);
+              if (!topicUnlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
+              if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}</button>`;
+              if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}</button>`;
+              return `<button class="topic-btn" data-topic-id="${t.id}" data-topic-label="${t.label}">${t.label}</button>`;
+            }).join("")}
+          </div>
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="cave-chapter${chLocked ? " locked" : ""}">
+        <div class="cave-chapter-header">
+          <span class="cave-chapter-title">${chTitle}</span>
+          ${chLocked
+            ? `<span class="cave-panel-lock">🔒</span>`
+            : `<span class="cave-chapter-progress">${chDone}/${chTotal}</span>
+               <div class="cave-panel-bar cave-chapter-bar"><div class="cave-panel-fill" style="width:${chPct}%"></div></div>
+               <span class="cave-chapter-arrow">▼</span>`
+          }
+        </div>
+        ${chLocked ? "" : `<div class="cave-chapter-sections">${sectionsHtml}</div>`}
+      </div>`;
+  }).join("");
+
   lobbyScreen.innerHTML = `
     <div class="cave-screen">
       <img class="cave-bg" src="${gradeBg(gradeData.grade)}" alt="" />
@@ -1354,51 +1418,29 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
         ${credits !== null ? `<div class="cave-credits ${credits <= 0 ? "cave-credits-zero" : credits < 10 ? "cave-credits-low" : ""}">${credits <= 0 ? "⚠️ Токены закончились" : `🪙 ${credits}`}</div>` : ""}
       </div>
       <div class="cave-accordion">
-        ${allItems.map((q, qi) => {
-          const unlocked = isThemeUnlocked(gradeData.grade) && !q.locked;
-          const items = q.topics;
-          const qDone = items.filter(t => progress.completed.has(t.id)).length;
-          const qPct = Math.round(qDone / items.length * 100);
-          if (!unlocked) {
-            return `<div class="cave-theme locked">
-              <div class="cave-theme-header">
-                <span class="cave-panel-lock">🔒</span>
-                <span class="cave-panel-label">${q.label}</span>
-              </div>
-            </div>`;
-          }
-          return `
-            <div class="cave-theme" data-qi="${qi}">
-              <div class="cave-theme-header">
-                <span class="cave-panel-label">${q.label}</span>
-                <span class="cave-panel-progress">${qDone} из ${items.length}</span>
-                <div class="cave-panel-bar"><div class="cave-panel-fill" style="width:${qPct}%"></div></div>
-                <span class="cave-theme-arrow">▼</span>
-              </div>
-              <div class="cave-theme-topics">
-                ${items.map((t, ti) => {
-                  const done = progress.completed.has(t.id);
-                  const resume = !done && progress.inProgress.has(t.id);
-                  const unlocked = isTopicUnlocked(items, ti, progress);
-                  if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
-                  if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}</button>`;
-                  if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}</button>`;
-                  return `<button class="topic-btn" data-topic-id="${t.id}" data-topic-label="${t.label}">${t.label}</button>`;
-                }).join("")}
-              </div>
-            </div>`;
-        }).join("")}
+        ${chaptersHtml}
       </div>
     </div>`;
 
   lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => { selectedSubject = null; renderSubjectSelect(selectedGrade); });
-  lobbyScreen.querySelectorAll(".cave-theme:not(.locked) .cave-theme-header").forEach(h => {
+
+  lobbyScreen.querySelectorAll(".cave-chapter:not(.locked) .cave-chapter-header").forEach(h => {
     h.addEventListener("click", () => {
+      const ch = h.closest(".cave-chapter");
+      ch.classList.toggle("open");
+      h.querySelector(".cave-chapter-arrow").textContent = ch.classList.contains("open") ? "▲" : "▼";
+    });
+  });
+
+  lobbyScreen.querySelectorAll(".cave-theme:not(.locked) .cave-theme-header").forEach(h => {
+    h.addEventListener("click", e => {
+      e.stopPropagation();
       const q = h.closest(".cave-theme");
       q.classList.toggle("open");
       h.querySelector(".cave-theme-arrow").textContent = q.classList.contains("open") ? "▲" : "▼";
     });
   });
+
   lobbyScreen.querySelectorAll(".topic-btn:not(.locked)").forEach(btn => {
     btn.addEventListener("click", async () => {
       const topicId = btn.dataset.topicId;

@@ -617,6 +617,64 @@ header {
   display: flex;
 }
 
+.cave-chapter {
+  border: 1.5px solid rgba(255,210,120,0.5);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.cave-chapter.locked {
+  opacity: 0.55;
+}
+.cave-chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  background: rgba(40,20,5,0.85);
+  cursor: pointer;
+  user-select: none;
+}
+.cave-chapter.locked .cave-chapter-header {
+  cursor: default;
+}
+.cave-chapter-title {
+  flex: 1;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffd27a;
+  letter-spacing: 0.01em;
+}
+.cave-chapter-progress {
+  font-size: 0.78rem;
+  color: rgba(255,210,120,0.7);
+  white-space: nowrap;
+}
+.cave-chapter-bar {
+  width: 50px;
+  flex-shrink: 0;
+}
+.cave-chapter-arrow {
+  font-size: 0.75rem;
+  color: rgba(255,210,120,0.7);
+}
+.cave-chapter-sections {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px 8px;
+  background: rgba(10,5,1,0.6);
+}
+.cave-chapter.open .cave-chapter-sections {
+  display: flex;
+}
+.cave-chapter .cave-theme {
+  margin: 0;
+}
+.cave-chapter .cave-theme-header {
+  padding: 10px 12px;
+}
+
 .cave-theme-topics .topic-btn {
   background: rgba(255, 248, 220, 0.07);
   border-color: rgba(255, 210, 120, 0.22);
