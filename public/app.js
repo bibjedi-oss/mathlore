@@ -32,6 +32,7 @@ let topic = "";
 let currentTopicId = null;
 let currentPhase = "theory"; // theory | easy | medium | hard | test | done
 let currentTasks = [];
+let currentTopicStars = 9;
 let isWaiting = false;
 let ttsEnabled = true;
 let currentAudio = null;
@@ -308,6 +309,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
     setControls(true);
   } else {
     const topicData = findTopicById(topicIdArg);
+    currentTopicStars = topicData?.stars ?? 9;
     const isMotivational = topicIdArg === "log0-1";
     if (isMotivational) {
       currentPhase = "test";
@@ -1495,7 +1497,7 @@ window.addEventListener("popstate", async () => {
 doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
     showAchievement("🧠", "Тема понята!");
-    if (!isReplayMode) { await saveSession("theory"); await addStars(9); }
+    if (!isReplayMode) { await saveSession("theory"); await addStars(currentTopicStars); }
     showDifficultySelector();
     return;
   }
