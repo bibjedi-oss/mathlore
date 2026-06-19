@@ -897,6 +897,14 @@ header {
   backdrop-filter: blur(4px);
 }
 
+.chat-task-img {
+  display: block;
+  max-width: 100%;
+  max-height: 340px;
+  margin: 10px 0;
+  border-radius: 8px;
+  background: #fff;
+}
 .chat-svg {
   margin: 8px 0;
   background: #fffdf5;
@@ -1674,6 +1682,35 @@ header {
 .phase-bar.phase-exercises { background: rgba(20,10,0,0.65); color: #ffb84d; }
 .phase-bar.phase-test     { background: rgba(25,5,0,0.7);  color: #ff9060; }
 .phase-bar.phase-done     { background: rgba(0,15,5,0.65); color: #7ee8b0; }
+
+.concept-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(10,5,1,0.45);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid rgba(255, 210, 120, 0.15);
+  flex-shrink: 0;
+}
+.concept-chip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255, 200, 80, 0.12);
+  color: rgba(255, 220, 130, 0.6);
+  border: 1px solid rgba(255, 200, 80, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  transition: background 0.4s, color 0.4s, border-color 0.4s;
+}
+.concept-chip.mastered {
+  background: rgba(80, 200, 120, 0.25);
+  color: #7ee8a0;
+  border-color: rgba(80, 200, 120, 0.5);
+}
 
 /* --- Logout icon in main header --- */
 .understood-btn {

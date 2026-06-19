@@ -17,6 +17,7 @@ const doneBtn       = document.getElementById("doneBtn");
 const topicBanner   = document.getElementById("topicBanner");
 const phaseBar      = document.getElementById("phaseBar");
 const phaseLabel    = document.getElementById("phaseLabel");
+const conceptBar    = document.getElementById("conceptBar");
 const logoutBtn     = document.getElementById("logoutBtn");
 const headerCredits = document.getElementById("headerCredits");
 const headerStars   = document.getElementById("headerStars");
@@ -33,6 +34,9 @@ let currentTopicId = null;
 let currentPhase = "theory"; // theory | easy | medium | hard | test | done
 let currentTasks = [];
 let currentTopicStars = 9;
+let currentConcepts = [];
+let currentTheoryImages = [];
+let masteredConceptsSet = new Set();
 let isWaiting = false;
 let ttsEnabled = true;
 let currentAudio = null;
@@ -284,6 +288,9 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   currentPhase = "theory";
   messages = [];
   chat.innerHTML = "";
+  currentConcepts = [];
+  currentTheoryImages = [];
+  masteredConceptsSet = new Set();
   chatScreen.classList.remove("hidden");
   backBtn.classList.remove("hidden");
   doneBtn.classList.remove("hidden");
@@ -310,6 +317,9 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   } else {
     const topicData = findTopicById(topicIdArg);
     currentTopicStars = topicData?.stars ?? 9;
+    currentConcepts = topicData?.concepts ?? [];
+    currentTheoryImages = topicData?.theoryImages ?? [];
+    renderConceptBar();
     const isMotivational = topicIdArg === "log0-1";
     if (isMotivational) {
       currentPhase = "test";
@@ -331,12 +341,21 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   }
 }
 
+function renderConceptBar() {
+  if (currentConcepts.length === 0) { conceptBar.classList.add("hidden"); return; }
+  conceptBar.innerHTML = currentConcepts.map(c =>
+    `<span class="concept-chip${masteredConceptsSet.has(c) ? " mastered" : ""}" title="${c}">${c}</span>`
+  ).join("");
+  conceptBar.classList.toggle("hidden", currentPhase !== "theory");
+}
+
 function updatePhaseUI() {
   const exercisesLabel = isSpecialCourseTopic(currentTopicId) ? "Практика" : "Задания из учебника";
   const labels = { theory: "Теория", exercises: exercisesLabel, test: "Финальный тест", easy: "⭐ Лёгкий", medium: "⭐⭐ Средний", hard: "⭐⭐⭐ Сложный", done: "Завершено" };
   phaseLabel.textContent = labels[currentPhase] || "";
   phaseBar.classList.remove("hidden");
   phaseBar.className = `phase-bar phase-${currentPhase}`;
+  conceptBar.classList.toggle("hidden", currentPhase !== "theory");
   const diffPhase = ["easy", "medium", "hard"].includes(currentPhase);
   if (currentPhase === "test" || currentPhase === "done" || diffPhase) {
     doneBtn.classList.add("hidden");
@@ -1626,7 +1645,7 @@ async function sendToAPI() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId), tasks: currentTasks })
+      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId), tasks: currentTasks, concepts: currentConcepts, theoryImages: currentTheoryImages })
     });
 
     if (res.status === 402) {
@@ -1649,6 +1668,10 @@ async function sendToAPI() {
       messages.push({ role: "assistant", content: data.reply });
       addMessage("bot", data.reply);
       speak(data.reply);
+      if (data.masteredConcepts?.length > 0) {
+        data.masteredConcepts.forEach(c => masteredConceptsSet.add(c));
+        renderConceptBar();
+      }
       if (data.levelPassed) {
         const icons = { easy: "⭐", medium: "⭐⭐", hard: "🏆" };
         const texts = { easy: "Лёгкий уровень пройден!", medium: "Средний уровень пройден!", hard: "Сложный уровень пройден!" };
@@ -1800,14 +1823,24 @@ function addMessage(role, text) {
   const div = document.createElement("div");
   div.className = `message ${role === "user" ? "user" : "bot"}`;
 
-  if (role === "bot" && text.includes("<svg")) {
-    const parts = text.split(/(<svg[\s\S]*?<\/svg>)/gi);
+  const hasSvg = role === "bot" && text.includes("<svg");
+  const hasImg = text.includes("[img:");
+
+  if (hasSvg || hasImg) {
+    const parts = text.split(/(<svg[\s\S]*?<\/svg>|\[img:[^\]]+\])/gi);
     parts.forEach(part => {
       if (/^<svg/i.test(part)) {
         const wrap = document.createElement("div");
         wrap.className = "chat-svg";
         wrap.innerHTML = part;
         div.appendChild(wrap);
+      } else if (/^\[img:/.test(part)) {
+        const src = part.slice(5, -1);
+        const img = document.createElement("img");
+        img.src = src;
+        img.className = "chat-task-img";
+        img.alt = "";
+        div.appendChild(img);
       } else if (part.trim()) {
         const span = document.createElement("span");
         span.textContent = part;

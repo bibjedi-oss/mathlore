@@ -526,7 +526,7 @@ function buildMotivationalPrompt() {
 - Никогда не говоришь "неправильно"`;
 }
 
-function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = []) {
+function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = [], concepts = [], theoryImages = []) {
   if (topic === "Зачем мне логика?") return buildMotivationalPrompt();
   const isConsolidation = topic.startsWith("Закрепление");
   const isGeometry = /геометр|треугольник|окружност|угол|прямоугольник|параллелограмм|трапеци|ромб|теорем|теорема|вектор|координат|площадь|периметр|конус|цилиндр|пирамид|сфер|куб|призм/i.test(topic);
@@ -675,6 +675,17 @@ ${base}
 
 ЕСЛИ РЕБЁНОК УХОДИТ ОТ ТЕМЫ: коротко ответь и мягко возвращай к теме.
 
+${concepts.length > 0 ? `КОНЦЕПТЫ ДЛЯ ОСВОЕНИЯ:
+Ребёнок должен открыть следующие понятия в ходе диалога:
+${concepts.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+
+МАРКЕР КОНЦЕПТА: когда ребёнок своими словами формулирует понятие из списка — добавь в самый конец своего сообщения на отдельной строке:
+[КОНЦЕПТ_ОСВОЕН: <точный текст понятия из списка выше>]
+Ставь маркер только один раз для каждого понятия. Только когда ребёнок реально его сформулировал — не раньше.` : ""}
+
+${theoryImages.length > 0 ? `ИЛЛЮСТРАЦИИ ИЗ УЧЕБНИКА:
+Для этой темы доступны рисунки из учебника. Когда картинка поможет ребёнку лучше понять идею — вставь её в своё сообщение тегом [img:/img/tasks/FILENAME]. Не вставляй все сразу — только ту, что нужна прямо сейчас.
+${theoryImages.map(img => `• ${img.src} — ${img.hint}`).join("\n")}` : ""}
 `;
 }
 
@@ -750,7 +761,7 @@ app.get("/api/tasks/:topicId/:difficulty", requireAuth("child"), async (req, res
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
 app.post("/api/chat", requireAuth("child"), async (req, res) => {
-  const { messages, topic, phase, noTextbook, tasks } = req.body;
+  const { messages, topic, phase, noTextbook, tasks, concepts, theoryImages } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages required" });
   try {
     const { data: parent } = await supabase
@@ -766,7 +777,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const response = await anthropic.messages.create({
       model: currentModel,
       max_tokens: 1024,
-      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : []),
+      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : []),
       messages,
     });
 
@@ -801,11 +812,14 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     let text = response.content.find(b => b.type === "text")?.text ?? "";
     const testPassed = text.includes("[ТЕСТ_ПРОЙДЕН]");
     const levelPassed = text.includes("[УРОВЕНЬ_ПРОЙДЕН]");
-    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").replace(/\[УРОВЕНЬ_ПРОЙДЕН\]/g, "").trim();
+    const masteredConcepts = [];
+    const conceptMatches = [...text.matchAll(/\[КОНЦЕПТ_ОСВОЕН:\s*([^\]]+)\]/g)];
+    conceptMatches.forEach(m => masteredConcepts.push(m[1].trim()));
+    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").replace(/\[УРОВЕНЬ_ПРОЙДЕН\]/g, "").replace(/\[КОНЦЕПТ_ОСВОЕН:[^\]]+\]/g, "").trim();
     const isFiction = text.startsWith("[ВЫМЫСЕЛ]");
     text = text.replace(/^\[ВЫМЫСЕЛ\]\s*/g, "");
     if (isFiction) text = "(Выдуманная история, но она хорошо объясняет тему)\n\n" + text;
-    res.json({ reply: text, testPassed, levelPassed, tokenBalance: newBalance, imageDescription });
+    res.json({ reply: text, testPassed, levelPassed, masteredConcepts, tokenBalance: newBalance, imageDescription });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "API error" });
