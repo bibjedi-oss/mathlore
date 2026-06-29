@@ -134,6 +134,27 @@
 
     .hint { font-size: 11px; color: #444; text-align: center; line-height: 1.6; }
 
+    .deriv-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 12px;
+      color: #888;
+    }
+    .deriv-table { width: 100%; border-collapse: collapse; line-height: 1.85; }
+    .deriv-table td { vertical-align: middle; }
+    .deriv-table td:first-child { color: #bbb; white-space: nowrap; padding-right: 4px; }
+    .deriv-table td:nth-child(2) { padding: 0 4px; color: #555; }
+    .deriv-table td:last-child { color: #888; }
+    .deriv-hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0; }
+    .deriv-result {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ddd;
+      text-align: center;
+    }
+
     @media (max-width: 700px) {
       body { flex-direction: column; }
 
@@ -233,6 +254,30 @@
   </div>
 
   <button class="btn" id="btn-explode">Разобрать куб</button>
+
+  <div class="deriv-box">
+    <div class="section-label">Раскрытие скобок</div>
+    <table class="deriv-table">
+      <tr>
+        <td>3(a−b)²b</td><td>=</td>
+        <td>3a²b − 6ab² + 3b³</td>
+      </tr>
+      <tr>
+        <td>3(a−b)b²</td><td>=</td>
+        <td>3ab² − 3b³</td>
+      </tr>
+      <tr>
+        <td>b³</td><td>=</td>
+        <td>b³</td>
+      </tr>
+    </table>
+    <div class="deriv-hr"></div>
+    <div class="deriv-result">
+      a³ −&thinsp;<span style="color:#e05555">3a²b</span>
+      +&thinsp;<span style="color:#f0a030">3ab²</span>
+      −&thinsp;<span style="color:#9b59b6">b³</span>
+    </div>
+  </div>
 
   <div class="hint">
     Вращение — тащить / пальцем<br>
@@ -439,14 +484,14 @@ function buildScene(a, b) {
     labels.push(labelObj);
   });
 
-  // Labels "(a-b)" on the 3 outer faces of the blue (a-b)³ cube (index 0).
-  // Positions are in the mesh's local space; outer faces sit at -c/2 on each axis.
+  // Labels "(a-b)" at midpoints of the 3 outer edges of the blue (a-b)³ cube (index 0).
+  // Each edge goes from the outer corner (-c/2,-c/2,-c/2); offset outward in both perp. axes.
   const c    = a - b;
-  const FOFF = 0.12;
+  const FOFF = 0.15;
   for (const pos of [
-    new THREE.Vector3(-c/2 - FOFF, 0, 0),
-    new THREE.Vector3(0, -c/2 - FOFF, 0),
-    new THREE.Vector3(0, 0, -c/2 - FOFF),
+    new THREE.Vector3(0,          -c/2 - FOFF, -c/2 - FOFF),  // ребро вдоль X
+    new THREE.Vector3(-c/2 - FOFF, 0,          -c/2 - FOFF),  // ребро вдоль Y
+    new THREE.Vector3(-c/2 - FOFF, -c/2 - FOFF, 0          ),  // ребро вдоль Z
   ]) {
     const el = document.createElement('div');
     el.className = 'face-label';
