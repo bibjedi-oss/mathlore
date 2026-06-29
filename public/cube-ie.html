@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>(a−b)³ — Принцип включений-исключений</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d0d1a;
+      color: #e0e0e0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #canvas-wrap { flex: 1; position: relative; min-width: 0; }
+    canvas { display: block; width: 100% !important; height: 100% !important; }
+
+    #panel {
+      width: 310px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px 16px;
+      background: rgba(255,255,255,0.03);
+      border-left: 1px solid rgba(255,255,255,0.07);
+      overflow-y: auto;
+    }
+
+    .formula-block {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .formula-main { font-size: 15px; font-weight: 700; color: #fff; min-height: 22px; }
+    .formula-note { font-size: 11px; color: #666; margin-top: 4px; min-height: 16px; font-style: italic; }
+
+    .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #555; margin-bottom: 6px; }
+
+    .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .slider-name { width: 14px; font-weight: 700; font-size: 16px; color: #fff; }
+    input[type=range] { flex: 1; accent-color: #7c6af7; cursor: pointer; height: 4px; }
+    .slider-val { width: 28px; text-align: right; font-size: 14px; color: #ccc; }
+    .constraint-hint { font-size: 11px; color: #555; margin-top: -4px; }
+
+    .step-box {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px;
+      padding: 14px;
+      flex: 1;
+    }
+    .step-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 8px; min-height: 22px; }
+    .step-desc { font-size: 12px; color: #888; line-height: 1.7; }
+
+    .step-nav { display: flex; align-items: center; gap: 8px; }
+    .btn-nav {
+      flex: 1;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #7c6af7, #5b4de0);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-nav:hover { opacity: 0.85; }
+    .btn-nav:disabled { opacity: 0.28; cursor: default; }
+    .step-counter { text-align: center; font-size: 12px; color: #555; white-space: nowrap; min-width: 44px; }
+
+    .hint { font-size: 11px; color: #444; text-align: center; line-height: 1.6; }
+
+    @media (max-width: 700px) {
+      body { flex-direction: column; overflow-y: auto; height: auto; }
+      #canvas-wrap { height: 52vh; min-height: 52vh; flex: none; }
+      #panel { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.07); }
+      .step-box { flex: none; }
+    }
+  </style>
+</head>
+<body>
+<div id="canvas-wrap"><canvas id="c"></canvas></div>
+
+<div id="panel">
+  <div class="formula-block">
+    <div class="formula-main" id="fml-main"></div>
+    <div class="formula-note" id="fml-note"></div>
+  </div>
+
+  <div>
+    <div class="section-label">Параметры</div>
+    <div class="slider-row">
+      <span class="slider-name">a</span>
+      <input type="range" id="sl-a" min="2" max="6" step="0.5" value="4">
+      <span class="slider-val" id="val-a">4</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-name">b</span>
+      <input type="range" id="sl-b" min="0.5" max="3.5" step="0.5" value="1.5">
+      <span class="slider-val" id="val-b">1.5</span>
+    </div>
+    <div class="constraint-hint" id="chint"></div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-title" id="step-title"></div>
+    <div class="step-desc"  id="step-desc"></div>
+  </div>
+
+  <div class="step-nav">
+    <button class="btn-nav" id="btn-prev">← Назад</button>
+    <div class="step-counter" id="step-ctr"></div>
+    <button class="btn-nav" id="btn-next">Вперёд →</button>
+  </div>
+
+  <div class="hint">Вращение — тащить / пальцем<br>Масштаб — колесо / щипок</div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ─── Renderer ─────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(devicePixelRatio);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.1);
+dLight.position.set(3, 5, 4);
+scene.add(dLight);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.7;
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+// ─── Piece index → octant ─────────────────────────────────────────────────────
+// -1 = (a-b) zone (low side),  +1 = b zone (high side)
+// Piece 0: (-1,-1,-1) = (a-b)³         THE RESULT
+// Piece 1: (+1,-1,-1) = slab X exclusive
+// Piece 2: (-1,+1,-1) = slab Y exclusive
+// Piece 3: (-1,-1,+1) = slab Z exclusive
+// Piece 4: (+1,+1,-1) = bar XY minus corner
+// Piece 5: (+1,-1,+1) = bar XZ minus corner
+// Piece 6: (-1,+1,+1) = bar YZ minus corner
+// Piece 7: (+1,+1,+1) = corner b³
+const OCT = [
+  [-1,-1,-1],
+  [+1,-1,-1],
+  [-1,+1,-1],
+  [-1,-1,+1],
+  [+1,+1,-1],
+  [+1,-1,+1],
+  [-1,+1,+1],
+  [+1,+1,+1],
+];
+
+// ─── Step data ────────────────────────────────────────────────────────────────
+// pieceState: [hexColor, opacity] for pieces 0-7
+const W  = '#c8d4e8';  // white/neutral
+const BL = '#4d9de0';  // blue  — result cube
+const R  = '#e05555';  // red   — being subtracted
+const DR = '#991111';  // dark red — triply subtracted
+const YE = '#ffe566';  // yellow — problem highlighted
+const GR = '#55c878';  // green  — added back
+const OR = '#f0a030';  // orange — special state
+const GH = '#1a2233';  // ghost  — faded out
+
+const STEPS = [
+  {
+    title: 'Целый куб a³',
+    desc:  'Начинаем с куба со стороной a. Нам нужно получить из него куб со стороной (a−b). Будем аккуратно вычитать лишние части.',
+    fml:   'a³',
+    note:  '',
+    pc: [
+      [W,  0.85], // 0 (a-b)³
+      [W,  0.85], // 1 slab X
+      [W,  0.85], // 2 slab Y
+      [W,  0.85], // 3 slab Z
+      [W,  0.85], // 4 bar XY
+      [W,  0.85], // 5 bar XZ
+      [W,  0.85], // 6 bar YZ
+      [W,  0.85], // 7 corner
+    ]
+  },
+  {
+    title: 'Вычитаем 3 пластины a²b',
+    desc:  'С каждой из трёх сторон срезаем пластину толщиной b. Если бы пластины не перекрывались, мы вычли бы ровно 3a²b. Но пластины накладываются друг на друга!',
+    fml:   'a³ − <span style="color:#e05555">3a²b</span>',
+    note:  'пластины перекрываются...',
+    pc: [
+      [BL, 0.88], // 0 (a-b)³ — синий, остаётся
+      [R,  0.72], // 1 slab X — красный (вычитается, 1 пластина)
+      [R,  0.72], // 2 slab Y
+      [R,  0.72], // 3 slab Z
+      [DR, 0.82], // 4 bar XY — тёмно-красный (в 2 пластинах)
+      [DR, 0.82], // 5 bar XZ
+      [DR, 0.82], // 6 bar YZ
+      ['#660000', 0.90], // 7 corner (в 3 пластинах — самый тёмный)
+    ]
+  },
+  {
+    title: 'Три бруса вычтены дважды!',
+    desc:  'Там, где две пластины пересеклись, образовались 3 бруса ab². Каждый брус вошёл сразу в две пластины — и мы вычли его дважды. Нужно исправить!',
+    fml:   'a³ − <span style="color:#e05555">3a²b</span>',
+    note:  'вычли слишком много!',
+    pc: [
+      [BL, 0.88],
+      [R,  0.40], // slab exclusive — гасим
+      [R,  0.40],
+      [R,  0.40],
+      [YE, 0.95], // bars — жёлтые, ПРОБЛЕМА
+      [YE, 0.95],
+      [YE, 0.95],
+      [DR, 0.82], // corner — пока тёмный
+    ]
+  },
+  {
+    title: 'Угол вычтен трижды!',
+    desc:  'Угловой куб b³ попал сразу во все три пластины — он вычтен трижды. Нужно исправить и это тоже.',
+    fml:   'a³ − <span style="color:#e05555">3a²b</span>',
+    note:  'вычли ещё больше лишнего!',
+    pc: [
+      [BL, 0.88],
+      [R,  0.35],
+      [R,  0.35],
+      [R,  0.35],
+      [YE, 0.88],
+      [YE, 0.88],
+      [YE, 0.88],
+      [OR, 0.98], // corner — теперь оранжевый (тройная проблема)
+    ]
+  },
+  {
+    title: 'Возвращаем 3 бруса ab²',
+    desc:  'Добавляем обратно три бруса ab² — исправляем двойной вычет. Но в каждый брус входит угловой куб b³. Значит, мы вернули угол три раза!',
+    fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span>',
+    note:  '...но угол вернули лишний раз',
+    pc: [
+      [BL, 0.88],
+      [R,  0.28],
+      [R,  0.28],
+      [R,  0.28],
+      [GR, 0.88], // bars — зелёные (добавлены обратно)
+      [GR, 0.88],
+      [GR, 0.88],
+      [YE, 0.98], // corner — жёлтый (вычли 3, вернули 3 → не вычтен!)
+    ]
+  },
+  {
+    title: 'Угол b³ не вычтен!',
+    desc:  'Угол был вычтен 3 раза (в трёх пластинах) и добавлен 3 раза (в трёх брусах). Итого: −3 + 3 = 0. Он всё ещё внутри куба! Нужно убрать его один раз.',
+    fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span>',
+    note:  'нужно ещё вычесть b³!',
+    pc: [
+      [BL, 0.88],
+      [R,  0.22],
+      [R,  0.22],
+      [R,  0.22],
+      [GR, 0.80],
+      [GR, 0.80],
+      [GR, 0.80],
+      [YE, 1.0],  // corner — пульсирует
+    ]
+  },
+  {
+    title: 'Вычитаем b³',
+    desc:  'Убираем угловой куб b³ один раз. Теперь каждая часть учтена ровно по одному разу — ни больше, ни меньше.',
+    fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span> − <span style="color:#ffe566">b³</span>',
+    note:  '',
+    pc: [
+      [BL, 0.88],
+      [R,  0.18],
+      [R,  0.18],
+      [R,  0.18],
+      [GR, 0.70],
+      [GR, 0.70],
+      [GR, 0.70],
+      [GH, 0.05], // corner — исчезает
+    ]
+  },
+  {
+    title: 'Результат: (a−b)³',
+    desc:  'Все лишние части аккуратно вычтены. Остался ровно тот куб, который нам нужен — со стороной (a−b). Вот откуда берётся формула!',
+    fml:   '<span style="color:#4d9de0">(a−b)³</span> = a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span> − <span style="color:#ffe566">b³</span>',
+    note:  '✓',
+    pc: [
+      [BL, 0.92], // 0 — синий, один
+      [GH, 0.04], // все остальные — исчезли
+      [GH, 0.04],
+      [GH, 0.04],
+      [GH, 0.04],
+      [GH, 0.04],
+      [GH, 0.04],
+      [GH, 0.04],
+    ]
+  },
+];
+
+// ─── Scene state ──────────────────────────────────────────────────────────────
+let pieceMeshes = [];
+let edgeMeshes  = [];
+let outerWire   = null;
+let a = 4, b = 1.5;
+let currentStep = 0;
+const GAP = 0.03;
+
+// Per-piece animated color/opacity
+const curC = Array.from({length: 8}, () => new THREE.Color(W));
+const curO = new Float32Array(8).fill(0.85);
+const tgtC = Array.from({length: 8}, () => new THREE.Color(W));
+const tgtO = new Float32Array(8).fill(0.85);
+const LSPD = 0.075;
+
+// ─── Build ────────────────────────────────────────────────────────────────────
+function buildScene() {
+  pieceMeshes.forEach(m => scene.remove(m));
+  edgeMeshes.forEach(m => scene.remove(m));
+  if (outerWire) scene.remove(outerWire);
+  pieceMeshes = [];
+  edgeMeshes  = [];
+
+  const c = a - b;
+
+  for (let i = 0; i < 8; i++) {
+    const [ox, oy, oz] = OCT[i];
+    const wx = ox < 0 ? c : b;
+    const wy = oy < 0 ? c : b;
+    const wz = oz < 0 ? c : b;
+    const px = ox < 0 ? -b / 2 : a / 2 - b / 2;
+    const py = oy < 0 ? -b / 2 : a / 2 - b / 2;
+    const pz = oz < 0 ? -b / 2 : a / 2 - b / 2;
+
+    const geo = new THREE.BoxGeometry(wx - GAP, wy - GAP, wz - GAP);
+    const mat = new THREE.MeshPhongMaterial({
+      color: new THREE.Color(W),
+      opacity: 0.85,
+      transparent: true,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(px, py, pz);
+    scene.add(mesh);
+    pieceMeshes.push(mesh);
+
+    const eGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(wx - GAP, wy - GAP, wz - GAP));
+    const eMat = new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true });
+    const edge = new THREE.LineSegments(eGeo, eMat);
+    edge.position.set(px, py, pz);
+    scene.add(edge);
+    edgeMeshes.push(edge);
+  }
+
+  // Outer wireframe cube for reference
+  const owGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(a, a, a));
+  const owMat = new THREE.LineBasicMaterial({ color: 0x334466, opacity: 0.35, transparent: true });
+  outerWire = new THREE.LineSegments(owGeo, owMat);
+  scene.add(outerWire);
+
+  const dist = a * 2.5;
+  camera.position.set(dist, dist * 0.75, dist);
+  camera.lookAt(0, 0, 0);
+  controls.target.set(0, 0, 0);
+  controls.update();
+
+  // Snap to current step colors immediately
+  setTargetColors();
+  for (let i = 0; i < 8; i++) {
+    curC[i].copy(tgtC[i]);
+    curO[i] = tgtO[i];
+  }
+}
+
+function setTargetColors() {
+  const pc = STEPS[currentStep].pc;
+  for (let i = 0; i < 8; i++) {
+    tgtC[i].set(pc[i][0]);
+    tgtO[i] = pc[i][1];
+  }
+}
+
+// ─── Panel ────────────────────────────────────────────────────────────────────
+function updatePanel() {
+  const s = STEPS[currentStep];
+  document.getElementById('fml-main').innerHTML  = s.fml;
+  document.getElementById('fml-note').textContent = s.note;
+  document.getElementById('step-title').textContent = s.title;
+  document.getElementById('step-desc').textContent  = s.desc;
+  document.getElementById('step-ctr').textContent = `${currentStep + 1} / ${STEPS.length}`;
+  document.getElementById('btn-prev').disabled = currentStep === 0;
+  document.getElementById('btn-next').disabled = currentStep === STEPS.length - 1;
+}
+
+// ─── Controls ─────────────────────────────────────────────────────────────────
+const slA = document.getElementById('sl-a');
+const slB = document.getElementById('sl-b');
+
+function onSlider() {
+  a = parseFloat(slA.value);
+  b = parseFloat(slB.value);
+  if (b >= a) { b = a - 0.5; slB.value = b; }
+  document.getElementById('val-a').textContent = a;
+  document.getElementById('val-b').textContent = b;
+  document.getElementById('chint').textContent = `b < a`;
+  buildScene();
+  updatePanel();
+}
+slA.addEventListener('input', onSlider);
+slB.addEventListener('input', onSlider);
+
+document.getElementById('btn-prev').addEventListener('click', () => {
+  if (currentStep > 0) { currentStep--; setTargetColors(); updatePanel(); }
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  if (currentStep < STEPS.length - 1) { currentStep++; setTargetColors(); updatePanel(); }
+});
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+function resize() {
+  const w = document.getElementById('canvas-wrap').clientWidth;
+  const h = document.getElementById('canvas-wrap').clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Animate ──────────────────────────────────────────────────────────────────
+let pulse = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  pulse += 0.055;
+
+  for (let i = 0; i < 8; i++) {
+    curC[i].lerp(tgtC[i], LSPD);
+    curO[i] += (tgtO[i] - curO[i]) * LSPD;
+
+    const mesh = pieceMeshes[i];
+    if (!mesh) continue;
+    mesh.material.color.copy(curC[i]);
+
+    // Corner (piece 7) pulses on steps 5 and 6
+    let op = curO[i];
+    if (i === 7 && (currentStep === 5)) {
+      op *= 0.65 + 0.35 * Math.abs(Math.sin(pulse));
+    }
+    op = Math.max(0, op);
+    mesh.material.opacity = op;
+    mesh.visible = op > 0.015;
+
+    if (edgeMeshes[i]) {
+      edgeMeshes[i].material.opacity = Math.min(op * 0.45, 0.28);
+      edgeMeshes[i].visible = op > 0.015;
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.getElementById('val-a').textContent = a;
+document.getElementById('val-b').textContent = b;
+slA.value = a;
+slB.value = b;
+buildScene();
+updatePanel();
+animate();
+</script>
+</body>
+</html>
