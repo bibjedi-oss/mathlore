@@ -17,6 +17,18 @@
     #canvas-wrap { flex: 1; position: relative; min-width: 0; }
     canvas { display: block; width: 100% !important; height: 100% !important; }
 
+    .dim-label {
+      font-family: Georgia, serif;
+      font-size: 13px;
+      font-weight: 700;
+      font-style: italic;
+      background: rgba(13,13,26,0.72);
+      border-radius: 4px;
+      padding: 1px 6px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
     #panel {
       width: 310px;
       flex-shrink: 0;
@@ -28,7 +40,6 @@
       border-left: 1px solid rgba(255,255,255,0.07);
       overflow-y: auto;
     }
-
     .formula-block {
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.1);
@@ -40,7 +51,6 @@
     .formula-note { font-size: 11px; color: #666; margin-top: 4px; min-height: 16px; font-style: italic; }
 
     .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #555; margin-bottom: 6px; }
-
     .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .slider-name { width: 14px; font-weight: 700; font-size: 16px; color: #fff; }
     input[type=range] { flex: 1; accent-color: #7c6af7; cursor: pointer; height: 4px; }
@@ -54,21 +64,15 @@
       padding: 14px;
       flex: 1;
     }
-    .step-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 8px; min-height: 22px; }
-    .step-desc { font-size: 12px; color: #888; line-height: 1.7; }
+    .step-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .step-desc  { font-size: 12px; color: #888; line-height: 1.7; }
 
     .step-nav { display: flex; align-items: center; gap: 8px; }
     .btn-nav {
-      flex: 1;
-      padding: 11px;
-      border: none;
-      border-radius: 8px;
+      flex: 1; padding: 11px; border: none; border-radius: 8px;
       background: linear-gradient(135deg, #7c6af7, #5b4de0);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s;
+      color: #fff; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s;
     }
     .btn-nav:hover { opacity: 0.85; }
     .btn-nav:disabled { opacity: 0.28; cursor: default; }
@@ -92,7 +96,6 @@
     <div class="formula-main" id="fml-main"></div>
     <div class="formula-note" id="fml-note"></div>
   </div>
-
   <div>
     <div class="section-label">Параметры</div>
     <div class="slider-row">
@@ -107,18 +110,15 @@
     </div>
     <div class="constraint-hint" id="chint"></div>
   </div>
-
   <div class="step-box">
     <div class="step-title" id="step-title"></div>
     <div class="step-desc"  id="step-desc"></div>
   </div>
-
   <div class="step-nav">
     <button class="btn-nav" id="btn-prev">← Назад</button>
     <div class="step-counter" id="step-ctr"></div>
     <button class="btn-nav" id="btn-next">Вперёд →</button>
   </div>
-
   <div class="hint">Вращение — тащить / пальцем<br>Масштаб — колесо / щипок</div>
 </div>
 
@@ -127,12 +127,17 @@
 </script>
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // ─── Renderer ─────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(devicePixelRatio);
+
+const css2d = new CSS2DRenderer();
+css2d.domElement.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
+document.getElementById('canvas-wrap').appendChild(css2d.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
@@ -144,339 +149,347 @@ scene.add(dLight);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.autoRotate = true;
-controls.autoRotateSpeed = 0.7;
+controls.autoRotateSpeed = 0.6;
 controls.addEventListener('start', () => { controls.autoRotate = false; });
 
-// ─── Piece index → octant ─────────────────────────────────────────────────────
+// ─── Octants ──────────────────────────────────────────────────────────────────
 // -1 = (a-b) zone (low side),  +1 = b zone (high side)
-// Piece 0: (-1,-1,-1) = (a-b)³         THE RESULT
-// Piece 1: (+1,-1,-1) = slab X exclusive
-// Piece 2: (-1,+1,-1) = slab Y exclusive
-// Piece 3: (-1,-1,+1) = slab Z exclusive
-// Piece 4: (+1,+1,-1) = bar XY minus corner
-// Piece 5: (+1,-1,+1) = bar XZ minus corner
-// Piece 6: (-1,+1,+1) = bar YZ minus corner
-// Piece 7: (+1,+1,+1) = corner b³
-const OCT = [
-  [-1,-1,-1],
-  [+1,-1,-1],
-  [-1,+1,-1],
-  [-1,-1,+1],
-  [+1,+1,-1],
-  [+1,-1,+1],
-  [-1,+1,+1],
-  [+1,+1,+1],
-];
+// 0: (-1,-1,-1) (a-b)³ cube
+// 1: (+1,-1,-1) slab X exclusive
+// 2: (-1,+1,-1) slab Y exclusive
+// 3: (-1,-1,+1) slab Z exclusive
+// 4: (+1,+1,-1) bar XY minus corner
+// 5: (+1,-1,+1) bar XZ minus corner
+// 6: (-1,+1,+1) bar YZ minus corner
+// 7: (+1,+1,+1) corner b³
+const OCT = [[-1,-1,-1],[+1,-1,-1],[-1,+1,-1],[-1,-1,+1],[+1,+1,-1],[+1,-1,+1],[-1,+1,+1],[+1,+1,+1]];
 
-// ─── Step data ────────────────────────────────────────────────────────────────
-// pieceState: [hexColor, opacity] for pieces 0-7
-const W  = '#c8d4e8';  // white/neutral
-const BL = '#4d9de0';  // blue  — result cube
-const R  = '#e05555';  // red   — being subtracted
-const DR = '#991111';  // dark red — triply subtracted
-const YE = '#ffe566';  // yellow — problem highlighted
-const GR = '#55c878';  // green  — added back
-const OR = '#f0a030';  // orange — special state
-const GH = '#1a2233';  // ghost  — faded out
+// ─── Step definitions ─────────────────────────────────────────────────────────
+const BL='#4d9de0', R='#e05555', DR='#cc2222', GR='#55c878', YE='#ffe566', OR='#f0a030', W='#c8d4e8', GH='#1a2233';
 
 const STEPS = [
   {
-    title: 'Целый куб a³',
-    desc:  'Начинаем с куба со стороной a. Нам нужно получить из него куб со стороной (a−b). Будем аккуратно вычитать лишние части.',
+    title: 'Куб (a−b)³ внутри куба a³',
+    desc:  'Куб со стороной (a−b) является одной из фигур, составляющих куб со стороной a. На размерных линиях показаны отрезки a, b и (a−b). Метка (a−b) указывает непосредственно на наш куб.',
     fml:   'a³',
     note:  '',
-    pc: [
-      [W,  0.85], // 0 (a-b)³
-      [W,  0.85], // 1 slab X
-      [W,  0.85], // 2 slab Y
-      [W,  0.85], // 3 slab Z
-      [W,  0.85], // 4 bar XY
-      [W,  0.85], // 5 bar XZ
-      [W,  0.85], // 6 bar YZ
-      [W,  0.85], // 7 corner
-    ]
+    pc: [[BL,0.90],[W,0.55],[W,0.55],[W,0.55],[W,0.55],[W,0.55],[W,0.55],[W,0.55]],
   },
   {
-    title: 'Вычитаем 3 пластины a²b',
-    desc:  'С каждой из трёх сторон срезаем пластину толщиной b. Если бы пластины не перекрывались, мы вычли бы ровно 3a²b. Но пластины накладываются друг на друга!',
+    title: 'Вычитаем три фигуры a²b',
+    desc:  'С каждой из трёх сторон мы можем вычесть большие фигуры a²b. Записываем −3a²b. Но проблема в том, что эти фигуры пересекаются между собой. Эту проблему мы решим далее.',
     fml:   'a³ − <span style="color:#e05555">3a²b</span>',
-    note:  'пластины перекрываются...',
-    pc: [
-      [BL, 0.88], // 0 (a-b)³ — синий, остаётся
-      [R,  0.72], // 1 slab X — красный (вычитается, 1 пластина)
-      [R,  0.72], // 2 slab Y
-      [R,  0.72], // 3 slab Z
-      [DR, 0.82], // 4 bar XY — тёмно-красный (в 2 пластинах)
-      [DR, 0.82], // 5 bar XZ
-      [DR, 0.82], // 6 bar YZ
-      ['#660000', 0.90], // 7 corner (в 3 пластинах — самый тёмный)
-    ]
+    note:  'фигуры пересекаются!',
+    pc: [[BL,0.88],[R,0.75],[R,0.75],[R,0.75],[DR,0.85],[DR,0.85],[DR,0.85],['#881111',0.90]],
   },
   {
-    title: 'Три бруса вычтены дважды!',
-    desc:  'Там, где две пластины пересеклись, образовались 3 бруса ab². Каждый брус вошёл сразу в две пластины — и мы вычли его дважды. Нужно исправить!',
-    fml:   'a³ − <span style="color:#e05555">3a²b</span>',
-    note:  'вычли слишком много!',
-    pc: [
-      [BL, 0.88],
-      [R,  0.40], // slab exclusive — гасим
-      [R,  0.40],
-      [R,  0.40],
-      [YE, 0.95], // bars — жёлтые, ПРОБЛЕМА
-      [YE, 0.95],
-      [YE, 0.95],
-      [DR, 0.82], // corner — пока тёмный
-    ]
-  },
-  {
-    title: 'Угол вычтен трижды!',
-    desc:  'Угловой куб b³ попал сразу во все три пластины — он вычтен трижды. Нужно исправить и это тоже.',
-    fml:   'a³ − <span style="color:#e05555">3a²b</span>',
-    note:  'вычли ещё больше лишнего!',
-    pc: [
-      [BL, 0.88],
-      [R,  0.35],
-      [R,  0.35],
-      [R,  0.35],
-      [YE, 0.88],
-      [YE, 0.88],
-      [YE, 0.88],
-      [OR, 0.98], // corner — теперь оранжевый (тройная проблема)
-    ]
-  },
-  {
-    title: 'Возвращаем 3 бруса ab²',
-    desc:  'Добавляем обратно три бруса ab² — исправляем двойной вычет. Но в каждый брус входит угловой куб b³. Значит, мы вернули угол три раза!',
+    title: 'Прибавляем три бруса ab²',
+    desc:  'Выделенные брусы были вычтены по два раза, так как в них пересекались предыдущие фигуры. Значит, если мы прибавим 3 таких бруса, мы исправим эту ошибку. Записываем +3ab². Но эти брусы тоже пересекаются друг с другом в одном единственном кубе. Эту проблему решим далее.',
     fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span>',
-    note:  '...но угол вернули лишний раз',
-    pc: [
-      [BL, 0.88],
-      [R,  0.28],
-      [R,  0.28],
-      [R,  0.28],
-      [GR, 0.88], // bars — зелёные (добавлены обратно)
-      [GR, 0.88],
-      [GR, 0.88],
-      [YE, 0.98], // corner — жёлтый (вычли 3, вернули 3 → не вычтен!)
-    ]
+    note:  'брусы пересекаются в b³!',
+    pc: [[BL,0.88],[R,0.28],[R,0.28],[R,0.28],[GR,0.88],[GR,0.88],[GR,0.88],[YE,0.96]],
   },
   {
-    title: 'Угол b³ не вычтен!',
-    desc:  'Угол был вычтен 3 раза (в трёх пластинах) и добавлен 3 раза (в трёх брусах). Итого: −3 + 3 = 0. Он всё ещё внутри куба! Нужно убрать его один раз.',
-    fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span>',
-    note:  'нужно ещё вычесть b³!',
-    pc: [
-      [BL, 0.88],
-      [R,  0.22],
-      [R,  0.22],
-      [R,  0.22],
-      [GR, 0.80],
-      [GR, 0.80],
-      [GR, 0.80],
-      [YE, 1.0],  // corner — пульсирует
-    ]
-  },
-  {
-    title: 'Вычитаем b³',
-    desc:  'Убираем угловой куб b³ один раз. Теперь каждая часть учтена ровно по одному разу — ни больше, ни меньше.',
-    fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span> − <span style="color:#ffe566">b³</span>',
-    note:  '',
-    pc: [
-      [BL, 0.88],
-      [R,  0.18],
-      [R,  0.18],
-      [R,  0.18],
-      [GR, 0.70],
-      [GR, 0.70],
-      [GR, 0.70],
-      [GH, 0.05], // corner — исчезает
-    ]
-  },
-  {
-    title: 'Результат: (a−b)³',
-    desc:  'Все лишние части аккуратно вычтены. Остался ровно тот куб, который нам нужен — со стороной (a−b). Вот откуда берётся формула!',
+    title: 'Вычитаем b³ — формула готова!',
+    desc:  'Куб со стороной b сначала вычли 3 раза (он входил в состав трёх фигур a²b), затем прибавили 3 раза (он входил в состав всех трёх брусов). Итого: −3 + 3 = 0. Остался! Вычтем его один раз — и формула готова.',
     fml:   '<span style="color:#4d9de0">(a−b)³</span> = a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span> − <span style="color:#ffe566">b³</span>',
     note:  '✓',
-    pc: [
-      [BL, 0.92], // 0 — синий, один
-      [GH, 0.04], // все остальные — исчезли
-      [GH, 0.04],
-      [GH, 0.04],
-      [GH, 0.04],
-      [GH, 0.04],
-      [GH, 0.04],
-      [GH, 0.04],
-    ]
+    pc: [[BL,0.94],[GH,0.04],[GH,0.04],[GH,0.04],[GH,0.04],[GH,0.04],[GH,0.04],[OR,0.92]],
   },
 ];
 
 // ─── Scene state ──────────────────────────────────────────────────────────────
-let pieceMeshes = [];
-let edgeMeshes  = [];
-let outerWire   = null;
-let a = 4, b = 1.5;
-let currentStep = 0;
-const GAP = 0.03;
+let pieceMeshes=[], edgeMeshes=[], outerWire=null;
+let dimGroup=null, dimCss2dObjs=[];
+let stepGroup=null, stepCss2dObjs=[];
+let a=4, b=1.5, currentStep=0;
+const GAP=0.03;
 
-// Per-piece animated color/opacity
-const curC = Array.from({length: 8}, () => new THREE.Color(W));
-const curO = new Float32Array(8).fill(0.85);
-const tgtC = Array.from({length: 8}, () => new THREE.Color(W));
-const tgtO = new Float32Array(8).fill(0.85);
+const curC = Array.from({length:8}, ()=>new THREE.Color(W));
+const curO = new Float32Array(8).fill(0.55);
+const tgtC = Array.from({length:8}, ()=>new THREE.Color(W));
+const tgtO = new Float32Array(8).fill(0.55);
 const LSPD = 0.075;
 
-// ─── Build ────────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function makeLineMat(color=0x7788aa, opacity=0.60) {
+  return new THREE.LineBasicMaterial({ color, opacity, transparent: true });
+}
+function seg3(group, p1, p2, mat) {
+  const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...p1), new THREE.Vector3(...p2)]);
+  group.add(new THREE.Line(g, mat));
+}
+function css2dLabel(group, arr, text, x, y, z, color) {
+  const el = document.createElement('div');
+  el.className = 'dim-label';
+  el.textContent = text;
+  el.style.color = color;
+  const obj = new CSS2DObject(el);
+  obj.position.set(x, y, z);
+  group.add(obj);
+  arr.push(obj);
+}
+function clearGroup(group, cssArr) {
+  cssArr.forEach(o => o.element.remove());
+  cssArr.length = 0;
+  if (group) scene.remove(group);
+}
+
+// ─── Outer dimension lines ────────────────────────────────────────────────────
+const OFF=0.48, TICK=0.18, LOFF=0.44;
+const AC='#ffe566', BC='#66ddee', TC='#d0d0d0';
+
+function buildDimensions() {
+  clearGroup(dimGroup, dimCss2dObjs);
+  dimGroup = new THREE.Group();
+  const lm = makeLineMat(0x778899, 0.60);
+  const D = a/2-b, midC=-b/2, midB=a/2-b/2;
+
+  function s(p1,p2){ seg3(dimGroup,p1,p2,lm); }
+  function lb(text,x,y,z,color){ css2dLabel(dimGroup,dimCss2dObjs,text,x,y,z,color); }
+
+  // X axis (below front face: y=-a/2-OFF, z=a/2)
+  const yB=-a/2-OFF, zF=a/2;
+  s([-a/2,yB,zF],[a/2,yB,zF]);
+  s([-a/2,yB-TICK,zF],[-a/2,yB+TICK,zF]);
+  s([D,   yB-TICK,zF],[D,   yB+TICK,zF]);
+  s([a/2, yB-TICK,zF],[a/2, yB+TICK,zF]);
+  lb('a−b', midC, yB-LOFF, zF, AC);
+  lb('b',   midB, yB-LOFF, zF, BC);
+  lb('a',   0,    yB-LOFF-0.38, zF, TC);
+
+  // Y axis (left of front face: x=-a/2-OFF, z=a/2)
+  const xL=-a/2-OFF;
+  s([xL,-a/2,zF],[xL,a/2,zF]);
+  s([xL-TICK,-a/2,zF],[xL+TICK,-a/2,zF]);
+  s([xL-TICK,D,   zF],[xL+TICK,D,   zF]);
+  s([xL-TICK,a/2, zF],[xL+TICK,a/2, zF]);
+  lb('a−b', xL-LOFF, midC, zF, AC);
+  lb('b',   xL-LOFF, midB, zF, BC);
+  lb('a',   xL-LOFF-0.38, 0, zF, TC);
+
+  // Z axis (below right face: x=a/2, y=-a/2-OFF)
+  const xR=a/2, yB2=-a/2-OFF;
+  s([xR,yB2,-a/2],[xR,yB2,a/2]);
+  s([xR,yB2-TICK,-a/2],[xR,yB2+TICK,-a/2]);
+  s([xR,yB2-TICK,D   ],[xR,yB2+TICK,D   ]);
+  s([xR,yB2-TICK,a/2 ],[xR,yB2+TICK,a/2 ]);
+  lb('a−b', xR, yB2-LOFF, midC, AC);
+  lb('b',   xR, yB2-LOFF, midB, BC);
+  lb('a',   xR, yB2-LOFF-0.38, 0, TC);
+
+  scene.add(dimGroup);
+}
+
+// ─── Per-step piece labels ────────────────────────────────────────────────────
+const SO=0.34; // step label offset from cube surface
+const ST=0.15; // tick half-length for step labels
+const SL=0.38; // label offset from line
+
+function buildStepLabels() {
+  clearGroup(stepGroup, stepCss2dObjs);
+  stepGroup = new THREE.Group();
+  const lm = makeLineMat(0x8899aa, 0.55);
+  const D=a/2-b;
+
+  function s(p1,p2){ seg3(stepGroup,p1,p2,lm); }
+  function lb(text,x,y,z,color){ css2dLabel(stepGroup,stepCss2dObjs,text,x,y,z,color); }
+
+  if (currentStep === 0) {
+    // (a-b) label pointing at front face of blue cube
+    // Blue cube front face is at z=D, center at (-b/2, -b/2, D)
+    lb('(a−b)', -b/2, -b/2, D+0.12, AC);
+  }
+
+  else if (currentStep === 1) {
+    // Slab Z = pieces 3+5+6+7, covers x,y ∈ [-a/2..a/2], z ∈ [D..a/2]
+    // Dimension a along x: line above slab's top face (y=a/2+SO, z=a/2+0.08)
+    const yT=a/2+SO, z0=a/2+0.08;
+    s([-a/2,yT,z0],[a/2,yT,z0]);
+    s([-a/2,yT-ST,z0],[-a/2,yT+ST,z0]);
+    s([a/2, yT-ST,z0],[a/2, yT+ST,z0]);
+    lb('a', 0, yT+SL, z0, TC);
+
+    // Dimension a along y: line right of slab's right face (x=a/2+SO, z=a/2+0.08)
+    const xR0=a/2+SO;
+    s([xR0,-a/2,z0],[xR0,a/2,z0]);
+    s([xR0-ST,-a/2,z0],[xR0+ST,-a/2,z0]);
+    s([xR0-ST,a/2, z0],[xR0+ST,a/2, z0]);
+    lb('a', xR0+SL, 0, z0, TC);
+
+    // Dimension b along z: line above-right of slab's z extent (x=a/2+SO, y=a/2+SO)
+    const xR1=a/2+SO, yT1=a/2+SO;
+    s([xR1,yT1,D],[xR1,yT1,a/2]);
+    s([xR1-ST,yT1,D  ],[xR1+ST,yT1,D  ]);
+    s([xR1-ST,yT1,a/2],[xR1+ST,yT1,a/2]);
+    lb('b', xR1+SL, yT1, D+b/2, BC);
+  }
+
+  else if (currentStep === 2) {
+    // Bar XY = pieces 4+7, covers x,y ∈ [D..a/2], z ∈ [-a/2..a/2]
+    // Dimension b along x: line above bar's top-front (y=a/2+SO, z=a/2+0.08)
+    const yT=a/2+SO, z0=a/2+0.08;
+    s([D,  yT,z0],[a/2,yT,z0]);
+    s([D,  yT-ST,z0],[D,  yT+ST,z0]);
+    s([a/2,yT-ST,z0],[a/2,yT+ST,z0]);
+    lb('b', D+b/2, yT+SL, z0, BC);
+
+    // Dimension b along y: line right of bar (x=a/2+SO, z=a/2+0.08)
+    const xR0=a/2+SO;
+    s([xR0,D,  z0],[xR0,a/2,z0]);
+    s([xR0-ST,D,  z0],[xR0+ST,D,  z0]);
+    s([xR0-ST,a/2,z0],[xR0+ST,a/2,z0]);
+    lb('b', xR0+SL, D+b/2, z0, BC);
+
+    // Dimension a along z: line top-right of bar (x=a/2+SO, y=a/2+SO)
+    const xR1=a/2+SO, yT1=a/2+SO;
+    s([xR1,yT1,-a/2],[xR1,yT1,a/2]);
+    s([xR1-ST,yT1,-a/2],[xR1+ST,yT1,-a/2]);
+    s([xR1-ST,yT1,a/2 ],[xR1+ST,yT1,a/2 ]);
+    lb('a', xR1+SL, yT1, 0, TC);
+  }
+
+  else if (currentStep === 3) {
+    // Labels on the two remaining pieces
+    lb('(a−b)³', -b/2, -b/2, D+0.12, BL);
+    lb('b³', a/2-b/2, a/2-b/2, a/2+0.15, OR);
+  }
+
+  scene.add(stepGroup);
+}
+
+// ─── Build scene ──────────────────────────────────────────────────────────────
 function buildScene() {
   pieceMeshes.forEach(m => scene.remove(m));
   edgeMeshes.forEach(m => scene.remove(m));
   if (outerWire) scene.remove(outerWire);
-  pieceMeshes = [];
-  edgeMeshes  = [];
+  pieceMeshes=[]; edgeMeshes=[];
 
-  const c = a - b;
+  const c=a-b;
+  for (let i=0;i<8;i++) {
+    const [ox,oy,oz]=OCT[i];
+    const wx=ox<0?c:b, wy=oy<0?c:b, wz=oz<0?c:b;
+    const px=ox<0?-b/2:a/2-b/2, py=oy<0?-b/2:a/2-b/2, pz=oz<0?-b/2:a/2-b/2;
 
-  for (let i = 0; i < 8; i++) {
-    const [ox, oy, oz] = OCT[i];
-    const wx = ox < 0 ? c : b;
-    const wy = oy < 0 ? c : b;
-    const wz = oz < 0 ? c : b;
-    const px = ox < 0 ? -b / 2 : a / 2 - b / 2;
-    const py = oy < 0 ? -b / 2 : a / 2 - b / 2;
-    const pz = oz < 0 ? -b / 2 : a / 2 - b / 2;
-
-    const geo = new THREE.BoxGeometry(wx - GAP, wy - GAP, wz - GAP);
-    const mat = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(W),
-      opacity: 0.85,
-      transparent: true,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(px, py, pz);
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(wx-GAP, wy-GAP, wz-GAP),
+      new THREE.MeshPhongMaterial({ color: new THREE.Color(W), opacity: 0.55, transparent: true })
+    );
+    mesh.position.set(px,py,pz);
     scene.add(mesh);
     pieceMeshes.push(mesh);
 
-    const eGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(wx - GAP, wy - GAP, wz - GAP));
-    const eMat = new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true });
-    const edge = new THREE.LineSegments(eGeo, eMat);
-    edge.position.set(px, py, pz);
+    const edge = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(wx-GAP, wy-GAP, wz-GAP)),
+      new THREE.LineBasicMaterial({ color:0x000000, opacity:0.22, transparent:true })
+    );
+    edge.position.set(px,py,pz);
     scene.add(edge);
     edgeMeshes.push(edge);
   }
 
-  // Outer wireframe cube for reference
-  const owGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(a, a, a));
-  const owMat = new THREE.LineBasicMaterial({ color: 0x334466, opacity: 0.35, transparent: true });
-  outerWire = new THREE.LineSegments(owGeo, owMat);
+  outerWire = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(a,a,a)),
+    new THREE.LineBasicMaterial({ color:0x334466, opacity:0.35, transparent:true })
+  );
   scene.add(outerWire);
 
-  const dist = a * 2.5;
-  camera.position.set(dist, dist * 0.75, dist);
-  camera.lookAt(0, 0, 0);
-  controls.target.set(0, 0, 0);
+  const dist=a*2.5;
+  camera.position.set(dist, dist*0.75, dist);
+  camera.lookAt(0,0,0);
+  controls.target.set(0,0,0);
   controls.update();
 
-  // Snap to current step colors immediately
-  setTargetColors();
-  for (let i = 0; i < 8; i++) {
-    curC[i].copy(tgtC[i]);
-    curO[i] = tgtO[i];
-  }
+  buildDimensions();
+  buildStepLabels();
+  setTargetColors(true);
 }
 
-function setTargetColors() {
-  const pc = STEPS[currentStep].pc;
-  for (let i = 0; i < 8; i++) {
-    tgtC[i].set(pc[i][0]);
-    tgtO[i] = pc[i][1];
-  }
+// ─── Colors ───────────────────────────────────────────────────────────────────
+function setTargetColors(instant=false) {
+  STEPS[currentStep].pc.forEach(([hex,op],i) => {
+    tgtC[i].set(hex); tgtO[i]=op;
+    if (instant) { curC[i].set(hex); curO[i]=op; }
+  });
 }
 
 // ─── Panel ────────────────────────────────────────────────────────────────────
 function updatePanel() {
-  const s = STEPS[currentStep];
+  const s=STEPS[currentStep];
   document.getElementById('fml-main').innerHTML  = s.fml;
   document.getElementById('fml-note').textContent = s.note;
   document.getElementById('step-title').textContent = s.title;
   document.getElementById('step-desc').textContent  = s.desc;
-  document.getElementById('step-ctr').textContent = `${currentStep + 1} / ${STEPS.length}`;
-  document.getElementById('btn-prev').disabled = currentStep === 0;
-  document.getElementById('btn-next').disabled = currentStep === STEPS.length - 1;
+  document.getElementById('step-ctr').textContent = `${currentStep+1} / ${STEPS.length}`;
+  document.getElementById('btn-prev').disabled = currentStep===0;
+  document.getElementById('btn-next').disabled = currentStep===STEPS.length-1;
 }
 
 // ─── Controls ─────────────────────────────────────────────────────────────────
-const slA = document.getElementById('sl-a');
-const slB = document.getElementById('sl-b');
-
 function onSlider() {
-  a = parseFloat(slA.value);
-  b = parseFloat(slB.value);
-  if (b >= a) { b = a - 0.5; slB.value = b; }
-  document.getElementById('val-a').textContent = a;
-  document.getElementById('val-b').textContent = b;
-  document.getElementById('chint').textContent = `b < a`;
-  buildScene();
-  updatePanel();
+  a=parseFloat(document.getElementById('sl-a').value);
+  b=parseFloat(document.getElementById('sl-b').value);
+  if (b>=a){ b=a-0.5; document.getElementById('sl-b').value=b; }
+  document.getElementById('val-a').textContent=a;
+  document.getElementById('val-b').textContent=b;
+  buildScene(); updatePanel();
 }
-slA.addEventListener('input', onSlider);
-slB.addEventListener('input', onSlider);
+document.getElementById('sl-a').addEventListener('input', onSlider);
+document.getElementById('sl-b').addEventListener('input', onSlider);
 
-document.getElementById('btn-prev').addEventListener('click', () => {
-  if (currentStep > 0) { currentStep--; setTargetColors(); updatePanel(); }
+document.getElementById('btn-prev').addEventListener('click', ()=>{
+  if (currentStep>0){ currentStep--; setTargetColors(); buildStepLabels(); updatePanel(); }
 });
-document.getElementById('btn-next').addEventListener('click', () => {
-  if (currentStep < STEPS.length - 1) { currentStep++; setTargetColors(); updatePanel(); }
+document.getElementById('btn-next').addEventListener('click', ()=>{
+  if (currentStep<STEPS.length-1){ currentStep++; setTargetColors(); buildStepLabels(); updatePanel(); }
 });
 
 // ─── Resize ───────────────────────────────────────────────────────────────────
 function resize() {
-  const w = document.getElementById('canvas-wrap').clientWidth;
-  const h = document.getElementById('canvas-wrap').clientHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
+  const wrap=document.getElementById('canvas-wrap');
+  const w=wrap.clientWidth, h=wrap.clientHeight;
+  renderer.setSize(w,h,false);
+  css2d.setSize(w,h);
+  camera.aspect=w/h;
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
 resize();
 
 // ─── Animate ──────────────────────────────────────────────────────────────────
-let pulse = 0;
-
+let pulse=0;
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
-  pulse += 0.055;
+  pulse+=0.055;
 
-  for (let i = 0; i < 8; i++) {
+  for (let i=0;i<8;i++) {
     curC[i].lerp(tgtC[i], LSPD);
-    curO[i] += (tgtO[i] - curO[i]) * LSPD;
-
-    const mesh = pieceMeshes[i];
+    curO[i]+=(tgtO[i]-curO[i])*LSPD;
+    const mesh=pieceMeshes[i];
     if (!mesh) continue;
     mesh.material.color.copy(curC[i]);
-
-    // Corner (piece 7) pulses on steps 5 and 6
-    let op = curO[i];
-    if (i === 7 && (currentStep === 5)) {
-      op *= 0.65 + 0.35 * Math.abs(Math.sin(pulse));
-    }
-    op = Math.max(0, op);
-    mesh.material.opacity = op;
-    mesh.visible = op > 0.015;
-
+    let op=curO[i];
+    // Corner (piece 7) pulses on step 3 (highlight b³)
+    if (i===7 && currentStep===2) op*=0.65+0.35*Math.abs(Math.sin(pulse));
+    op=Math.max(0,op);
+    mesh.material.opacity=op;
+    mesh.visible=op>0.01;
     if (edgeMeshes[i]) {
-      edgeMeshes[i].material.opacity = Math.min(op * 0.45, 0.28);
-      edgeMeshes[i].visible = op > 0.015;
+      edgeMeshes[i].material.opacity=Math.min(op*0.4, 0.25);
+      edgeMeshes[i].visible=op>0.01;
     }
   }
 
   renderer.render(scene, camera);
+  css2d.render(scene, camera);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-document.getElementById('val-a').textContent = a;
-document.getElementById('val-b').textContent = b;
-slA.value = a;
-slB.value = b;
+document.getElementById('val-a').textContent=a;
+document.getElementById('val-b').textContent=b;
+document.getElementById('sl-a').value=a;
+document.getElementById('sl-b').value=b;
 buildScene();
 updatePanel();
 animate();
