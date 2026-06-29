@@ -139,11 +139,9 @@
     .dc-purple { color: #9b59b6; font-weight: 700; }
     .dc-red    { color: #e05555; font-weight: 700; }
     .dc-orange { color: #f0a030; font-weight: 700; }
-    .deriv-table { width: 100%; border-collapse: collapse; line-height: 1.9; }
-    .deriv-table td { vertical-align: middle; }
-    .deriv-table td:first-child { white-space: nowrap; padding-right: 4px; }
-    .deriv-table td:nth-child(2) { padding: 0 4px; color: #555; }
-    .deriv-table td:last-child { color: #888; }
+    .deriv-step { font-size: 12px; color: #888; line-height: 2; }
+    .deriv-step.pl { padding-left: 20px; }
+    .deriv-step.mt { margin-top: 6px; }
     .deriv-hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0; }
     .deriv-result {
       font-size: 13px;
@@ -271,20 +269,11 @@
         <span class="dc-orange">D</span>
     </div>
 
-    <table class="deriv-table">
-      <tr>
-        <td><span class="dc-red">C</span></td><td>=</td>
-        <td>−3(a−b)²b = −3a²b + 6ab² − 3b³</td>
-      </tr>
-      <tr>
-        <td><span class="dc-orange">D</span></td><td>=</td>
-        <td>−3(a−b)b² = −3ab² + 3b³</td>
-      </tr>
-      <tr>
-        <td><span class="dc-red">C</span>+<span class="dc-orange">D</span></td><td>=</td>
-        <td>−3a²b + 3ab²</td>
-      </tr>
-    </table>
+    <div class="deriv-step"><span class="dc-red">C</span> = −3(a−b)²b</div>
+    <div class="deriv-step pl">= −3(a²−2ab+b²)·b</div>
+    <div class="deriv-step pl">= −3a²b + 6ab² − 3b³</div>
+    <div class="deriv-step mt"><span class="dc-orange">D</span> = −3(a−b)b² = −3ab² + 3b³</div>
+    <div class="deriv-step mt"><span class="dc-red">C</span>+<span class="dc-orange">D</span> = −3a²b + 6ab² − 3b³ − 3ab² + 3b³ = −3a²b + 3ab²</div>
 
     <div class="deriv-hr"></div>
     <div class="deriv-result">
