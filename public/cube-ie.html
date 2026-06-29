@@ -189,6 +189,7 @@ const STEPS = [
 
 // ─── Scene state ──────────────────────────────────────────────────────────────
 let pieceMeshes=[], edgeMeshes=[], outerWire=null;
+let slabMeshes=[], slabEdges=[];
 let dimGroup=null, dimCss2d_objs=[];
 let stepGroup=null, stepCss2d_objs=[];
 let mesh0Extra=[]; // objects (lines + CSS2D) added as children of pieceMeshes[0]
@@ -381,8 +382,10 @@ function buildScene() {
   clearMesh0Extra();
   pieceMeshes.forEach(m=>scene.remove(m));
   edgeMeshes.forEach(m=>scene.remove(m));
+  slabMeshes.forEach(m=>scene.remove(m));
+  slabEdges.forEach(m=>scene.remove(m));
   if(outerWire) scene.remove(outerWire);
-  pieceMeshes=[]; edgeMeshes=[];
+  pieceMeshes=[]; edgeMeshes=[]; slabMeshes=[]; slabEdges=[];
 
   const c=a-b;
   for(let i=0;i<8;i++){
@@ -407,6 +410,26 @@ function buildScene() {
     new THREE.LineBasicMaterial({color:0x334466,opacity:0.35,transparent:true})
   );
   scene.add(outerWire);
+
+  // ── Slab meshes for step-2 explode ──────────────────────────────────────────
+  // Slab X: x∈[D,a/2], y∈[-a/2,a/2], z∈[-a/2,a/2]  (b × a × a)
+  // Slab Y: y∈[D,a/2], x∈[-a/2,a/2], z∈[-a/2,a/2]  (a × b × a)
+  // Slab Z: z∈[D,a/2], x∈[-a/2,a/2], y∈[-a/2,a/2]  (a × a × b)
+  const slabDefs=[
+    {sz:[b-GAP, a-GAP, a-GAP], bp:[a/2-b/2, 0, 0]},
+    {sz:[a-GAP, b-GAP, a-GAP], bp:[0, a/2-b/2, 0]},
+    {sz:[a-GAP, a-GAP, b-GAP], bp:[0, 0, a/2-b/2]},
+  ];
+  for(const {sz,bp} of slabDefs){
+    const geo=new THREE.BoxGeometry(...sz);
+    const sm=new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+      color:new THREE.Color(R), opacity:0, transparent:true, depthWrite:false
+    }));
+    sm.position.set(...bp); sm.visible=false; scene.add(sm); slabMeshes.push(sm);
+    const se=new THREE.LineSegments(new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({color:0x000000,opacity:0,transparent:true}));
+    se.position.set(...bp); se.visible=false; scene.add(se); slabEdges.push(se);
+  }
 
   const dist=a*2.5;
   camera.position.set(dist,dist*0.75,dist);
@@ -453,11 +476,16 @@ function onSlider(){
 document.getElementById('sl-a').addEventListener('input',onSlider);
 document.getElementById('sl-b').addEventListener('input',onSlider);
 
+function resetExplode(){
+  explodeProgress=0; explodeTarget=0; isExploded=false;
+  document.getElementById('btn-explode').textContent='Разобрать';
+}
+
 document.getElementById('btn-prev').addEventListener('click',()=>{
-  if(currentStep>0){currentStep--; setTargetColors(); buildStepLabels(); updatePanel();}
+  if(currentStep>0){currentStep--; resetExplode(); setTargetColors(); buildStepLabels(); updatePanel();}
 });
 document.getElementById('btn-next').addEventListener('click',()=>{
-  if(currentStep<STEPS.length-1){currentStep++; setTargetColors(); buildStepLabels(); updatePanel();}
+  if(currentStep<STEPS.length-1){currentStep++; resetExplode(); setTargetColors(); buildStepLabels(); updatePanel();}
 });
 
 document.getElementById('btn-explode').addEventListener('click',()=>{
@@ -485,20 +513,49 @@ function animate(){
   controls.update();
   pulse+=0.055;
 
-  // Explode: only piece 0 moves, direction (-1,-1,-1)
   explodeProgress+=(explodeTarget-explodeProgress)*0.055;
+  const p=explodeProgress;
+  const isSlabStep=(currentStep===1);
+
+  // ── Slab explode (step 2) ────────────────────────────────────────────────
+  if(slabMeshes.length>0){
+    const SMOVE=a*0.9;
+    // slabs fade in from p=0.25, fully visible at p=0.70
+    const slabOp=isSlabStep ? Math.min(1,Math.max(0,(p-0.25)/0.45))*0.82 : 0;
+    // slabs start moving at p=0.55
+    const slabShift=isSlabStep ? Math.max(0,(p-0.55)/0.45)*SMOVE : 0;
+    const basePts=[[a/2-b/2,0,0],[0,a/2-b/2,0],[0,0,a/2-b/2]];
+    slabMeshes.forEach((sm,i)=>{
+      sm.material.opacity=slabOp;
+      sm.visible=slabOp>0.01;
+      const [bx,by,bz]=basePts[i];
+      sm.position.set(
+        bx+(i===0?slabShift:0),
+        by+(i===1?slabShift:0),
+        bz+(i===2?slabShift:0)
+      );
+      slabEdges[i].position.copy(sm.position);
+      slabEdges[i].visible=sm.visible;
+      slabEdges[i].material.opacity=Math.min(slabOp*0.35,0.22);
+    });
+  }
+
+  // ── Piece-0 explode (all steps except slab step) ─────────────────────────
   if(pieceMeshes[0]){
-    const c=a-b;
-    const dist=c*0.6;
-    const bx=-b/2, by=-b/2, bz=-b/2;
-    pieceMeshes[0].position.set(
-      bx+EXPLODE_DIR.x*dist*explodeProgress,
-      by+EXPLODE_DIR.y*dist*explodeProgress,
-      bz+EXPLODE_DIR.z*dist*explodeProgress
-    );
+    if(!isSlabStep){
+      const c=a-b, dist=c*0.6;
+      pieceMeshes[0].position.set(
+        -b/2+EXPLODE_DIR.x*dist*p,
+        -b/2+EXPLODE_DIR.y*dist*p,
+        -b/2+EXPLODE_DIR.z*dist*p
+      );
+    } else {
+      pieceMeshes[0].position.set(-b/2,-b/2,-b/2);
+    }
     edgeMeshes[0].position.copy(pieceMeshes[0].position);
   }
 
+  // ── Octant piece color / opacity ─────────────────────────────────────────
   for(let i=0;i<8;i++){
     curC[i].lerp(tgtC[i],LSPD);
     curO[i]+=(tgtO[i]-curO[i])*LSPD;
@@ -506,7 +563,13 @@ function animate(){
     if(!mesh) continue;
     mesh.material.color.copy(curC[i]);
     let op=curO[i];
-    if(i===7&&currentStep===2) op*=0.65+0.35*Math.abs(Math.sin(pulse));
+
+    // Step 4: b³ (piece 7) pulses in and out
+    if(i===7&&currentStep===3) op*=0.45+0.55*Math.abs(Math.sin(pulse));
+
+    // Step 2: pieces 1-7 fade out as slabs appear
+    if(isSlabStep&&i>0) op*=Math.max(0,1-p*2.2);
+
     op=Math.max(0,op);
     mesh.material.opacity=op;
     mesh.visible=op>0.01;
