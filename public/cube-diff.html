@@ -131,9 +131,16 @@
       font-size: 12px;
       color: #888;
     }
-    .deriv-table { width: 100%; border-collapse: collapse; line-height: 1.85; }
+    .deriv-intro { font-size: 12px; color: #777; line-height: 1.55; margin-bottom: 9px; }
+    .deriv-geo { font-size: 13px; color: #ccc; margin-bottom: 3px; }
+    .deriv-assign { font-size: 12px; color: #555; margin-bottom: 10px; }
+    .dc-blue   { color: #4d9de0; font-weight: 700; }
+    .dc-purple { color: #9b59b6; font-weight: 700; }
+    .dc-red    { color: #e05555; font-weight: 700; }
+    .dc-orange { color: #f0a030; font-weight: 700; }
+    .deriv-table { width: 100%; border-collapse: collapse; line-height: 1.9; }
     .deriv-table td { vertical-align: middle; }
-    .deriv-table td:first-child { color: #bbb; white-space: nowrap; padding-right: 4px; }
+    .deriv-table td:first-child { white-space: nowrap; padding-right: 4px; }
     .deriv-table td:nth-child(2) { padding: 0 4px; color: #555; }
     .deriv-table td:last-child { color: #888; }
     .deriv-hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0; }
@@ -244,26 +251,47 @@
   <button class="btn" id="btn-explode">Разобрать куб</button>
 
   <div class="deriv-box">
-    <div class="section-label">Раскрытие скобок</div>
+    <div class="section-label">Как получить формулу</div>
+    <div class="deriv-intro">
+      На 3D-модели видно: (a−b)³ — это большой куб со стороной a, из которого вычтены все остальные фигуры.
+    </div>
+
+    <div class="deriv-geo">
+      (a−b)³ =
+      <span class="dc-blue">a³</span> −
+      <span class="dc-purple">b³</span> −
+      <span class="dc-red">3(a−b)²b</span> −
+      <span class="dc-orange">3(a−b)b²</span>
+    </div>
+    <div class="deriv-assign">
+      = <span class="dc-blue">A</span> +
+        <span class="dc-purple">B</span> +
+        <span class="dc-red">C</span> +
+        <span class="dc-orange">D</span>
+    </div>
+
     <table class="deriv-table">
       <tr>
-        <td>3(a−b)²b</td><td>=</td>
-        <td>3a²b − 6ab² + 3b³</td>
+        <td><span class="dc-red">C</span></td><td>=</td>
+        <td>−3(a−b)²b = −3a²b + 6ab² − 3b³</td>
       </tr>
       <tr>
-        <td>3(a−b)b²</td><td>=</td>
-        <td>3ab² − 3b³</td>
+        <td><span class="dc-orange">D</span></td><td>=</td>
+        <td>−3(a−b)b² = −3ab² + 3b³</td>
       </tr>
       <tr>
-        <td>b³</td><td>=</td>
-        <td>b³</td>
+        <td><span class="dc-red">C</span>+<span class="dc-orange">D</span></td><td>=</td>
+        <td>−3a²b + 3ab²</td>
       </tr>
     </table>
+
     <div class="deriv-hr"></div>
     <div class="deriv-result">
-      a³ −&thinsp;<span style="color:#e05555">3a²b</span>
-      +&thinsp;<span style="color:#f0a030">3ab²</span>
-      −&thinsp;<span style="color:#9b59b6">b³</span>
+      (a−b)³ =
+      <span class="dc-blue">a³</span>
+      −&thinsp;<span class="dc-red">3a²b</span>
+      +&thinsp;<span class="dc-orange">3ab²</span>
+      −&thinsp;<span class="dc-purple">b³</span>
     </div>
   </div>
 
