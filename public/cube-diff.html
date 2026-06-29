@@ -46,17 +46,6 @@
       transition: opacity 0.2s;
     }
 
-    .face-label {
-      font-family: Georgia, serif;
-      font-size: 14px;
-      font-weight: 700;
-      font-style: italic;
-      color: #4d9de0;
-      background: rgba(13,13,26,0.65);
-      border-radius: 3px;
-      padding: 1px 5px;
-      pointer-events: none;
-    }
 
     .piece-label {
       background: rgba(0,0,0,0.65);
@@ -417,6 +406,32 @@ function buildDimensions(a, b) {
   seg([xR, yB2 - TICK, -a/2], [xR, yB2 + TICK, -a/2]);
   seg([xR, yB2 - TICK,  a/2], [xR, yB2 + TICK,  a/2]);
   dlabel('a', xR, yB2 - LOFF, 0, AAC);
+
+  // ── Рёбра синего куба (a-b)³ — размерные линии на задней грани (z = -a/2) ────
+  // Три ребра из внешнего угла (-a/2,-a/2,-a/2), каждое длиной (a-b).
+  // Отступ SOFF наружу от грани куба.
+  const SOFF = 0.32;
+
+  // Ребро вдоль X: от (-a/2, -a/2, -a/2) до (D, -a/2, -a/2)
+  // Линия смещена ниже: y = -a/2 - SOFF
+  seg([-a/2, -a/2 - SOFF, -a/2], [D, -a/2 - SOFF, -a/2]);
+  seg([-a/2, -a/2 - SOFF - TICK, -a/2], [-a/2, -a/2 - SOFF + TICK, -a/2]);
+  seg([   D, -a/2 - SOFF - TICK, -a/2], [   D, -a/2 - SOFF + TICK, -a/2]);
+  dlabel('a−b', midC, -a/2 - SOFF - LOFF, -a/2, AC);
+
+  // Ребро вдоль Y: от (-a/2, -a/2, -a/2) до (-a/2, D, -a/2)
+  // Линия смещена левее: x = -a/2 - SOFF
+  seg([-a/2 - SOFF, -a/2, -a/2], [-a/2 - SOFF, D, -a/2]);
+  seg([-a/2 - SOFF - TICK, -a/2, -a/2], [-a/2 - SOFF + TICK, -a/2, -a/2]);
+  seg([-a/2 - SOFF - TICK,    D, -a/2], [-a/2 - SOFF + TICK,    D, -a/2]);
+  dlabel('a−b', -a/2 - SOFF - LOFF, midC, -a/2, AC);
+
+  // Ребро вдоль Z: от (-a/2, -a/2, -a/2) до (-a/2, -a/2, D)
+  // Линия смещена ниже: y = -a/2 - SOFF
+  seg([-a/2, -a/2 - SOFF, -a/2], [-a/2, -a/2 - SOFF, D]);
+  seg([-a/2, -a/2 - SOFF - TICK, -a/2], [-a/2, -a/2 - SOFF + TICK, -a/2]);
+  seg([-a/2, -a/2 - SOFF - TICK,    D], [-a/2, -a/2 - SOFF + TICK,    D]);
+  dlabel('a−b', -a/2, -a/2 - SOFF - LOFF, midC, AC);
 }
 
 // ─── Pieces ──────────────────────────────────────────────────────────────────
@@ -439,7 +454,6 @@ function baseCenter(octant, a, b) {
 }
 
 let meshes = [], edgeSets = [], labels = [], outerWire;
-let faceSizeLabels = [];
 let explodeProgress = 0, explodeTarget = 0, isExploded = false;
 let curA = 4, curB = 1.5;
 const GAP = 0.04;
@@ -448,9 +462,8 @@ function buildScene(a, b) {
   meshes.forEach(m  => scene.remove(m));
   edgeSets.forEach(l => scene.remove(l));
   labels.forEach(lb => lb.element.remove());
-  faceSizeLabels.forEach(obj => obj.element.remove());
   if (outerWire) scene.remove(outerWire);
-  meshes = []; edgeSets = []; labels = []; faceSizeLabels = [];
+  meshes = []; edgeSets = []; labels = [];
 
   const owEdge = new THREE.EdgesGeometry(new THREE.BoxGeometry(a, a, a));
   outerWire = new THREE.LineSegments(owEdge,
@@ -483,24 +496,6 @@ function buildScene(a, b) {
     mesh.add(labelObj);
     labels.push(labelObj);
   });
-
-  // Labels "(a-b)" at midpoints of the 3 outer edges of the blue (a-b)³ cube (index 0).
-  // Each edge goes from the outer corner (-c/2,-c/2,-c/2); offset outward in both perp. axes.
-  const c    = a - b;
-  const FOFF = 0.15;
-  for (const pos of [
-    new THREE.Vector3(0,          -c/2 - FOFF, -c/2 - FOFF),  // ребро вдоль X
-    new THREE.Vector3(-c/2 - FOFF, 0,          -c/2 - FOFF),  // ребро вдоль Y
-    new THREE.Vector3(-c/2 - FOFF, -c/2 - FOFF, 0          ),  // ребро вдоль Z
-  ]) {
-    const el = document.createElement('div');
-    el.className = 'face-label';
-    el.textContent = 'a−b';
-    const obj = new CSS2DObject(el);
-    obj.position.copy(pos);
-    meshes[0].add(obj);
-    faceSizeLabels.push(obj);
-  }
 
   const dist = a * 2.6;
   camera.position.set(dist, dist * 0.75, dist);
