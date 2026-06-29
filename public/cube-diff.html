@@ -46,6 +46,18 @@
       transition: opacity 0.2s;
     }
 
+    .face-label {
+      font-family: Georgia, serif;
+      font-size: 14px;
+      font-weight: 700;
+      font-style: italic;
+      color: #4d9de0;
+      background: rgba(13,13,26,0.65);
+      border-radius: 3px;
+      padding: 1px 5px;
+      pointer-events: none;
+    }
+
     .piece-label {
       background: rgba(0,0,0,0.65);
       border-radius: 6px;
@@ -289,11 +301,13 @@ function buildDimensions(a, b) {
   const OFF  = 0.5;
   const TICK = 0.22;
   const LOFF = 0.52;
+  const LGAP = 0.78;  // gap between inner (a-b / b) and outer (a) dim levels
 
   dimMat = new THREE.LineBasicMaterial({ color: 0x999999, transparent: true, opacity: 0.65 });
 
-  const AC = '#ffe566';
-  const BC = '#66ddee';
+  const AC  = '#ffe566';  // a−b
+  const BC  = '#66ddee';  // b
+  const AAC = '#ffffff';  // a (total)
 
   function seg(from, to) {
     const g = new THREE.BufferGeometry().setFromPoints([
@@ -313,34 +327,51 @@ function buildDimensions(a, b) {
     dimLabels.push(obj);
   }
 
-  // Outer cube: [-a/2, a/2]. Division at D = a/2 - b.
-  // (a-b) zone: [-a/2, D], midpoint = -b/2
-  // b zone:     [D, a/2],  midpoint = a/2 - b/2
   const D    = a/2 - b;
   const midC = -b/2;
   const midB = a/2 - b/2;
   const yB   = -a/2 - OFF;
+  const yB2  = yB - LGAP;   // outer level (below inner)
   const zF   =  a/2;
   const xL   = -a/2 - OFF;
+  const xL2  = xL - LGAP;   // outer level (left of inner)
   const xR   =  a/2;
 
-  // X axis
+  // ── X axis ──────────────────────────────────────────────────────────────
+  // Inner: a−b and b
   seg([-a/2, yB, zF], [a/2, yB, zF]);
   for (const x of [-a/2, D, a/2]) seg([x, yB - TICK, zF], [x, yB + TICK, zF]);
   dlabel('a−b', midC, yB - LOFF, zF, AC);
   dlabel('b',   midB, yB - LOFF, zF, BC);
+  // Outer: a
+  seg([-a/2, yB2, zF], [a/2, yB2, zF]);
+  seg([-a/2, yB2 - TICK, zF], [-a/2, yB2 + TICK, zF]);
+  seg([ a/2, yB2 - TICK, zF], [ a/2, yB2 + TICK, zF]);
+  dlabel('a', 0, yB2 - LOFF, zF, AAC);
 
-  // Y axis
+  // ── Y axis ──────────────────────────────────────────────────────────────
+  // Inner: a−b and b
   seg([xL, -a/2, zF], [xL, a/2, zF]);
   for (const y of [-a/2, D, a/2]) seg([xL - TICK, y, zF], [xL + TICK, y, zF]);
   dlabel('a−b', xL - LOFF, midC, zF, AC);
   dlabel('b',   xL - LOFF, midB, zF, BC);
+  // Outer: a
+  seg([xL2, -a/2, zF], [xL2, a/2, zF]);
+  seg([xL2 - TICK, -a/2, zF], [xL2 + TICK, -a/2, zF]);
+  seg([xL2 - TICK,  a/2, zF], [xL2 + TICK,  a/2, zF]);
+  dlabel('a', xL2 - LOFF, 0, zF, AAC);
 
-  // Z axis
+  // ── Z axis ──────────────────────────────────────────────────────────────
+  // Inner: a−b and b
   seg([xR, yB, -a/2], [xR, yB, a/2]);
   for (const z of [-a/2, D, a/2]) seg([xR, yB - TICK, z], [xR, yB + TICK, z]);
   dlabel('a−b', xR, yB - LOFF, midC, AC);
   dlabel('b',   xR, yB - LOFF, midB, BC);
+  // Outer: a
+  seg([xR, yB2, -a/2], [xR, yB2, a/2]);
+  seg([xR, yB2 - TICK, -a/2], [xR, yB2 + TICK, -a/2]);
+  seg([xR, yB2 - TICK,  a/2], [xR, yB2 + TICK,  a/2]);
+  dlabel('a', xR, yB2 - LOFF, 0, AAC);
 }
 
 // ─── Pieces ──────────────────────────────────────────────────────────────────
@@ -363,6 +394,7 @@ function baseCenter(octant, a, b) {
 }
 
 let meshes = [], edgeSets = [], labels = [], outerWire;
+let faceSizeLabels = [];
 let explodeProgress = 0, explodeTarget = 0, isExploded = false;
 let curA = 4, curB = 1.5;
 const GAP = 0.04;
@@ -371,8 +403,9 @@ function buildScene(a, b) {
   meshes.forEach(m  => scene.remove(m));
   edgeSets.forEach(l => scene.remove(l));
   labels.forEach(lb => lb.element.remove());
+  faceSizeLabels.forEach(obj => obj.element.remove());
   if (outerWire) scene.remove(outerWire);
-  meshes = []; edgeSets = []; labels = [];
+  meshes = []; edgeSets = []; labels = []; faceSizeLabels = [];
 
   const owEdge = new THREE.EdgesGeometry(new THREE.BoxGeometry(a, a, a));
   outerWire = new THREE.LineSegments(owEdge,
@@ -405,6 +438,24 @@ function buildScene(a, b) {
     mesh.add(labelObj);
     labels.push(labelObj);
   });
+
+  // Labels "(a-b)" on the 3 outer faces of the blue (a-b)³ cube (index 0).
+  // Positions are in the mesh's local space; outer faces sit at -c/2 on each axis.
+  const c    = a - b;
+  const FOFF = 0.12;
+  for (const pos of [
+    new THREE.Vector3(-c/2 - FOFF, 0, 0),
+    new THREE.Vector3(0, -c/2 - FOFF, 0),
+    new THREE.Vector3(0, 0, -c/2 - FOFF),
+  ]) {
+    const el = document.createElement('div');
+    el.className = 'face-label';
+    el.textContent = 'a−b';
+    const obj = new CSS2DObject(el);
+    obj.position.copy(pos);
+    meshes[0].add(obj);
+    faceSizeLabels.push(obj);
+  }
 
   const dist = a * 2.6;
   camera.position.set(dist, dist * 0.75, dist);
