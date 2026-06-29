@@ -199,8 +199,7 @@
       + <span style="color:#f0a030">3ab²</span>
       − <span style="color:#9b59b6">b³</span>
     </div>
-    <div class="formula-numeric" id="formula-numeric"></div>
-    <div class="formula-geo" id="formula-geo"></div>
+
   </div>
 
   <div>
@@ -538,10 +537,6 @@ function updatePanel(a, b) {
   const b3  = Math.pow(b, 3);
   const a3  = Math.pow(a, 3);
 
-  document.getElementById('formula-numeric').textContent =
-    `${fmt(a3)} − ${fmt(3*a*a*b)} + ${fmt(3*a*b*b)} − ${fmt(b3)} = ${fmt(c3)}`;
-  document.getElementById('formula-geo').textContent =
-    `В кубе a³: ${fmt(c3)} + ${fmt(c2b)} + ${fmt(cb2)} + ${fmt(b3)} = ${fmt(a3)}`;
 
   document.getElementById('leg-main').textContent = `= ${fmt(c3)}`;
   document.getElementById('leg-c2b').textContent  = `× ${fmt(c*c*b)} = ${fmt(c2b)}`;
