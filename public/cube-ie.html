@@ -174,9 +174,9 @@ const STEPS = [
     pc: [[BL,0.88],[R,0.75],[R,0.75],[R,0.75],[DR,0.85],[DR,0.85],[DR,0.85],['#881111',0.90]],
   },
   {
-    title: 'Прибавляем три бруса ab²',
-    desc:  'Выделенные брусы были вычтены по два раза, так как в них пересекались предыдущие фигуры. Значит, если мы прибавим 3 таких бруса, мы исправим эту ошибку. Записываем +3ab². Но эти брусы тоже пересекаются друг с другом в одном единственном кубе. Эту проблему решим далее.',
-    fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span>',  note: 'брусы пересекаются в b³!',
+    title: 'Прибавляем три бруска ab²',
+    desc:  'Назовём эти зелёные фигуры брусками (b×b×a = ab²). Каждый брусок был вычтен дважды — он входил сразу в две плиты. Чтобы компенсировать это, прибавляем 3 бруска обратно. Записываем +3ab². Но бруски тоже пересекаются друг с другом — в кубе b³ в углу. Эту проблему решим далее. Нажми «Разобрать», чтобы увидеть бруски отдельно.',
+    fml:   'a³ − <span style="color:#e05555">3a²b</span> + <span style="color:#55c878">3ab²</span>',  note: 'бруски пересекаются в b³!',
     pc: [[BL,0.88],[R,0.28],[R,0.28],[R,0.28],[GR,0.88],[GR,0.88],[GR,0.88],[YE,0.96]],
   },
   {
@@ -190,6 +190,7 @@ const STEPS = [
 // ─── Scene state ──────────────────────────────────────────────────────────────
 let pieceMeshes=[], edgeMeshes=[], outerWire=null;
 let slabMeshes=[], slabEdges=[];
+let barMeshes=[], barEdges=[];
 let dimGroup=null, dimCss2d_objs=[];
 let stepGroup=null, stepCss2d_objs=[];
 let mesh0Extra=[]; // objects (lines + CSS2D) added as children of pieceMeshes[0]
@@ -384,8 +385,10 @@ function buildScene() {
   edgeMeshes.forEach(m=>scene.remove(m));
   slabMeshes.forEach(m=>scene.remove(m));
   slabEdges.forEach(m=>scene.remove(m));
+  barMeshes.forEach(m=>scene.remove(m));
+  barEdges.forEach(m=>scene.remove(m));
   if(outerWire) scene.remove(outerWire);
-  pieceMeshes=[]; edgeMeshes=[]; slabMeshes=[]; slabEdges=[];
+  pieceMeshes=[]; edgeMeshes=[]; slabMeshes=[]; slabEdges=[]; barMeshes=[]; barEdges=[];
 
   const c=a-b;
   for(let i=0;i<8;i++){
@@ -429,6 +432,29 @@ function buildScene() {
     const se=new THREE.LineSegments(new THREE.EdgesGeometry(geo),
       new THREE.LineBasicMaterial({color:0x000000,opacity:0,transparent:true}));
     se.position.set(...bp); se.visible=false; scene.add(se); slabEdges.push(se);
+  }
+
+  // ── Bar meshes for step-3 explode ───────────────────────────────────────────
+  // Bar XY: x,y in b-zone, z full span → b×b×a, moves along (+1,+1,0)/√2
+  // Bar XZ: x,z in b-zone, y full span → b×a×b, moves along (+1,0,+1)/√2
+  // Bar YZ: y,z in b-zone, x full span → a×b×b, moves along (0,+1,+1)/√2
+  const barDefs=[
+    {sz:[b-GAP, b-GAP, a-GAP], bp:[a/2-b/2, a/2-b/2, 0],    dr:[1,1,0]},
+    {sz:[b-GAP, a-GAP, b-GAP], bp:[a/2-b/2, 0,       a/2-b/2], dr:[1,0,1]},
+    {sz:[a-GAP, b-GAP, b-GAP], bp:[0,       a/2-b/2, a/2-b/2], dr:[0,1,1]},
+  ];
+  for(const {sz,bp,dr} of barDefs){
+    const geo=new THREE.BoxGeometry(...sz);
+    const bm=new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+      color:new THREE.Color(GR), opacity:0, transparent:true, depthWrite:false
+    }));
+    bm.position.set(...bp); bm.visible=false;
+    bm.userData={bp,dr};
+    scene.add(bm); barMeshes.push(bm);
+    const be=new THREE.LineSegments(new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({color:0x000000,opacity:0,transparent:true}));
+    be.position.set(...bp); be.visible=false;
+    scene.add(be); barEdges.push(be);
   }
 
   const dist=a*2.5;
@@ -516,13 +542,13 @@ function animate(){
   explodeProgress+=(explodeTarget-explodeProgress)*0.055;
   const p=explodeProgress;
   const isSlabStep=(currentStep===1);
+  const isBarStep =(currentStep===2);
+  const N1O2=1/Math.sqrt(2);
 
   // ── Slab explode (step 2) ────────────────────────────────────────────────
   if(slabMeshes.length>0){
     const SMOVE=a*0.9;
-    // slabs fade in from p=0.25, fully visible at p=0.70
     const slabOp=isSlabStep ? Math.min(1,Math.max(0,(p-0.25)/0.45))*0.82 : 0;
-    // slabs start moving at p=0.55
     const slabShift=isSlabStep ? Math.max(0,(p-0.55)/0.45)*SMOVE : 0;
     const basePts=[[a/2-b/2,0,0],[0,a/2-b/2,0],[0,0,a/2-b/2]];
     slabMeshes.forEach((sm,i)=>{
@@ -540,9 +566,29 @@ function animate(){
     });
   }
 
-  // ── Piece-0 explode (all steps except slab step) ─────────────────────────
+  // ── Bar explode (step 3) ─────────────────────────────────────────────────
+  if(barMeshes.length>0){
+    const BMOVE=a*0.72;
+    const barOp=isBarStep ? Math.min(1,Math.max(0,(p-0.25)/0.45))*0.88 : 0;
+    const barShift=isBarStep ? Math.max(0,(p-0.55)/0.45)*BMOVE : 0;
+    barMeshes.forEach((bm,i)=>{
+      bm.material.opacity=barOp;
+      bm.visible=barOp>0.01;
+      const {bp:[bx,by,bz], dr:[dx,dy,dz]}=bm.userData;
+      bm.position.set(
+        bx+dx*N1O2*barShift,
+        by+dy*N1O2*barShift,
+        bz+dz*N1O2*barShift
+      );
+      barEdges[i].position.copy(bm.position);
+      barEdges[i].visible=bm.visible;
+      barEdges[i].material.opacity=Math.min(barOp*0.35,0.22);
+    });
+  }
+
+  // ── Piece-0 explode (steps 0 and 3 only) ────────────────────────────────
   if(pieceMeshes[0]){
-    if(!isSlabStep){
+    if(!isSlabStep&&!isBarStep){
       const c=a-b, dist=c*0.6;
       pieceMeshes[0].position.set(
         -b/2+EXPLODE_DIR.x*dist*p,
@@ -569,6 +615,9 @@ function animate(){
 
     // Step 2: pieces 1-7 fade out as slabs appear
     if(isSlabStep&&i>0) op*=Math.max(0,1-p*2.2);
+
+    // Step 3: pieces 4-7 fade out as bars appear; pieces 0-3 stay
+    if(isBarStep&&i>=4) op*=Math.max(0,1-p*2.2);
 
     op=Math.max(0,op);
     mesh.material.opacity=op;
