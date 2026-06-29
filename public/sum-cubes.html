@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>a³ + b³ — Сумма кубов</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d0d1a;
+      color: #e0e0e0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #canvas-wrap { flex: 1; position: relative; min-width: 0; }
+    #canvas-wrap canvas { display: block; width: 100% !important; height: 100% !important; }
+    #label-wrap { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+
+    .dim-label {
+      font-family: Georgia, serif; font-size: 14px; font-weight: 700; font-style: italic;
+      background: rgba(13,13,26,0.72); border-radius: 4px; padding: 1px 6px;
+      pointer-events: none; white-space: nowrap;
+    }
+    .piece-label {
+      background: rgba(0,0,0,0.65); border-radius: 6px; padding: 4px 10px;
+      font-size: 15px; font-weight: 700; white-space: nowrap;
+      pointer-events: none; border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    #panel {
+      width: 300px; flex-shrink: 0;
+      background: rgba(255,255,255,0.04);
+      border-left: 1px solid rgba(255,255,255,0.08);
+      padding: 22px 18px;
+      display: flex; flex-direction: column; gap: 16px;
+      overflow-y: auto;
+    }
+
+    h1 { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    h1 sup { font-size: 14px; }
+    .subtitle { color: #666; font-size: 12px; margin-top: 3px; }
+
+    .formula-box {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 14px 12px; text-align: center;
+    }
+    .formula-main { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .formula-parts { font-size: 14px; line-height: 1.7; }
+    .formula-numeric { margin-top: 6px; font-size: 12px; color: #9888ff; }
+
+    .section-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #555; margin-bottom: 6px;
+    }
+    .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .slider-name { width: 14px; font-weight: 700; font-size: 16px; color: #fff; }
+    input[type=range] { flex: 1; accent-color: #7c6af7; cursor: pointer; height: 4px; }
+    .slider-val { width: 28px; text-align: right; font-size: 14px; color: #ccc; }
+
+    .legend-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); margin-bottom: 5px;
+    }
+    .legend-dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+    .legend-term { flex: 1; font-size: 13px; font-weight: 600; }
+    .legend-val  { font-size: 12px; color: #888; }
+
+    .deriv-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12px; line-height: 2; color: #aaa;
+    }
+    .deriv-box .hl  { color: #fff; font-weight: 600; }
+    .deriv-box .dc-bl { color: #4d9de0; }
+    .deriv-box .dc-or { color: #f0a030; }
+    .deriv-box .faded { color: #444; }   /* cancelled terms */
+
+    .btn {
+      padding: 13px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #7c6af7, #5b4de0);
+      color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn:active { transform: scale(0.98); }
+
+    .hint { font-size: 11px; color: #444; text-align: center; line-height: 1.6; }
+
+    @media (max-width: 700px) {
+      body { flex-direction: column; overflow-y: auto; height: auto; }
+      #canvas-wrap { height: 52vh; min-height: 52vh; flex: none; }
+      #panel { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.07); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <canvas id="canvas"></canvas>
+  <div id="label-wrap"></div>
+</div>
+
+<div id="panel">
+  <div>
+    <h1>a<sup>3</sup> + b<sup>3</sup></h1>
+    <div class="subtitle">Геометрическое объяснение формулы</div>
+  </div>
+
+  <div class="formula-box">
+    <div class="formula-main">a³ + b³ =</div>
+    <div class="formula-parts">
+      (a + b)(<span style="color:#4d9de0">a²</span> − <span style="color:#9370db">ab</span> + <span style="color:#f0a030">b²</span>)
+    </div>
+    <div class="formula-numeric" id="formula-numeric"></div>
+  </div>
+
+  <div>
+    <div class="section-label">Параметры</div>
+    <div class="slider-row">
+      <span class="slider-name">a</span>
+      <input type="range" id="slider-a" min="1" max="5" value="3" step="0.5">
+      <span class="slider-val" id="val-a">3</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-name">b</span>
+      <input type="range" id="slider-b" min="0.5" max="4" value="2" step="0.5">
+      <span class="slider-val" id="val-b">2</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">Объёмы</div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#4d9de0"></div>
+      <span class="legend-term" style="color:#4d9de0">a³</span>
+      <span class="legend-val" id="leg-a3"></span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f0a030"></div>
+      <span class="legend-term" style="color:#f0a030">b³</span>
+      <span class="legend-val" id="leg-b3"></span>
+    </div>
+    <div style="border-top:1px solid rgba(255,255,255,0.07);margin:6px 0 8px;"></div>
+    <div style="font-size:12px;color:#888;margin-bottom:4px">
+      a + b = <span id="leg-apb" style="color:#ffe566;font-weight:700"></span>
+    </div>
+    <div style="font-size:12px;color:#888;margin-bottom:4px">
+      a² − ab + b² = <span id="leg-factor2" style="color:#9370db;font-weight:700"></span>
+    </div>
+    <div style="font-size:13px;color:#888;text-align:right;margin-top:4px">
+      Итого: <span id="leg-total" style="color:#fff;font-weight:700"></span>
+    </div>
+  </div>
+
+  <!-- Derivation -->
+  <div class="deriv-box">
+    <div>(a+b)(a²−ab+b²)</div>
+    <div style="padding-left:6px">
+      = <span class="dc-bl">a³</span>
+        <span class="faded">−a²b+ab²</span>
+    </div>
+    <div style="padding-left:12px">
+        <span class="faded">+a²b−ab²</span>
+        + <span class="dc-or">b³</span>
+    </div>
+    <div style="padding-left:6px;color:#555;font-size:11px">
+      средние члены взаимно уничтожаются
+    </div>
+    <div style="padding-left:6px">
+      = <span class="hl">a³ + b³</span> ✓
+    </div>
+  </div>
+
+  <button class="btn" id="btn-explode">Разобрать</button>
+
+  <div class="hint">
+    Вращение — тащить / пальцем<br>
+    Масштаб — колесо / щипок
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }              from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ─── Renderer ────────────────────────────────────────────────────────────────
+const canvasEl  = document.getElementById('canvas');
+const labelWrap = document.getElementById('label-wrap');
+
+const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+const labelRenderer = new CSS2DRenderer({ element: labelWrap });
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d1a);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+
+const controls = new OrbitControls(camera, canvasEl);
+controls.enableDamping = true; controls.dampingFactor = 0.06;
+controls.autoRotate = true;   controls.autoRotateSpeed = 0.7;
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const sun = new THREE.DirectionalLight(0xfff4e0, 1.1);
+sun.position.set(10, 16, 10); scene.add(sun);
+const fill = new THREE.DirectionalLight(0x8899ff, 0.35);
+fill.position.set(-8, -5, -8); scene.add(fill);
+
+// ─── Scene state ──────────────────────────────────────────────────────────────
+const GAP = 0.025;
+const INIT_SEP = 0.3; // initial gap between cubes when "assembled"
+
+let meshA=null, edgeA=null, labelA=null;
+let meshB=null, edgeB=null, labelB=null;
+let dimGroup=null, dimLabels=[], dimMat=null;
+let curA=3, curB=2;
+let explodeProgress=0, explodeTarget=0, isExploded=false;
+
+// ─── Build scene ──────────────────────────────────────────────────────────────
+function buildScene(a, b) {
+  [meshA, edgeA, meshB, edgeB].forEach(m => { if(m) scene.remove(m); });
+  [labelA, labelB].forEach(lb => { if(lb) lb.element.remove(); });
+  if(dimGroup) { [...dimGroup.children].forEach(c=>{ if(c.element) c.element.remove(); }); scene.remove(dimGroup); }
+  meshA=edgeA=meshB=edgeB=labelA=labelB=dimGroup=null;
+  dimLabels=[]; dimMat=null;
+
+  // a-cube (blue)
+  const geoA = new THREE.BoxGeometry(a-GAP, a-GAP, a-GAP);
+  meshA = new THREE.Mesh(geoA, new THREE.MeshPhongMaterial({color:0x4d9de0,transparent:true,opacity:0.82,shininess:60}));
+  scene.add(meshA);
+  edgeA = new THREE.LineSegments(new THREE.EdgesGeometry(geoA),
+    new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.28}));
+  scene.add(edgeA);
+  const divA = document.createElement('div');
+  divA.className='piece-label'; divA.textContent='a³'; divA.style.color='#4d9de0'; divA.style.opacity='0';
+  labelA = new CSS2DObject(divA); labelA.position.set(0,0,0); meshA.add(labelA);
+
+  // b-cube (orange)
+  const geoB = new THREE.BoxGeometry(b-GAP, b-GAP, b-GAP);
+  meshB = new THREE.Mesh(geoB, new THREE.MeshPhongMaterial({color:0xf0a030,transparent:true,opacity:0.82,shininess:60}));
+  scene.add(meshB);
+  edgeB = new THREE.LineSegments(new THREE.EdgesGeometry(geoB),
+    new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.28}));
+  scene.add(edgeB);
+  const divB = document.createElement('div');
+  divB.className='piece-label'; divB.textContent='b³'; divB.style.color='#f0a030'; divB.style.opacity='0';
+  labelB = new CSS2DObject(divB); labelB.position.set(0,0,0); meshB.add(labelB);
+
+  buildDimensions(a, b);
+  applyPositions(a, b, 0);
+
+  const dist = (a+b) * 2.0;
+  camera.position.set(dist, dist*0.75, dist);
+  controls.target.set(0, 0, 0); controls.update();
+
+  updatePanel(a, b);
+}
+
+// ─── Dimension lines ──────────────────────────────────────────────────────────
+function buildDimensions(a, b) {
+  dimGroup = new THREE.Group(); scene.add(dimGroup);
+  const OFF=0.44, TICK=0.16, LOFF=0.40;
+  dimMat = new THREE.LineBasicMaterial({color:0x778899,transparent:true,opacity:0.6});
+
+  function seg(p1,p2){
+    const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...p1),new THREE.Vector3(...p2)]);
+    dimGroup.add(new THREE.Line(g,dimMat));
+  }
+  function dlabel(text,px,py,pz,color){
+    const el=document.createElement('div');
+    el.className='dim-label'; el.textContent=text; el.style.color=color;
+    const obj=new CSS2DObject(el); obj.position.set(px,py,pz);
+    dimGroup.add(obj); dimLabels.push(obj);
+  }
+
+  // a-cube: dimension lines on its outer left/bottom edges
+  const axL = -b/2-INIT_SEP/2-a/2;  // left face of a-cube x
+  const axR = -b/2-INIT_SEP/2+a/2;  // right face of a-cube x (= join face)
+  const aFz = a/2;    // front face z
+  const aBy = -a/2-OFF; // below a-cube y
+
+  // "a" along X below a-cube
+  seg([axL,aBy,aFz],[axR,aBy,aFz]);
+  seg([axL,aBy-TICK,aFz],[axL,aBy+TICK,aFz]);
+  seg([axR,aBy-TICK,aFz],[axR,aBy+TICK,aFz]);
+  dlabel('a', (axL+axR)/2, aBy-LOFF, aFz, '#4d9de0');
+
+  // "a" along Y left of a-cube
+  const axLL = axL-OFF;
+  seg([axLL,-a/2,aFz],[axLL,a/2,aFz]);
+  seg([axLL-TICK,-a/2,aFz],[axLL+TICK,-a/2,aFz]);
+  seg([axLL-TICK,a/2,aFz],[axLL+TICK,a/2,aFz]);
+  dlabel('a', axLL-LOFF, 0, aFz, '#4d9de0');
+
+  // b-cube: dimension lines
+  const bxL = a/2+INIT_SEP/2;          // left face of b-cube
+  const bxR = a/2+INIT_SEP/2+b;        // right face of b-cube
+  const bFz = b/2;
+  const bBy = -b/2-OFF;
+
+  // "b" along X below b-cube
+  seg([bxL,bBy,bFz],[bxR,bBy,bFz]);
+  seg([bxL,bBy-TICK,bFz],[bxL,bBy+TICK,bFz]);
+  seg([bxR,bBy-TICK,bFz],[bxR,bBy+TICK,bFz]);
+  dlabel('b', (bxL+bxR)/2, bBy-LOFF, bFz, '#f0a030');
+
+  // "b" along Y right of b-cube
+  const bxRR = bxR+OFF;
+  seg([bxRR,-b/2,bFz],[bxRR,b/2,bFz]);
+  seg([bxRR-TICK,-b/2,bFz],[bxRR+TICK,-b/2,bFz]);
+  seg([bxRR-TICK,b/2,bFz],[bxRR+TICK,b/2,bFz]);
+  dlabel('b', bxRR+LOFF, 0, bFz, '#f0a030');
+
+  // Combined "a+b" span below both cubes (along bottom)
+  const combY = -Math.max(a,b)/2-OFF*1.8;
+  seg([axL,combY,0],[bxR,combY,0]);
+  seg([axL,combY-TICK,0],[axL,combY+TICK,0]);
+  seg([bxR,combY-TICK,0],[bxR,combY+TICK,0]);
+  dlabel('a+b', (axL+bxR)/2, combY-LOFF, 0, '#ffe566');
+}
+
+// ─── Positions ───────────────────────────────────────────────────────────────
+function applyPositions(a, b, p) {
+  const DIST = (a+b) * 0.85;
+
+  // Assembled centers (with initial gap)
+  const cxA = -b/2 - INIT_SEP/2;
+  const cxB =  a/2 + INIT_SEP/2;
+
+  // Move apart on explode
+  meshA.position.set(cxA - p*DIST, 0, 0);
+  edgeA.position.copy(meshA.position);
+  meshB.position.set(cxB + p*DIST, 0, 0);
+  edgeB.position.copy(meshB.position);
+
+  // Labels fade in when exploded
+  labelA.element.style.opacity = Math.min(p*1.8, 1).toFixed(2);
+  labelB.element.style.opacity = Math.min(p*1.8, 1).toFixed(2);
+
+  // Dim lines fade out
+  const dimOp = Math.max(0, 1-p*2.2);
+  if(dimMat) dimMat.opacity = 0.6*dimOp;
+  dimLabels.forEach(lb => { lb.element.style.opacity = dimOp.toFixed(2); });
+}
+
+// ─── Panel ───────────────────────────────────────────────────────────────────
+function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2); }
+
+function updatePanel(a, b) {
+  const a3  = a*a*a;
+  const b3  = b*b*b;
+  const apb = a+b;
+  const f2  = a*a - a*b + b*b;   // a²-ab+b²
+  const tot = a3+b3;
+
+  document.getElementById('formula-numeric').textContent =
+    `(${fmt(apb)})(${fmt(f2)}) = ${fmt(tot)}`;
+  document.getElementById('leg-a3').textContent     = `= ${fmt(a3)}`;
+  document.getElementById('leg-b3').textContent     = `= ${fmt(b3)}`;
+  document.getElementById('leg-apb').textContent    = fmt(apb);
+  document.getElementById('leg-factor2').textContent = fmt(f2);
+  document.getElementById('leg-total').textContent  = fmt(tot);
+}
+
+// ─── Controls ────────────────────────────────────────────────────────────────
+function resetExplode() {
+  isExploded=false; explodeTarget=0;
+  document.getElementById('btn-explode').textContent='Разобрать';
+}
+
+document.getElementById('slider-a').addEventListener('input', e => {
+  curA=parseFloat(e.target.value);
+  document.getElementById('val-a').textContent=curA;
+  resetExplode(); buildScene(curA, curB);
+});
+document.getElementById('slider-b').addEventListener('input', e => {
+  curB=parseFloat(e.target.value);
+  document.getElementById('val-b').textContent=curB;
+  resetExplode(); buildScene(curA, curB);
+});
+
+document.getElementById('btn-explode').addEventListener('click', () => {
+  isExploded=!isExploded; explodeTarget=isExploded?1:0;
+  document.getElementById('btn-explode').textContent=isExploded?'Собрать':'Разобрать';
+  controls.autoRotate=false;
+});
+
+// ─── Resize ──────────────────────────────────────────────────────────────────
+function resize() {
+  const w = document.getElementById('canvas-wrap').clientWidth;
+  const h = document.getElementById('canvas-wrap').clientHeight;
+  renderer.setSize(w,h,false); labelRenderer.setSize(w,h);
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize); resize();
+
+// ─── Animate ─────────────────────────────────────────────────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+  explodeProgress+=(explodeTarget-explodeProgress)*0.055;
+  applyPositions(curA, curB, explodeProgress);
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+buildScene(curA, curB);
+animate();
+</script>
+</body>
+</html>
