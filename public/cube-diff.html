@@ -121,6 +121,39 @@
     .btn:active { transform: scale(0.98); }
 
     .hint { font-size: 11px; color: #444; text-align: center; line-height: 1.6; }
+
+    @media (max-width: 700px) {
+      body { flex-direction: column; }
+
+      #canvas-wrap {
+        flex: none;
+        height: 52vh;
+        min-height: 240px;
+      }
+
+      #panel {
+        width: 100%;
+        flex: 1;
+        border-left: none;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding: 12px 16px 24px;
+        gap: 12px;
+      }
+
+      h1 { font-size: 20px; }
+      .subtitle { font-size: 11px; }
+      .formula-box { padding: 10px; }
+      .formula-main { font-size: 14px; }
+      .formula-parts { font-size: 13px; }
+      .formula-numeric { font-size: 11px; }
+      .section-label { margin-bottom: 4px; }
+      .legend-item { padding: 6px 8px; margin-bottom: 4px; }
+      .legend-term { font-size: 13px; }
+      .legend-val { font-size: 11px; }
+      .constraint-hint { font-size: 10px; margin-top: -6px; }
+      .btn { padding: 11px; font-size: 14px; }
+      .hint { font-size: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -190,8 +223,8 @@
   <button class="btn" id="btn-explode">Разобрать куб</button>
 
   <div class="hint">
-    Перетащите мышью — вращение<br>
-    Колесо прокрутки — масштаб
+    Вращение — тащить / пальцем<br>
+    Масштаб — колесо / щипок
   </div>
 </div>
 
