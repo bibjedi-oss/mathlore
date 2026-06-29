@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>(a−b)³ — Геометрическое доказательство</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d0d1a;
+      color: #e0e0e0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    #canvas-wrap canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    #label-wrap {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    .dim-label {
+      font-family: Georgia, serif;
+      font-size: 17px;
+      font-weight: 700;
+      font-style: italic;
+      background: rgba(13,13,26,0.72);
+      border-radius: 4px;
+      padding: 1px 6px;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .piece-label {
+      background: rgba(0,0,0,0.65);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    #panel {
+      width: 290px;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.04);
+      border-left: 1px solid rgba(255,255,255,0.08);
+      padding: 22px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow-y: auto;
+    }
+
+    h1 { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    h1 sup { font-size: 16px; }
+    .subtitle { color: #777; font-size: 13px; margin-top: 2px; }
+
+    .formula-box {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .formula-main { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .formula-parts { font-size: 15px; line-height: 1.6; }
+    .formula-numeric { margin-top: 8px; font-size: 12px; color: #9888ff; letter-spacing: 0.3px; }
+    .formula-geo {
+      margin-top: 8px;
+      font-size: 10px;
+      color: #555;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 7px;
+      line-height: 1.5;
+    }
+
+    .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #555; margin-bottom: 6px; }
+
+    .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .slider-name { width: 14px; font-weight: 700; font-size: 16px; color: #fff; }
+    input[type=range] { flex: 1; accent-color: #7c6af7; cursor: pointer; height: 4px; }
+    .slider-val { width: 28px; text-align: right; font-size: 14px; color: #ccc; }
+    .constraint-hint { font-size: 11px; color: #555; margin-top: -4px; }
+
+    .legend-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); margin-bottom: 6px;
+    }
+    .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+    .legend-term { flex: 1; font-size: 14px; font-weight: 600; }
+    .legend-val { font-size: 12px; color: #888; }
+
+    .btn {
+      padding: 13px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #7c6af7, #5b4de0);
+      color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn:active { transform: scale(0.98); }
+
+    .hint { font-size: 11px; color: #444; text-align: center; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <canvas id="canvas"></canvas>
+  <div id="label-wrap"></div>
+</div>
+
+<div id="panel">
+  <div>
+    <h1>(a − b)<sup>3</sup></h1>
+    <div class="subtitle">Геометрическое объяснение формулы</div>
+  </div>
+
+  <div class="formula-box">
+    <div class="formula-main">(a − b)³ =</div>
+    <div class="formula-parts">
+      <span style="color:#bbb">a³</span>
+      − <span style="color:#e05555">3a²b</span>
+      + <span style="color:#f0a030">3ab²</span>
+      − <span style="color:#9b59b6">b³</span>
+    </div>
+    <div class="formula-numeric" id="formula-numeric"></div>
+    <div class="formula-geo" id="formula-geo"></div>
+  </div>
+
+  <div>
+    <div class="section-label">Параметры</div>
+    <div class="slider-row">
+      <span class="slider-name">a</span>
+      <input type="range" id="slider-a" min="2" max="6" value="4" step="0.5">
+      <span class="slider-val" id="val-a">4</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-name">b</span>
+      <input type="range" id="slider-b" min="0.5" max="3.5" value="1.5" step="0.5">
+      <span class="slider-val" id="val-b">1.5</span>
+    </div>
+    <div class="constraint-hint">b &lt; a</div>
+  </div>
+
+  <div>
+    <div class="section-label">Части куба a³</div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#4d9de0"></div>
+      <span class="legend-term">(a−b)³</span>
+      <span class="legend-val" id="leg-main"></span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#e05555"></div>
+      <span class="legend-term">3·(a−b)²·b</span>
+      <span class="legend-val" id="leg-c2b"></span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f0a030"></div>
+      <span class="legend-term">3·(a−b)·b²</span>
+      <span class="legend-val" id="leg-cb2"></span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#9b59b6"></div>
+      <span class="legend-term">b³</span>
+      <span class="legend-val" id="leg-b3"></span>
+    </div>
+  </div>
+
+  <button class="btn" id="btn-explode">Разобрать куб</button>
+
+  <div class="hint">
+    Перетащите мышью — вращение<br>
+    Колесо прокрутки — масштаб
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const canvasEl  = document.getElementById('canvas');
+const labelWrap = document.getElementById('label-wrap');
+
+const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+const labelRenderer = new CSS2DRenderer({ element: labelWrap });
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d1a);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+camera.position.set(12, 9, 12);
+
+const controls = new OrbitControls(camera, canvasEl);
+controls.enableDamping   = true;
+controls.dampingFactor   = 0.06;
+controls.autoRotate      = true;
+controls.autoRotateSpeed = 0.8;
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+const sun = new THREE.DirectionalLight(0xfff4e0, 1.1);
+sun.position.set(12, 18, 10);
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x8899ff, 0.35);
+fill.position.set(-10, -6, -8);
+scene.add(fill);
+
+// ─── Dimension annotations ───────────────────────────────────────────────────
+const dimGroup = new THREE.Group();
+scene.add(dimGroup);
+let dimMat    = null;
+let dimLabels = [];
+
+function buildDimensions(a, b) {
+  [...dimGroup.children].forEach(child => {
+    if (child.isCSS2DObject) child.element.remove();
+    else if (child.geometry) child.geometry.dispose();
+    dimGroup.remove(child);
+  });
+  dimLabels = [];
+
+  const OFF  = 0.5;
+  const TICK = 0.22;
+  const LOFF = 0.52;
+
+  dimMat = new THREE.LineBasicMaterial({ color: 0x999999, transparent: true, opacity: 0.65 });
+
+  const AC = '#ffe566';
+  const BC = '#66ddee';
+
+  function seg(from, to) {
+    const g = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(...from), new THREE.Vector3(...to)
+    ]);
+    dimGroup.add(new THREE.Line(g, dimMat));
+  }
+
+  function dlabel(text, px, py, pz, color) {
+    const el = document.createElement('div');
+    el.className = 'dim-label';
+    el.textContent = text;
+    el.style.color = color;
+    const obj = new CSS2DObject(el);
+    obj.position.set(px, py, pz);
+    dimGroup.add(obj);
+    dimLabels.push(obj);
+  }
+
+  // Outer cube: [-a/2, a/2]. Division at D = a/2 - b.
+  // (a-b) zone: [-a/2, D], midpoint = -b/2
+  // b zone:     [D, a/2],  midpoint = a/2 - b/2
+  const D    = a/2 - b;
+  const midC = -b/2;
+  const midB = a/2 - b/2;
+  const yB   = -a/2 - OFF;
+  const zF   =  a/2;
+  const xL   = -a/2 - OFF;
+  const xR   =  a/2;
+
+  // X axis
+  seg([-a/2, yB, zF], [a/2, yB, zF]);
+  for (const x of [-a/2, D, a/2]) seg([x, yB - TICK, zF], [x, yB + TICK, zF]);
+  dlabel('a−b', midC, yB - LOFF, zF, AC);
+  dlabel('b',   midB, yB - LOFF, zF, BC);
+
+  // Y axis
+  seg([xL, -a/2, zF], [xL, a/2, zF]);
+  for (const y of [-a/2, D, a/2]) seg([xL - TICK, y, zF], [xL + TICK, y, zF]);
+  dlabel('a−b', xL - LOFF, midC, zF, AC);
+  dlabel('b',   xL - LOFF, midB, zF, BC);
+
+  // Z axis
+  seg([xR, yB, -a/2], [xR, yB, a/2]);
+  for (const z of [-a/2, D, a/2]) seg([xR, yB - TICK, z], [xR, yB + TICK, z]);
+  dlabel('a−b', xR, yB - LOFF, midC, AC);
+  dlabel('b',   xR, yB - LOFF, midB, BC);
+}
+
+// ─── Pieces ──────────────────────────────────────────────────────────────────
+// Outer cube side = a. Divided at (a-b) from the − corner.
+// Octant -1 → (a-b) zone, center = -b/2
+// Octant +1 → b zone,     center = a/2 - b/2
+const PIECES = [
+  { key:'main', label:'(a−b)³',  color:0x4d9de0, hex:'#4d9de0', octant:[-1,-1,-1], size:(a,b)=>[a-b,a-b,a-b] },
+  { key:'c2b',  label:'(a−b)²b', color:0xe05555, hex:'#e05555', octant:[-1,-1, 1], size:(a,b)=>[a-b,a-b,  b] },
+  { key:'c2b',  label:'(a−b)²b', color:0xe05555, hex:'#e05555', octant:[-1, 1,-1], size:(a,b)=>[a-b,  b,a-b] },
+  { key:'c2b',  label:'(a−b)²b', color:0xe05555, hex:'#e05555', octant:[ 1,-1,-1], size:(a,b)=>[  b,a-b,a-b] },
+  { key:'cb2',  label:'(a−b)b²', color:0xf0a030, hex:'#f0a030', octant:[ 1, 1,-1], size:(a,b)=>[  b,  b,a-b] },
+  { key:'cb2',  label:'(a−b)b²', color:0xf0a030, hex:'#f0a030', octant:[ 1,-1, 1], size:(a,b)=>[  b,a-b,  b] },
+  { key:'cb2',  label:'(a−b)b²', color:0xf0a030, hex:'#f0a030', octant:[-1, 1, 1], size:(a,b)=>[a-b,  b,  b] },
+  { key:'b3',   label:'b³',      color:0x9b59b6, hex:'#9b59b6', octant:[ 1, 1, 1], size:(a,b)=>[  b,  b,  b] },
+];
+
+function baseCenter(octant, a, b) {
+  return octant.map(o => o < 0 ? -b/2 : a/2 - b/2);
+}
+
+let meshes = [], edgeSets = [], labels = [], outerWire;
+let explodeProgress = 0, explodeTarget = 0, isExploded = false;
+let curA = 4, curB = 1.5;
+const GAP = 0.04;
+
+function buildScene(a, b) {
+  meshes.forEach(m  => scene.remove(m));
+  edgeSets.forEach(l => scene.remove(l));
+  labels.forEach(lb => lb.element.remove());
+  if (outerWire) scene.remove(outerWire);
+  meshes = []; edgeSets = []; labels = [];
+
+  const owEdge = new THREE.EdgesGeometry(new THREE.BoxGeometry(a, a, a));
+  outerWire = new THREE.LineSegments(owEdge,
+    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12 }));
+  scene.add(outerWire);
+
+  PIECES.forEach(def => {
+    const [sx, sy, sz] = def.size(a, b);
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(sx - GAP, sy - GAP, sz - GAP),
+      new THREE.MeshPhongMaterial({ color: def.color, transparent: true, opacity: 0.84, shininess: 70 })
+    );
+    scene.add(mesh);
+    meshes.push(mesh);
+
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(sx - GAP, sy - GAP, sz - GAP)),
+      new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 })
+    );
+    scene.add(edges);
+    edgeSets.push(edges);
+
+    const div = document.createElement('div');
+    div.className = 'piece-label';
+    div.textContent = def.label;
+    div.style.color = def.hex;
+    div.style.opacity = '0';
+    const labelObj = new CSS2DObject(div);
+    labelObj.position.set(0, 0, 0);
+    mesh.add(labelObj);
+    labels.push(labelObj);
+  });
+
+  const dist = a * 2.6;
+  camera.position.set(dist, dist * 0.75, dist);
+  controls.target.set(0, 0, 0);
+  controls.update();
+
+  buildDimensions(a, b);
+  updatePanel(a, b);
+}
+
+function applyPositions(a, b, progress) {
+  const EXPLODE_DIST = a * 1.3;
+
+  PIECES.forEach((def, i) => {
+    const bc  = baseCenter(def.octant, a, b);
+    const dir = new THREE.Vector3(...def.octant).normalize();
+    meshes[i].position.set(
+      bc[0] + dir.x * progress * EXPLODE_DIST,
+      bc[1] + dir.y * progress * EXPLODE_DIST,
+      bc[2] + dir.z * progress * EXPLODE_DIST
+    );
+    edgeSets[i].position.copy(meshes[i].position);
+  });
+
+  labels.forEach(lb => { lb.element.style.opacity = (progress * 1.6).toFixed(2); });
+  if (outerWire) outerWire.material.opacity = 0.12 * (1 - progress);
+
+  const dimOp = Math.max(0, 1 - progress * 3);
+  if (dimMat) dimMat.opacity = 0.65 * dimOp;
+  dimLabels.forEach(lb => { lb.element.style.opacity = String(dimOp); });
+}
+
+function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2); }
+
+function updatePanel(a, b) {
+  const c   = a - b;
+  const c3  = Math.pow(c, 3);
+  const c2b = 3 * c * c * b;
+  const cb2 = 3 * c * b * b;
+  const b3  = Math.pow(b, 3);
+  const a3  = Math.pow(a, 3);
+
+  document.getElementById('formula-numeric').textContent =
+    `${fmt(a3)} − ${fmt(3*a*a*b)} + ${fmt(3*a*b*b)} − ${fmt(b3)} = ${fmt(c3)}`;
+  document.getElementById('formula-geo').textContent =
+    `В кубе a³: ${fmt(c3)} + ${fmt(c2b)} + ${fmt(cb2)} + ${fmt(b3)} = ${fmt(a3)}`;
+
+  document.getElementById('leg-main').textContent = `= ${fmt(c3)}`;
+  document.getElementById('leg-c2b').textContent  = `× ${fmt(c*c*b)} = ${fmt(c2b)}`;
+  document.getElementById('leg-cb2').textContent  = `× ${fmt(c*b*b)} = ${fmt(cb2)}`;
+  document.getElementById('leg-b3').textContent   = `= ${fmt(b3)}`;
+}
+
+const sliderA = document.getElementById('slider-a');
+const sliderB = document.getElementById('slider-b');
+
+sliderA.addEventListener('input', e => {
+  curA = parseFloat(e.target.value);
+  document.getElementById('val-a').textContent = curA;
+  const maxB = curA - 0.5;
+  sliderB.max = maxB;
+  if (curB >= curA) {
+    curB = maxB;
+    sliderB.value = curB;
+    document.getElementById('val-b').textContent = fmt(curB);
+  }
+  resetExplode();
+  buildScene(curA, curB);
+});
+
+sliderB.addEventListener('input', e => {
+  curB = parseFloat(e.target.value);
+  document.getElementById('val-b').textContent = curB;
+  resetExplode();
+  buildScene(curA, curB);
+});
+
+function resetExplode() {
+  isExploded = false;
+  explodeTarget = 0;
+  document.getElementById('btn-explode').textContent = 'Разобрать куб';
+}
+
+document.getElementById('btn-explode').addEventListener('click', () => {
+  isExploded = !isExploded;
+  explodeTarget = isExploded ? 1 : 0;
+  document.getElementById('btn-explode').textContent = isExploded ? 'Собрать куб' : 'Разобрать куб';
+});
+
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  labelRenderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function animate() {
+  requestAnimationFrame(animate);
+  explodeProgress += (explodeTarget - explodeProgress) * 0.055;
+  applyPositions(curA, curB, explodeProgress);
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+buildScene(curA, curB);
+animate();
+</script>
+</body>
+</html>
