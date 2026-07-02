@@ -34,6 +34,7 @@ let currentTopicId = null;
 let currentPhase = "theory"; // theory | easy | medium | hard | test | done
 let currentTasks = [];
 let currentTopicStars = 9;
+let currentTopicType = null;
 let currentConcepts = [];
 let currentTheoryImages = [];
 let masteredConceptsSet = new Set();
@@ -288,6 +289,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   currentPhase = "theory";
   messages = [];
   chat.innerHTML = "";
+  currentTopicType = null;
   currentConcepts = [];
   currentTheoryImages = [];
   masteredConceptsSet = new Set();
@@ -317,6 +319,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   } else {
     const topicData = findTopicById(topicIdArg);
     currentTopicStars = topicData?.stars ?? 9;
+    currentTopicType = topicData?.type ?? null;
     currentConcepts = topicData?.concepts ?? [];
     currentTheoryImages = topicData?.theoryImages ?? [];
     renderConceptBar();
@@ -361,7 +364,11 @@ function updatePhaseUI() {
     doneBtn.classList.add("hidden");
   } else {
     doneBtn.classList.remove("hidden");
-    doneBtn.textContent = currentPhase === "theory" ? "→ Выбрать задания" : "→ Финальный тест";
+    if (currentPhase === "theory") {
+      doneBtn.textContent = currentTopicType === "theory-only" ? "✓ Усвоено" : "→ Выбрать задания";
+    } else {
+      doneBtn.textContent = "→ Финальный тест";
+    }
   }
 }
 
@@ -1515,6 +1522,12 @@ window.addEventListener("popstate", async () => {
 
 doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
+    if (currentTopicType === "theory-only") {
+      showAchievement("🧠", "Тема понята!");
+      if (!isReplayMode) { await saveSession("theory"); await addStars(currentTopicStars); if (currentTopicId) await markCompleted(currentTopicId); }
+      showLobby();
+      return;
+    }
     showAchievement("🧠", "Тема понята!");
     if (!isReplayMode) { await saveSession("theory"); await addStars(currentTopicStars); }
     showDifficultySelector();
