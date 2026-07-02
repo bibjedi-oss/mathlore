@@ -1233,10 +1233,11 @@ async function renderSpecialCourseTopics(courseId) {
                   const done = progress.completed.has(t.id);
                   const resume = !done && progress.inProgress.has(t.id);
                   const unlocked = isTopicUnlocked(items, ti, progress);
-                  if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
-                  if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}</button>`;
-                  if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}</button>`;
-                  return `<button class="topic-btn" data-topic-id="${t.id}" data-topic-label="${t.label}">${t.label}</button>`;
+                  const optBadge = t.optional ? ` <span class="optional-badge">★ необязательно</span>` : "";
+                  if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}${optBadge}</button>`;
+                  if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}${optBadge}</button>`;
+                  if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}${optBadge}</button>`;
+                  return `<button class="topic-btn${t.optional ? " optional" : ""}" data-topic-id="${t.id}" data-topic-label="${t.label}">${t.label}${optBadge}</button>`;
                 }).join("")}
               </div>
             </div>`;
