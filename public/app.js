@@ -924,7 +924,11 @@ function isThemeUnlocked(gradeNum) {
 
 function isTopicUnlocked(topics, topicIndex, progress, gradeNum) {
   if (gradeNum !== undefined && (currentUser?.currentGrade ?? 1) > gradeNum) return true;
-  if (topicIndex === 0) return true;
+  const topic = topics[topicIndex];
+  if (topicIndex === 0) {
+    if (!topic.requires || topic.requires.length === 0) return true;
+    return topic.requires.every(id => progress.completed.has(id));
+  }
   return progress.completed.has(topics[topicIndex - 1].id);
 }
 
