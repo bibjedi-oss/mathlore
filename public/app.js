@@ -922,7 +922,8 @@ function isThemeUnlocked(gradeNum) {
   return gradeNum <= cg;
 }
 
-function isTopicUnlocked(topics, topicIndex, progress) {
+function isTopicUnlocked(topics, topicIndex, progress, gradeNum) {
+  if (gradeNum !== undefined && (currentUser?.currentGrade ?? 1) > gradeNum) return true;
   if (topicIndex === 0) return true;
   return progress.completed.has(topics[topicIndex - 1].id);
 }
@@ -1410,7 +1411,7 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
             ${items.map((t, ti) => {
               const done = progress.completed.has(t.id);
               const resume = !done && progress.inProgress.has(t.id);
-              const topicUnlocked = isTopicUnlocked(items, ti, progress);
+              const topicUnlocked = isTopicUnlocked(items, ti, progress, gradeData.grade);
               if (!topicUnlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}</button>`;
               if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}</button>`;
               if (resume) return `<button class="topic-btn resume" data-topic-id="${t.id}" data-topic-label="${t.label}">▶ ${t.label}</button>`;
