@@ -625,6 +625,7 @@ header {
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 4px;
+  flex-shrink: 0;
 }
 .cave-chapter.locked {
   opacity: 0.55;
