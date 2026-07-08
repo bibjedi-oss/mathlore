@@ -1314,6 +1314,19 @@ header {
   padding: 4px 2px;
 }
 
+.auth-access-notice {
+  font-size: 13px;
+  color: #c8a84b;
+  background: rgba(200, 168, 75, 0.1);
+  border: 1px solid rgba(200, 168, 75, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+  line-height: 1.6;
+}
+.auth-access-notice a { color: #e0b86a; text-decoration: underline; }
+
 /* --- Payment steps --- */
 .payment-steps {
   display: flex;
