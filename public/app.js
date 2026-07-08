@@ -1478,6 +1478,9 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
       const ch = h.closest(".cave-chapter");
       ch.classList.toggle("open");
       h.querySelector(".cave-chapter-arrow").textContent = ch.classList.contains("open") ? "▲" : "▼";
+      if (ch.classList.contains("open")) {
+        setTimeout(() => h.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      }
     });
   });
 
@@ -1487,6 +1490,9 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
       const q = h.closest(".cave-theme");
       q.classList.toggle("open");
       h.querySelector(".cave-theme-arrow").textContent = q.classList.contains("open") ? "▲" : "▼";
+      if (q.classList.contains("open")) {
+        setTimeout(() => h.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      }
     });
   });
 
