@@ -38,6 +38,8 @@ let currentTopicType = null;
 let currentConcepts = [];
 let currentTheoryImages = [];
 let masteredConceptsSet = new Set();
+let notebookRequested = false;
+let notebookConfirmed = false;
 let isWaiting = false;
 let ttsEnabled = true;
 let currentAudio = null;
@@ -293,6 +295,8 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   currentConcepts = [];
   currentTheoryImages = [];
   masteredConceptsSet = new Set();
+  notebookRequested = false;
+  notebookConfirmed = false;
   chatScreen.classList.remove("hidden");
   backBtn.classList.remove("hidden");
   doneBtn.classList.remove("hidden");
@@ -350,6 +354,16 @@ function renderConceptBar() {
     `<span class="concept-chip${masteredConceptsSet.has(c) ? " mastered" : ""}" title="${c}">${masteredConceptsSet.has(c) ? "★" : "☆"}</span>`
   ).join("");
   conceptBar.classList.toggle("hidden", currentPhase !== "theory");
+
+  if (!notebookRequested && currentPhase === "theory" && currentConcepts.length > 0 && masteredConceptsSet.size >= currentConcepts.length) {
+    notebookRequested = true;
+    doneBtn.classList.add("hidden");
+    const defsList = currentConcepts.map((c, i) => `${i + 1}. ${c}`).join("\n");
+    const msg = `Отлично! Все концепты темы открыты 🌟\n\nВот их формальные определения — запиши в тетрадь:\n${defsList}\n\nКогда запишешь — пришли фото тетради, я проверю конспект.`;
+    addMessage("bot", msg);
+    messages.push({ role: "assistant", content: msg });
+    speak(msg);
+  }
 }
 
 function updatePhaseUI() {
@@ -360,7 +374,7 @@ function updatePhaseUI() {
   phaseBar.className = `phase-bar phase-${currentPhase}`;
   conceptBar.classList.toggle("hidden", currentPhase !== "theory");
   const diffPhase = ["easy", "medium", "hard"].includes(currentPhase);
-  if (currentPhase === "test" || currentPhase === "done" || diffPhase) {
+  if (currentPhase === "test" || currentPhase === "done" || diffPhase || (notebookRequested && !notebookConfirmed)) {
     doneBtn.classList.add("hidden");
   } else {
     doneBtn.classList.remove("hidden");
@@ -1664,7 +1678,7 @@ async function sendToAPI() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId), tasks: currentTasks, concepts: currentConcepts, theoryImages: currentTheoryImages })
+      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId), tasks: currentTasks, concepts: currentConcepts, theoryImages: currentTheoryImages, notebookRequested })
     });
 
     if (res.status === 402) {
@@ -1690,6 +1704,12 @@ async function sendToAPI() {
       if (data.masteredConcepts?.length > 0) {
         data.masteredConcepts.forEach(c => masteredConceptsSet.add(c));
         renderConceptBar();
+      }
+      if (data.notebookAccepted) {
+        notebookConfirmed = true;
+        showAchievement("📓", "Конспект принят!");
+        doneBtn.classList.remove("hidden");
+        doneBtn.textContent = currentTopicType === "theory-only" ? "✓ Усвоено" : "→ Выбрать задания";
       }
       if (data.levelPassed) {
         const icons = { easy: "⭐", medium: "⭐⭐", hard: "🏆" };

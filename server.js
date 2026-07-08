@@ -684,6 +684,13 @@ ${concepts.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 [КОНЦЕПТ_ОСВОЕН: <точный текст понятия из списка выше>]
 Ставь маркер только один раз для каждого понятия. Только когда ребёнок реально его сформулировал — не раньше.` : ""}
 
+${notebookRequested && concepts.length > 0 ? `ПРОВЕРКА КОНСПЕКТА:
+Ученик уже открыл все концепты темы и записал их в тетрадь. Он прислал фото тетради.
+Убедись, что все эти понятия записаны верно:
+${concepts.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+Если все понятия записаны корректно — добавь в самый конец ответа на отдельной строке: [КОНСПЕКТ_ПРИНЯТ]
+Если есть ошибки или пропуски — укажи конкретно что нужно исправить или дописать, и попроси прислать исправленное фото.` : ""}
+
 ${theoryImages.length > 0 ? `ИЛЛЮСТРАЦИИ ИЗ УЧЕБНИКА:
 Для этой темы доступны рисунки из учебника. Когда картинка поможет ребёнку лучше понять идею — вставь её в своё сообщение тегом [img:/img/tasks/FILENAME]. Не вставляй все сразу — только ту, что нужна прямо сейчас.
 ${theoryImages.map(img => `• ${img.src} — ${img.hint}`).join("\n")}` : ""}
@@ -762,7 +769,7 @@ app.get("/api/tasks/:topicId/:difficulty", requireAuth("child"), async (req, res
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
 app.post("/api/chat", requireAuth("child"), async (req, res) => {
-  const { messages, topic, phase, noTextbook, tasks, concepts, theoryImages } = req.body;
+  const { messages, topic, phase, noTextbook, tasks, concepts, theoryImages, notebookRequested = false } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages required" });
   try {
     const { data: parent } = await supabase
@@ -813,14 +820,15 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     let text = response.content.find(b => b.type === "text")?.text ?? "";
     const testPassed = text.includes("[ТЕСТ_ПРОЙДЕН]");
     const levelPassed = text.includes("[УРОВЕНЬ_ПРОЙДЕН]");
+    const notebookAccepted = text.includes("[КОНСПЕКТ_ПРИНЯТ]");
     const masteredConcepts = [];
     const conceptMatches = [...text.matchAll(/\[КОНЦЕПТ_ОСВОЕН:\s*([^\]]+)\]/g)];
     conceptMatches.forEach(m => masteredConcepts.push(m[1].trim()));
-    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").replace(/\[УРОВЕНЬ_ПРОЙДЕН\]/g, "").replace(/\[КОНЦЕПТ_ОСВОЕН:[^\]]+\]/g, "").trim();
+    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").replace(/\[УРОВЕНЬ_ПРОЙДЕН\]/g, "").replace(/\[КОНЦЕПТ_ОСВОЕН:[^\]]+\]/g, "").replace(/\[КОНСПЕКТ_ПРИНЯТ\]/g, "").trim();
     const isFiction = text.startsWith("[ВЫМЫСЕЛ]");
     text = text.replace(/^\[ВЫМЫСЕЛ\]\s*/g, "");
     if (isFiction) text = "(Выдуманная история, но она хорошо объясняет тему)\n\n" + text;
-    res.json({ reply: text, testPassed, levelPassed, masteredConcepts, tokenBalance: newBalance, imageDescription });
+    res.json({ reply: text, testPassed, levelPassed, masteredConcepts, notebookAccepted, tokenBalance: newBalance, imageDescription });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "API error" });
