@@ -347,7 +347,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
 function renderConceptBar() {
   if (currentConcepts.length === 0) { conceptBar.classList.add("hidden"); return; }
   conceptBar.innerHTML = currentConcepts.map(c =>
-    `<span class="concept-chip${masteredConceptsSet.has(c) ? " mastered" : ""}" title="${c}">${c}</span>`
+    `<span class="concept-chip${masteredConceptsSet.has(c) ? " mastered" : ""}" title="${c}">${masteredConceptsSet.has(c) ? "★" : "☆"}</span>`
   ).join("");
   conceptBar.classList.toggle("hidden", currentPhase !== "theory");
 }

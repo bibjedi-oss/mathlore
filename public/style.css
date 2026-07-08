@@ -1718,31 +1718,24 @@ header {
 
 .concept-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 14px;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
   background: rgba(10,5,1,0.45);
   backdrop-filter: blur(4px);
   border-bottom: 1px solid rgba(255, 210, 120, 0.15);
   flex-shrink: 0;
 }
 .concept-chip {
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  background: rgba(255, 200, 80, 0.12);
-  color: rgba(255, 220, 130, 0.6);
-  border: 1px solid rgba(255, 200, 80, 0.2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
-  transition: background 0.4s, color 0.4s, border-color 0.4s;
+  font-size: 20px;
+  color: rgba(255, 220, 130, 0.25);
+  transition: color 0.4s, text-shadow 0.4s;
+  cursor: default;
+  line-height: 1;
 }
 .concept-chip.mastered {
-  background: rgba(80, 200, 120, 0.25);
-  color: #7ee8a0;
-  border-color: rgba(80, 200, 120, 0.5);
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
 }
 
 /* --- Logout icon in main header --- */
