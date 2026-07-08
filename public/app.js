@@ -554,7 +554,7 @@ document.getElementById("parentAuthBtn").addEventListener("click", async () => {
 
   const url = parentMode === "login"
     ? "/api/auth/parent-login"
-    : "https://archimath.ru/proxy/register.php";
+    : "/api/auth/parent-register";
   const body = parentMode === "login" ? { email, password } : { email, password, name };
 
   try {
