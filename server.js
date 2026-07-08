@@ -64,7 +64,6 @@ function requireAuth(role) {
 // ── Parent auth ──────────────────────────────────────────────────────────────
 
 app.post("/api/auth/parent-register", async (req, res) => {
-  return res.status(403).json({ error: "Регистрация временно закрыта" });
   const { email, password, name } = req.body;
   if (!email || !password) return res.status(400).json({ error: "Email и пароль обязательны" });
   try {
