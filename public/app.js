@@ -907,7 +907,7 @@ async function loadChildProgress(childId, childName) {
 // ── Lobby ─────────────────────────────────────────────────────────────────────
 function renderLobby() {
   if (selectedSpecialCourse) renderSpecialCourseTopics(selectedSpecialCourse);
-  else if (!selectedGrade) renderGradeSelect();
+  else if (!selectedGrade) { selectedGrade = 7; renderSubjectSelect(7); }
   else if (!selectedSubject) renderSubjectSelect(selectedGrade);
   else renderTopicLobby(selectedGrade, selectedSubject);
 }
@@ -1332,8 +1332,8 @@ async function renderSubjectSelect(gradeNum) {
     </div>`;
 
   lobbyScreen.querySelector(".cave-back-btn").addEventListener("click", () => {
-    selectedGrade = null;
-    renderGradeSelect();
+    selectedSubject = null;
+    renderSubjectSelect(selectedGrade);
   });
   lobbyScreen.querySelectorAll(".subject-card").forEach(card => {
     card.addEventListener("click", () => {
