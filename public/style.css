@@ -531,6 +531,9 @@ header {
   padding: 6px;
   overflow-y: auto;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .cave-theme {
