@@ -854,6 +854,7 @@ app.get("/apk", async (req, res) => {
 });
 app.get("/demo",    (req, res) => res.sendFile("demo.html",    { root: "public" }));
 app.get("/app",     (req, res) => res.sendFile("index.html",   { root: "public" }));
+app.get("/logic",   (req, res) => res.sendFile("index.html",   { root: "public" }));
 
 // Если LANDING_AS_HOME=true в env — лендинг на /, приложение только на /app
 // Если не задано (по умолчанию) — приложение на /, лендинг на /landing
