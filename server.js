@@ -527,7 +527,7 @@ function buildMotivationalPrompt() {
 - Никогда не говоришь "неправильно"`;
 }
 
-function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = [], concepts = [], theoryImages = []) {
+function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = [], concepts = [], theoryImages = [], notebookRequested = false) {
   if (topic === "Зачем мне логика?") return buildMotivationalPrompt();
   const isConsolidation = topic.startsWith("Закрепление");
   const isGeometry = /геометр|треугольник|окружност|угол|прямоугольник|параллелограмм|трапеци|ромб|теорем|теорема|вектор|координат|площадь|периметр|конус|цилиндр|пирамид|сфер|куб|призм/i.test(topic);
@@ -785,7 +785,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const response = await anthropic.messages.create({
       model: currentModel,
       max_tokens: 1024,
-      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : []),
+      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested),
       messages,
     });
 
