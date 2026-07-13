@@ -362,7 +362,8 @@ function renderConceptBar() {
     const msg = `Отлично! Все концепты темы открыты 🌟\n\nВот их формальные определения — запиши в тетрадь:\n${defsList}\n\nКогда запишешь — пришли фото тетради, я проверю конспект.`;
     addMessage("bot", msg);
     messages.push({ role: "assistant", content: msg });
-    speak(msg);
+    const speakWhenReady = () => { if (currentAudio) setTimeout(speakWhenReady, 300); else speak(msg); };
+    speakWhenReady();
   }
 }
 
