@@ -33,6 +33,7 @@ let topic = "";
 let currentTopicId = null;
 let currentPhase = "theory"; // theory | easy | medium | hard | test | done
 let currentTasks = [];
+let currentTasksDone = 0;
 let currentTopicStars = 9;
 let currentTopicType = null;
 let currentConcepts = [];
@@ -348,6 +349,13 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   }
 }
 
+function renderTaskBar() {
+  conceptBar.innerHTML = Array.from({ length: 4 }, (_, i) =>
+    `<span class="concept-chip${i < currentTasksDone ? " mastered" : ""}">${i < currentTasksDone ? "★" : "☆"}</span>`
+  ).join("");
+  conceptBar.classList.remove("hidden");
+}
+
 function renderConceptBar() {
   if (currentConcepts.length === 0) { conceptBar.classList.add("hidden"); return; }
   conceptBar.innerHTML = currentConcepts.map(c =>
@@ -373,8 +381,14 @@ function updatePhaseUI() {
   phaseLabel.textContent = labels[currentPhase] || "";
   phaseBar.classList.remove("hidden");
   phaseBar.className = `phase-bar phase-${currentPhase}`;
-  conceptBar.classList.toggle("hidden", currentPhase !== "theory");
   const diffPhase = ["easy", "medium", "hard"].includes(currentPhase);
+  if (currentPhase === "theory") {
+    renderConceptBar();
+  } else if (diffPhase) {
+    renderTaskBar();
+  } else {
+    conceptBar.classList.add("hidden");
+  }
   if (currentPhase === "test" || currentPhase === "done" || diffPhase || (notebookRequested && !notebookConfirmed)) {
     doneBtn.classList.add("hidden");
   } else {
@@ -1714,6 +1728,10 @@ async function sendToAPI() {
         data.masteredConcepts.forEach(c => masteredConceptsSet.add(c));
         renderConceptBar();
       }
+      if (data.taskDone) {
+        currentTasksDone = Math.min(currentTasksDone + 1, 4);
+        renderTaskBar();
+      }
       if (data.notebookAccepted) {
         notebookConfirmed = true;
         showAchievement("📓", "Конспект принят!");
@@ -1808,6 +1826,7 @@ async function startDifficulty(level) {
   document.querySelectorAll(".diff-select-card").forEach(el => el.remove());
   currentPhase = level;
   currentTasks = [];
+  currentTasksDone = 0;
   updatePhaseUI();
   if (!isReplayMode) await saveSession(level);
   try {
@@ -1822,6 +1841,11 @@ async function startDifficulty(level) {
     }
   } catch {}
   const levelLabel = { easy: "лёгкого", medium: "среднего", hard: "сложного" }[level];
+  if (currentTasks.length === 0) {
+    addMessage("bot", `Все задания ${levelLabel} уровня по теме «${topic}» выполнены! Выбери другой уровень.`);
+    setTimeout(() => showDifficultySelector(), 500);
+    return;
+  }
   messages = [{ role: "user", content: `Начинаем задания ${levelLabel} уровня.` }];
   sendToAPI();
 }

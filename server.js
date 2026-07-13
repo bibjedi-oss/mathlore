@@ -561,18 +561,16 @@ function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = 
 
   if (phase === "easy" || phase === "medium" || phase === "hard") {
     const levelName = { easy: "лёгкого", medium: "среднего", hard: "сложного" }[phase];
-    const tasksList = tasks.length > 0
-      ? `Задания для этого уровня — давай строго по очереди:\n${tasks.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
-      : `Придумай 4 задания ${levelName} уровня по теме "${topic}" для ${grade} класса.`;
+    const tasksList = `Задания для этого уровня — давай строго по очереди:\n${tasks.map((t, i) => `${i + 1}. ${t}`).join("\n")}`;
     return `Ты — Архи, проводишь задания ${levelName} уровня по теме: ${topic} (${grade} класс).
 
 ${tasksList}
 
 ПРАВИЛА — соблюдай строго:
 1. Начни с первого задания прямо сейчас — без вступлений
-2. Верный ответ → коротко похвали (1 предложение) → следующее задание
+2. Верный ответ → добавь [ЗАДАНИЕ_ВЫПОЛНЕНО] в конец ответа → коротко похвали (1 предложение) → дай следующее задание
 3. Ошибка → мягко укажи где, дай подсказку уровня ${grade} класса, жди повтора. Не решай сам.
-4. После верного ответа на последнее (4-е) задание — напиши короткую похвалу и добавь [УРОВЕНЬ_ПРОЙДЕН] в самый конец
+4. После верного ответа на последнее (4-е) задание — напиши короткую похвалу и добавь [ЗАДАНИЕ_ВЫПОЛНЕНО] и [УРОВЕНЬ_ПРОЙДЕН] в самый конец
 
 ${base}`;
   }
@@ -823,17 +821,18 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     let text = response.content.find(b => b.type === "text")?.text ?? "";
     const testPassed = text.includes("[ТЕСТ_ПРОЙДЕН]");
     const levelPassed = text.includes("[УРОВЕНЬ_ПРОЙДЕН]");
+    const taskDone = text.includes("[ЗАДАНИЕ_ВЫПОЛНЕНО]");
     const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
     const lastMsgHasPhoto = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some(c => c.type === "image");
     const notebookAccepted = text.includes("[КОНСПЕКТ_ПРИНЯТ]") && lastMsgHasPhoto;
     const masteredConcepts = [];
     const conceptMatches = [...text.matchAll(/\[КОНЦЕПТ_ОСВОЕН:\s*([^\]]+)\]/g)];
     conceptMatches.forEach(m => masteredConcepts.push(m[1].trim()));
-    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").replace(/\[УРОВЕНЬ_ПРОЙДЕН\]/g, "").replace(/\[КОНЦЕПТ_ОСВОЕН:[^\]]+\]/g, "").replace(/\[КОНСПЕКТ_ПРИНЯТ\]/g, "").trim();
+    text = text.replace(/\[ТЕСТ_ПРОЙДЕН\]/g, "").replace(/\[УРОВЕНЬ_ПРОЙДЕН\]/g, "").replace(/\[КОНЦЕПТ_ОСВОЕН:[^\]]+\]/g, "").replace(/\[КОНСПЕКТ_ПРИНЯТ\]/g, "").replace(/\[ЗАДАНИЕ_ВЫПОЛНЕНО\]/g, "").trim();
     const isFiction = text.startsWith("[ВЫМЫСЕЛ]");
     text = text.replace(/^\[ВЫМЫСЕЛ\]\s*/g, "");
     if (isFiction) text = "(Выдуманная история, но она хорошо объясняет тему)\n\n" + text;
-    res.json({ reply: text, testPassed, levelPassed, masteredConcepts, notebookAccepted, tokenBalance: newBalance, imageDescription });
+    res.json({ reply: text, testPassed, levelPassed, taskDone, masteredConcepts, notebookAccepted, tokenBalance: newBalance, imageDescription });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "API error" });
