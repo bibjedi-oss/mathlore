@@ -225,10 +225,7 @@ function showLobby() {
 }
 
 const PHASE_TRIGGERS = [
-  "Начни историю прямо сейчас, с первого предложения. Без вступлений.",
-  "Переходим к заданиям из учебника.",
-  "Переходим к практике.",
-  "Дай мне финальное испытание — самое сложное задание на эту тему."
+  "Начни историю прямо сейчас, с первого предложения. Без вступлений."
 ];
 
 const TOKEN_RATE = 200 / 300_000; // ₽ за 1 токен (300к ≈ 200₽)
@@ -376,8 +373,7 @@ function renderConceptBar() {
 }
 
 function updatePhaseUI() {
-  const exercisesLabel = isSpecialCourseTopic(currentTopicId) ? "Практика" : "Задания из учебника";
-  const labels = { theory: "Теория", exercises: exercisesLabel, test: "Финальный тест", easy: "⭐ Лёгкий", medium: "⭐⭐ Средний", hard: "⭐⭐⭐ Сложный", done: "Завершено" };
+  const labels = { theory: "Теория", test: "Мотивационный тест", easy: "⭐ Лёгкий", medium: "⭐⭐ Средний", hard: "⭐⭐⭐ Сложный", done: "Завершено" };
   phaseLabel.textContent = labels[currentPhase] || "";
   phaseBar.classList.remove("hidden");
   phaseBar.className = `phase-bar phase-${currentPhase}`;
@@ -393,11 +389,7 @@ function updatePhaseUI() {
     doneBtn.classList.add("hidden");
   } else {
     doneBtn.classList.remove("hidden");
-    if (currentPhase === "theory") {
-      doneBtn.textContent = currentTopicType === "theory-only" ? "✓ Усвоено" : "→ Выбрать задания";
-    } else {
-      doneBtn.textContent = "→ Финальный тест";
-    }
+    doneBtn.textContent = currentTopicType === "theory-only" ? "✓ Усвоено" : "→ Выбрать задания";
   }
 }
 
@@ -834,7 +826,7 @@ async function loadChildProgress(childId, childName) {
       return;
     }
 
-    const phaseLabels = { theory: "Теория", exercises: "Задания", test: "Тест", done: "✓ Завершено" };
+    const phaseLabels = { theory: "Теория", test: "Тест", done: "✓ Завершено" };
 
     // Group sessions by theme using curriculum
     const themes = [];
@@ -1682,9 +1674,7 @@ photoInput.addEventListener("change", async () => {
   const mediaType = file.type || "image/jpeg";
   messages.push({ role: "user", content: [
     { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-    { type: "text", text: currentPhase === "exercises"
-      ? (isSpecialCourseTopic(currentTopicId) ? "Я написал ответ на задачу. Прочитай и проверь." : "Я решил задачу из учебника. Проверь моё решение.")
-      : "Я написал ответ на бумаге. Прочитай что там написано и продолжай разговор как обычно." }
+    { type: "text", text: "Я написал ответ на бумаге. Прочитай что там написано и продолжай разговор как обычно." }
   ]});
   addMessage("user", "📷 Отправил фото");
   await sendToAPI();
