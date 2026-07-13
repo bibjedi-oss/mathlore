@@ -432,7 +432,7 @@ async function sendDemoMessage() {
       speak(data.reply);
       if (data.eurekaReached) {
         setTimeout(() => {
-          addMessage("bot", "Вот так и открывают настоящую математику — не зубрёжкой, а через живую задачу. Хочешь, чтобы ребёнок занимался так каждый день?");
+          addMessage("bot", "Вот так и открывают настоящую математику — не зубрёжкой, а через живую задачу. Хочешь, чтобы ученик занимался так каждый день?");
           showDemoCTA();
         }, 1800);
         return;
@@ -550,7 +550,7 @@ document.getElementById("parentToggleBtn").addEventListener("click", () => {
   authTab = isParent ? "child" : "parent";
   document.getElementById("parentAuthPanel").classList.toggle("hidden", authTab !== "parent");
   document.getElementById("childAuthPanel").classList.toggle("hidden", authTab !== "child");
-  document.getElementById("parentToggleBtn").textContent = isParent ? "Вход для родителей" : "← Назад";
+  document.getElementById("parentToggleBtn").textContent = isParent ? "Вход для взрослых" : "← Назад";
 });
 
 document.querySelectorAll(".auth-mode").forEach(btn => {
@@ -1772,7 +1772,7 @@ function showTrialEndedModal() {
     <div class="modal-emoji">⏸️</div>
     <div class="modal-text">
       <b>Занятие на паузе</b><br><br>
-      Сообщи родителям, что у тебя закончились токены.
+      Сообщи взрослому, что у тебя закончились токены.
     </div>`;
   modal.classList.remove("hidden");
 }
