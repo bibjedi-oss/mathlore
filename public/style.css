@@ -1756,6 +1756,37 @@ header {
 }
 .understood-btn:hover { background: #3a9669; }
 
+/* --- Finish actions --- */
+.finish-actions {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+  width: 100%;
+  max-width: 320px;
+}
+.finish-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffd080;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.finish-btn {
+  padding: 13px 20px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.finish-btn:hover { opacity: 0.85; }
+.finish-btn-theory { background: #4a6fa5; color: #fff; }
+.finish-btn-tasks  { background: #c8860a; color: #fff; }
+.finish-btn-lobby  { background: rgba(255,255,255,0.12); color: #e8d5a0; border: 1px solid rgba(255,255,255,0.2); }
+
 /* --- Difficulty selector --- */
 .diff-select-card {
   align-self: flex-start;

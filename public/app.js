@@ -1841,11 +1841,23 @@ async function startDifficulty(level) {
 }
 
 function showFinishBtn() {
-  const btn = document.createElement("button");
-  btn.className = "understood-btn";
-  btn.textContent = "🎉 Вернуться к темам";
-  btn.addEventListener("click", showLobby);
-  chat.appendChild(btn);
+  const wrap = document.createElement("div");
+  wrap.className = "finish-actions";
+  wrap.innerHTML = `
+    <div class="finish-title">🎉 Тема пройдена!</div>
+    <button class="finish-btn finish-btn-theory">📖 Повторить теорию</button>
+    <button class="finish-btn finish-btn-tasks">⭐ Ещё задания</button>
+    <button class="finish-btn finish-btn-lobby">← К темам</button>
+  `;
+  wrap.querySelector(".finish-btn-theory").addEventListener("click", () => {
+    showChat(topic, currentTopicId);
+  });
+  wrap.querySelector(".finish-btn-tasks").addEventListener("click", () => {
+    wrap.remove();
+    showDifficultySelector();
+  });
+  wrap.querySelector(".finish-btn-lobby").addEventListener("click", showLobby);
+  chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
 }
 
