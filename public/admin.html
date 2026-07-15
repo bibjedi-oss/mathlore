@@ -416,7 +416,7 @@
       try {
         const res = await fetch(`/api/admin/tutors/${tutorId}/credits`, {
           method: "POST", headers: authHeaders(),
-          body: JSON.stringify({ add })
+          body: JSON.stringify({ amount: add })
         });
         if (res.ok) {
           ok.style.display = "inline";
