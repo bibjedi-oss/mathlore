@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArchiMath — Кабинет репетитора</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f1eb; color: #2c1a0e; min-height: 100vh; }
+
+    /* ── Auth ── */
+    #authScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .auth-box { background: #fff; border-radius: 16px; padding: 40px 32px; width: 360px; box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+    .auth-logo { font-size: 22px; font-weight: 700; color: #8b5e1a; text-align: center; margin-bottom: 24px; }
+    .auth-box h2 { font-size: 18px; margin-bottom: 20px; text-align: center; color: #4a2c08; }
+    .auth-input { width: 100%; padding: 11px 14px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 15px; margin-bottom: 12px; outline: none; transition: border-color 0.2s; }
+    .auth-input:focus { border-color: #c8860a; }
+    .auth-btn { width: 100%; padding: 12px; background: #c8860a; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .auth-btn:hover { background: #a56e08; }
+    .auth-error { color: #c0392b; font-size: 13px; margin-top: 8px; text-align: center; }
+
+    /* ── Layout ── */
+    #appScreen { display: none; min-height: 100vh; }
+    .top-bar { background: #4a2c08; color: #ffe8b0; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+    .top-bar-logo { font-size: 18px; font-weight: 700; flex: 1; }
+    .top-bar-balance { font-size: 14px; background: rgba(255,255,255,0.12); padding: 4px 12px; border-radius: 20px; }
+    .top-bar-logout { background: none; border: 1px solid rgba(255,255,255,0.3); color: #ffe8b0; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+    .top-bar-logout:hover { background: rgba(255,255,255,0.1); }
+
+    .main { display: flex; gap: 0; min-height: calc(100vh - 52px); }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 280px; background: #fff; border-right: 1px solid #e8e0d5; padding: 16px; flex-shrink: 0; overflow-y: auto; }
+    .sidebar-title { font-size: 12px; font-weight: 700; color: #8b5e1a; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+    .add-parent-btn { width: 100%; padding: 9px; background: #f0e8d8; border: 1.5px dashed #c8860a; border-radius: 10px; color: #8b5e1a; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 16px; }
+    .add-parent-btn:hover { background: #e8dcc8; }
+
+    .parent-item { border: 1px solid #e8e0d5; border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+    .parent-header { padding: 10px 12px; background: #faf7f2; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .parent-header:hover { background: #f0ebe0; }
+    .parent-name { font-weight: 600; font-size: 14px; flex: 1; }
+    .parent-balance { font-size: 12px; color: #8b5e1a; background: #f0e8d8; padding: 2px 8px; border-radius: 10px; }
+    .parent-arrow { font-size: 12px; color: #aaa; transition: transform 0.2s; }
+    .parent-item.open .parent-arrow { transform: rotate(90deg); }
+
+    .parent-children { display: none; padding: 8px; background: #fff; border-top: 1px solid #e8e0d5; }
+    .parent-item.open .parent-children { display: block; }
+    .child-item { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .child-item:hover { background: #f4f1eb; }
+    .child-item.active { background: #fff3e0; font-weight: 600; }
+    .child-grade { font-size: 11px; color: #aaa; }
+    .add-child-btn { width: 100%; padding: 7px; background: none; border: 1px dashed #ccc; border-radius: 8px; color: #aaa; font-size: 13px; cursor: pointer; margin-top: 6px; }
+    .add-child-btn:hover { border-color: #c8860a; color: #8b5e1a; }
+
+    /* ── Content ── */
+    .content { flex: 1; padding: 24px; overflow-y: auto; }
+    .content-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #aaa; font-size: 16px; gap: 8px; padding-top: 80px; }
+
+    /* ── Student view ── */
+    .student-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .student-name { font-size: 24px; font-weight: 700; color: #4a2c08; }
+    .student-grade { font-size: 14px; color: #8b5e1a; background: #f0e8d8; padding: 4px 12px; border-radius: 20px; }
+
+    .section-title { font-size: 13px; font-weight: 700; color: #8b5e1a; text-transform: uppercase; letter-spacing: 0.7px; margin: 24px 0 12px; }
+
+    /* Sessions list */
+    .sessions-list { display: flex; flex-direction: column; gap: 8px; }
+    .session-card { background: #fff; border: 1px solid #e8e0d5; border-radius: 12px; padding: 14px 16px; }
+    .session-card.done { border-left: 3px solid #27ae60; }
+    .session-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .session-topic { font-weight: 600; font-size: 15px; flex: 1; }
+    .session-phase { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #f0e8d8; color: #8b5e1a; }
+    .session-phase.done { background: #e8f5e9; color: #27ae60; }
+    .session-date { font-size: 12px; color: #aaa; }
+    .session-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .session-btn { padding: 5px 12px; border-radius: 7px; border: 1px solid #e0d8cc; background: #faf7f2; font-size: 13px; cursor: pointer; color: #4a2c08; }
+    .session-btn:hover { background: #f0e8d8; }
+    .session-btn.primary { background: #c8860a; color: #fff; border-color: #c8860a; }
+    .session-btn.primary:hover { background: #a56e08; }
+
+    /* Log viewer */
+    .log-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .log-box { background: #fff; border-radius: 16px; width: 100%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column; }
+    .log-header { padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; }
+    .log-title { font-size: 16px; font-weight: 700; flex: 1; }
+    .log-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
+    .log-body { flex: 1; overflow-y: auto; padding: 16px 20px; font-size: 14px; line-height: 1.7; }
+    .log-msg { margin-bottom: 12px; }
+    .log-msg .who { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .log-msg.user .who { color: #1565c0; }
+    .log-msg.bot .who { color: #8b5e1a; }
+    .log-msg .text { background: #f8f8f8; padding: 8px 12px; border-radius: 8px; white-space: pre-wrap; }
+    .log-footer { padding: 12px 20px; border-top: 1px solid #eee; display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* Credits panel */
+    .credits-panel { background: #fff; border: 1px solid #e8e0d5; border-radius: 12px; padding: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .credits-label { font-size: 14px; color: #4a2c08; flex: 1; }
+    .credits-balance { font-size: 18px; font-weight: 700; color: #8b5e1a; }
+    .credits-input { width: 120px; padding: 8px 12px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; }
+    .credits-btn { padding: 8px 16px; background: #c8860a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .credits-ok { color: #27ae60; font-size: 13px; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: #fff; border-radius: 16px; padding: 28px; width: 360px; }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #4a2c08; }
+    .modal-input { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 14px; margin-bottom: 10px; }
+    .modal-row { display: flex; gap: 8px; }
+    .modal-btn { flex: 1; padding: 11px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .modal-btn.primary { background: #c8860a; color: #fff; }
+    .modal-btn.secondary { background: #f0e8d8; color: #4a2c08; }
+    .modal-error { color: #c0392b; font-size: 13px; margin-top: 8px; }
+
+    .hidden { display: none !important; }
+    @media (max-width: 600px) {
+      .main { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e8e0d5; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">🔭 ArchiMath</div>
+    <h2>Кабинет репетитора</h2>
+    <input id="loginEmail" class="auth-input" type="email" placeholder="Email" />
+    <input id="loginPassword" class="auth-input" type="password" placeholder="Пароль" />
+    <button class="auth-btn" onclick="doLogin()">Войти</button>
+    <div id="loginError" class="auth-error hidden"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appScreen">
+  <div class="top-bar">
+    <div class="top-bar-logo">🔭 ArchiMath — Репетитор</div>
+    <div class="top-bar-balance" id="tutorBalance">🪙 —</div>
+    <button class="top-bar-logout" onclick="doLogout()">Выйти</button>
+  </div>
+  <div class="main">
+    <div class="sidebar">
+      <div class="sidebar-title">Ученики</div>
+      <button class="add-parent-btn" onclick="showAddParentModal()">+ Добавить родителя</button>
+      <div id="parentsList"></div>
+    </div>
+    <div class="content" id="content">
+      <div class="content-empty">
+        <div>👈 Выберите ученика</div>
+        <div style="font-size:13px;color:#bbb">или добавьте нового родителя</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add parent modal -->
+<div id="addParentModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title">Новый родитель</div>
+    <input id="pName" class="modal-input" placeholder="Имя (необязательно)" />
+    <input id="pEmail" class="modal-input" type="email" placeholder="Email *" />
+    <input id="pPassword" class="modal-input" type="text" placeholder="Пароль *" />
+    <div id="addParentError" class="modal-error hidden"></div>
+    <div class="modal-row" style="margin-top:12px">
+      <button class="modal-btn secondary" onclick="hideModal('addParentModal')">Отмена</button>
+      <button class="modal-btn primary" onclick="submitAddParent()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add child modal -->
+<div id="addChildModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title">Новый ученик</div>
+    <input id="cName" class="modal-input" placeholder="Имя *" />
+    <input id="cPassword" class="modal-input" type="text" placeholder="Пароль *" />
+    <select id="cGrade" class="modal-input">
+      <option value="7">7 класс</option>
+      <option value="8">8 класс</option>
+      <option value="9">9 класс</option>
+    </select>
+    <div id="addChildError" class="modal-error hidden"></div>
+    <div class="modal-row" style="margin-top:12px">
+      <button class="modal-btn secondary" onclick="hideModal('addChildModal')">Отмена</button>
+      <button class="modal-btn primary" onclick="submitAddChild()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log viewer -->
+<div id="logOverlay" class="log-overlay hidden">
+  <div class="log-box">
+    <div class="log-header">
+      <div class="log-title" id="logTitle">Лог занятия</div>
+      <button class="log-close" onclick="closeLog()">✕</button>
+    </div>
+    <div class="log-body" id="logBody"></div>
+    <div class="log-footer">
+      <button class="session-btn" onclick="downloadLog()">⬇ Скачать .txt</button>
+      <button class="session-btn primary" onclick="closeLog()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let token = localStorage.getItem("tutor_token");
+  let tutorData = null;
+  let parentsData = [];
+  let activeChild = null;
+  let activeParentId = null;
+  let currentLogSession = null;
+  let addChildParentId = null;
+
+  const phaseLabels = { theory: "Теория", easy: "⭐ Лёгкий", medium: "⭐⭐ Средний", hard: "⭐⭐⭐ Сложный", done: "✓ Завершено", test: "Тест" };
+
+  function api(path, opts = {}) {
+    return fetch(path, { headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" }, ...opts });
+  }
+
+  async function doLogin() {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const err = document.getElementById("loginError");
+    err.classList.add("hidden");
+    const res = await fetch("/api/auth/tutor-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error; err.classList.remove("hidden"); return; }
+    token = data.token;
+    localStorage.setItem("tutor_token", token);
+    await initApp(data.user);
+  }
+
+  function doLogout() {
+    localStorage.removeItem("tutor_token");
+    location.reload();
+  }
+
+  async function initApp(user) {
+    tutorData = user;
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("appScreen").style.display = "block";
+    await refreshAll();
+  }
+
+  async function refreshAll() {
+    const meRes = await api("/api/tutor/me");
+    if (meRes.ok) {
+      tutorData = await meRes.json();
+      document.getElementById("tutorBalance").textContent = "🪙 " + Math.round((tutorData.token_balance || 0) / 1000) + "к";
+    }
+    const pRes = await api("/api/tutor/parents");
+    if (pRes.ok) {
+      parentsData = await pRes.json();
+      renderSidebar();
+    }
+  }
+
+  function renderSidebar() {
+    const list = document.getElementById("parentsList");
+    if (!parentsData.length) { list.innerHTML = '<div style="color:#bbb;font-size:13px;text-align:center;padding:16px">Пока нет родителей</div>'; return; }
+    list.innerHTML = parentsData.map(p => `
+      <div class="parent-item" id="parent-${p.id}">
+        <div class="parent-header" onclick="toggleParent('${p.id}')">
+          <span class="parent-name">${p.name || p.email}</span>
+          <span class="parent-balance">🪙 ${Math.round((p.token_balance || 0) / 1000)}к</span>
+          <span class="parent-arrow">▶</span>
+        </div>
+        <div class="parent-children">
+          ${(p.children || []).map(c => `
+            <div class="child-item${activeChild?.id === c.id ? " active" : ""}" onclick="selectChild('${c.id}', '${p.id}')">
+              <span>${c.name}</span>
+              <span class="child-grade">${c.grade ? c.grade + " кл" : ""}</span>
+            </div>
+          `).join("")}
+          <button class="add-child-btn" onclick="showAddChildModal('${p.id}')">+ Добавить ученика</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function toggleParent(parentId) {
+    const el = document.getElementById("parent-" + parentId);
+    el.classList.toggle("open");
+  }
+
+  async function selectChild(childId, parentId) {
+    activeParentId = parentId;
+    const parent = parentsData.find(p => p.id === parentId);
+    activeChild = parent?.children.find(c => c.id === childId);
+    renderSidebar();
+    await renderChildContent();
+  }
+
+  async function renderChildContent() {
+    const content = document.getElementById("content");
+    const parent = parentsData.find(p => p.id === activeParentId);
+    content.innerHTML = `<div style="color:#aaa;text-align:center;padding:40px">Загрузка...</div>`;
+
+    const sessRes = await api(`/api/tutor/children/${activeChild.id}/sessions`);
+    const sessions = sessRes.ok ? await sessRes.json() : [];
+
+    const creditsHtml = `
+      <div class="section-title">Баланс родителя</div>
+      <div class="credits-panel">
+        <div class="credits-label">${parent?.name || parent?.email}</div>
+        <div class="credits-balance">🪙 ${Math.round((parent?.token_balance || 0) / 1000)}к токенов</div>
+        <input class="credits-input" type="number" id="creditsAmount" placeholder="+ токенов" min="1000" step="10000" />
+        <button class="credits-btn" onclick="addCredits('${activeParentId}')">Пополнить</button>
+        <span id="creditsOk" class="credits-ok hidden">✓ Готово</span>
+      </div>
+    `;
+
+    const sessionsHtml = sessions.length ? sessions.map(s => `
+      <div class="session-card${s.phase === "done" ? " done" : ""}">
+        <div class="session-top">
+          <div class="session-topic">${s.topic_label || s.topic_id}</div>
+          <div class="session-phase${s.phase === "done" ? " done" : ""}">${phaseLabels[s.phase] || s.phase}</div>
+        </div>
+        <div class="session-date">${formatDate(s.updated_at || s.created_at)}</div>
+        <div class="session-actions">
+          <button class="session-btn primary" onclick="viewLog('${s.id}', '${(s.topic_label || s.topic_id).replace(/'/g, "\\'")}', ${JSON.stringify(s.messages).replace(/</g, "\\u003c")})">📋 Открыть лог</button>
+        </div>
+      </div>
+    `).join("") : `<div style="color:#bbb;font-size:14px;padding:16px">Занятий пока не было</div>`;
+
+    content.innerHTML = `
+      <div class="student-header">
+        <div class="student-name">${activeChild.name}</div>
+        ${activeChild.grade ? `<div class="student-grade">${activeChild.grade} класс</div>` : ""}
+      </div>
+      ${creditsHtml}
+      <div class="section-title">История занятий</div>
+      <div class="sessions-list">${sessionsHtml}</div>
+    `;
+  }
+
+  async function addCredits(parentId) {
+    const amount = parseInt(document.getElementById("creditsAmount").value);
+    if (!amount || amount <= 0) return;
+    const res = await api(`/api/tutor/parents/${parentId}/credits`, { method: "POST", body: JSON.stringify({ amount }) });
+    if (res.ok) {
+      const data = await res.json();
+      document.getElementById("creditsOk").classList.remove("hidden");
+      setTimeout(() => document.getElementById("creditsOk")?.classList.add("hidden"), 2000);
+      const parent = parentsData.find(p => p.id === parentId);
+      if (parent) parent.token_balance = data.parentBalance;
+      tutorData.token_balance = data.tutorBalance;
+      document.getElementById("tutorBalance").textContent = "🪙 " + Math.round(data.tutorBalance / 1000) + "к";
+      renderSidebar();
+    } else {
+      const d = await res.json();
+      alert(d.error);
+    }
+  }
+
+  function viewLog(sessionId, title, messages) {
+    currentLogSession = { sessionId, title, messages };
+    document.getElementById("logTitle").textContent = title;
+    const body = document.getElementById("logBody");
+    if (!messages || !messages.length) { body.innerHTML = '<div style="color:#aaa">Лог пуст</div>'; }
+    else {
+      body.innerHTML = messages.map(m => {
+        const isUser = m.role === "user";
+        const text = typeof m.content === "string" ? m.content : (Array.isArray(m.content) ? m.content.filter(b => b.type === "text").map(b => b.text).join(" ") || "[фото]" : "[фото]");
+        return `<div class="log-msg ${isUser ? "user" : "bot"}">
+          <div class="who">${isUser ? "Ученик" : "Архи"}</div>
+          <div class="text">${escHtml(text)}</div>
+        </div>`;
+      }).join("");
+    }
+    document.getElementById("logOverlay").classList.remove("hidden");
+  }
+
+  function closeLog() { document.getElementById("logOverlay").classList.add("hidden"); }
+
+  function downloadLog() {
+    if (!currentLogSession) return;
+    const { title, messages } = currentLogSession;
+    const lines = (messages || []).map(m => {
+      const who = m.role === "user" ? "Ученик" : "Архи";
+      const text = typeof m.content === "string" ? m.content : (Array.isArray(m.content) ? m.content.filter(b => b.type === "text").map(b => b.text).join(" ") || "[фото]" : "[фото]");
+      return `[${who}]\n${text}`;
+    }).join("\n\n");
+    const blob = new Blob([`Тема: ${title}\n${"─".repeat(40)}\n\n${lines}`], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `${title.replace(/[^а-яёa-z0-9 ]/gi, "")}.txt`; a.click();
+  }
+
+  // ── Modals ──
+  function showAddParentModal() {
+    ["pName","pEmail","pPassword"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("addParentError").classList.add("hidden");
+    document.getElementById("addParentModal").classList.remove("hidden");
+  }
+  async function submitAddParent() {
+    const name = document.getElementById("pName").value.trim();
+    const email = document.getElementById("pEmail").value.trim();
+    const password = document.getElementById("pPassword").value.trim();
+    const err = document.getElementById("addParentError");
+    if (!email || !password) { err.textContent = "Заполните email и пароль"; err.classList.remove("hidden"); return; }
+    const res = await api("/api/tutor/parents", { method: "POST", body: JSON.stringify({ name, email, password }) });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error; err.classList.remove("hidden"); return; }
+    hideModal("addParentModal");
+    await refreshAll();
+    document.getElementById("parent-" + data.id)?.classList.add("open");
+  }
+
+  function showAddChildModal(parentId) {
+    addChildParentId = parentId;
+    ["cName","cPassword"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("addChildError").classList.add("hidden");
+    document.getElementById("addChildModal").classList.remove("hidden");
+  }
+  async function submitAddChild() {
+    const name = document.getElementById("cName").value.trim();
+    const password = document.getElementById("cPassword").value.trim();
+    const grade = parseInt(document.getElementById("cGrade").value);
+    const err = document.getElementById("addChildError");
+    if (!name || !password) { err.textContent = "Заполните имя и пароль"; err.classList.remove("hidden"); return; }
+    const res = await api(`/api/tutor/parents/${addChildParentId}/children`, { method: "POST", body: JSON.stringify({ name, password, grade, currentGrade: grade }) });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error; err.classList.remove("hidden"); return; }
+    hideModal("addChildModal");
+    await refreshAll();
+    selectChild(data.id, addChildParentId);
+  }
+
+  function hideModal(id) { document.getElementById(id).classList.add("hidden"); }
+
+  // ── Utils ──
+  function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function formatDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  // ── Init ──
+  if (token) {
+    api("/api/tutor/me").then(r => r.ok ? r.json() : null).then(u => {
+      if (u) initApp(u); else { localStorage.removeItem("tutor_token"); }
+    });
+  }
+</script>
+</body>
+</html>

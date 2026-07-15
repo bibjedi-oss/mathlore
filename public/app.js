@@ -550,7 +550,7 @@ document.getElementById("parentToggleBtn").addEventListener("click", () => {
   authTab = isParent ? "child" : "parent";
   document.getElementById("parentAuthPanel").classList.toggle("hidden", authTab !== "parent");
   document.getElementById("childAuthPanel").classList.toggle("hidden", authTab !== "child");
-  document.getElementById("parentToggleBtn").textContent = isParent ? "Вход для взрослых" : "← Назад";
+  document.getElementById("parentToggleBtn").textContent = isParent ? "Вход для родителей" : "← Назад";
 });
 
 document.querySelectorAll(".auth-mode").forEach(btn => {
@@ -1772,7 +1772,7 @@ function showTrialEndedModal() {
     <div class="modal-emoji">⏸️</div>
     <div class="modal-text">
       <b>Занятие на паузе</b><br><br>
-      Сообщи взрослому, что у тебя закончились токены.
+      Сообщи родителю, что у тебя закончились токены.
     </div>`;
   modal.classList.remove("hidden");
 }

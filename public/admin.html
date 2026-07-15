@@ -132,6 +132,41 @@
         </table>
       </div>
 
+      <h2>Репетиторы</h2>
+      <div style="background:#fffdf5;border-radius:14px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div>
+          <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Имя</label>
+          <input id="tName" type="text" placeholder="Имя репетитора" style="width:160px" />
+        </div>
+        <div>
+          <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Email *</label>
+          <input id="tEmail" type="email" placeholder="email@example.com" style="width:200px" />
+        </div>
+        <div>
+          <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Пароль *</label>
+          <input id="tPassword" type="text" placeholder="пароль" style="width:140px" />
+        </div>
+        <button class="btn" onclick="createTutor()">+ Создать репетитора</button>
+        <span id="tCreateOk" style="color:#2e7d32;font-size:13px;display:none">✓ Создан</span>
+        <span id="tCreateErr" style="color:#c0392b;font-size:13px;display:none"></span>
+      </div>
+      <div class="table-wrap" style="margin-bottom:24px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Имя</th>
+              <th>Email</th>
+              <th>Токены</th>
+              <th>Пополнить</th>
+              <th>Дата</th>
+            </tr>
+          </thead>
+          <tbody id="tutorsBody">
+            <tr><td colspan="5" class="loading">Загружаю...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <h2>Лиды из демо</h2>
       <div class="table-wrap">
         <table class="data-table">
@@ -327,6 +362,71 @@
       btn.disabled = false; btn.textContent = "💾";
     }
 
+    async function loadTutors() {
+      const res = await fetch("/api/admin/tutors", { headers: authHeaders() });
+      if (!res.ok) { document.getElementById("tutorsBody").innerHTML = `<tr><td colspan="5" class="loading">Ошибка загрузки</td></tr>`; return; }
+      const tutors = await res.json();
+      if (!tutors.length) {
+        document.getElementById("tutorsBody").innerHTML = `<tr><td colspan="5" class="loading">Репетиторов пока нет</td></tr>`;
+        return;
+      }
+      document.getElementById("tutorsBody").innerHTML = tutors.map(t => `
+        <tr>
+          <td><b>${t.name || "—"}</b></td>
+          <td>${t.email}</td>
+          <td><span class="credit-badge ${creditClass(t.token_balance ?? 0)}">${formatTokens(t.token_balance ?? 0)}</span></td>
+          <td>
+            <div class="credit-row">
+              <input class="credit-input" type="number" min="0" placeholder="кол-во" id="tci-${t.id}" />
+              <button class="top-up-btn" onclick="topUpTutor('${t.id}')">+ Добавить</button>
+              <span class="top-up-ok" id="tok-${t.id}">✓</span>
+            </div>
+          </td>
+          <td class="date">${formatDate(t.created_at)}</td>
+        </tr>`).join("");
+    }
+
+    async function createTutor() {
+      const name = document.getElementById("tName").value.trim();
+      const email = document.getElementById("tEmail").value.trim();
+      const password = document.getElementById("tPassword").value.trim();
+      const ok = document.getElementById("tCreateOk");
+      const err = document.getElementById("tCreateErr");
+      ok.style.display = "none"; err.style.display = "none";
+      if (!email || !password) { err.textContent = "Нужны email и пароль"; err.style.display = "inline"; return; }
+      const res = await fetch("/api/admin/tutors", {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { err.textContent = data.error; err.style.display = "inline"; return; }
+      ok.style.display = "inline";
+      ["tName","tEmail","tPassword"].forEach(id => document.getElementById(id).value = "");
+      setTimeout(() => { ok.style.display = "none"; }, 2000);
+      loadTutors();
+    }
+
+    async function topUpTutor(tutorId) {
+      const input = document.getElementById(`tci-${tutorId}`);
+      const ok = document.getElementById(`tok-${tutorId}`);
+      const add = parseInt(input.value);
+      if (isNaN(add) || add <= 0) return;
+      const btn = input.parentElement.querySelector(".top-up-btn");
+      btn.disabled = true; btn.textContent = "...";
+      try {
+        const res = await fetch(`/api/admin/tutors/${tutorId}/credits`, {
+          method: "POST", headers: authHeaders(),
+          body: JSON.stringify({ add })
+        });
+        if (res.ok) {
+          ok.style.display = "inline";
+          input.value = "";
+          setTimeout(() => { ok.style.display = "none"; loadTutors(); }, 1200);
+        }
+      } catch {}
+      btn.disabled = false; btn.textContent = "+ Добавить";
+    }
+
     function logout() {
       localStorage.removeItem("mathlore_admin_token");
       adminToken = null;
@@ -339,6 +439,7 @@
       document.getElementById("dashScreen").style.display = "block";
       loadModel();
       loadUsers();
+      loadTutors();
       loadLeads();
     }
 

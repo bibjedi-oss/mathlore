@@ -244,7 +244,7 @@ app.post("/api/parent/child/:id/quarter-analysis", requireAuth("parent"), async 
     const response = await anthropic.messages.create({
       model: currentModel,
       max_tokens: 600,
-      system: "Ты анализируешь успехи ученика за учебную четверть по математике. Изучи диалоги с ИИ-репетитором и напиши отчёт для взрослого (5-6 предложений, без markdown, без заголовков). Охвати: общий прогресс, сильные стороны, трудности, вовлечённость, рекомендации. Пиши тепло, как опытный педагог.",
+      system: "Ты анализируешь успехи ученика за учебную четверть по математике. Изучи диалоги с ИИ-репетитором и напиши отчёт для родителя (5-6 предложений, без markdown, без заголовков). Охвати: общий прогресс, сильные стороны, трудности, вовлечённость, рекомендации. Пиши тепло, как опытный педагог.",
       messages: [{ role: "user", content: `Ученик: ${child.name}\nЧетверть: ${quarterLabel}\n\n${statsText}` }]
     });
     res.json({ analysis: response.content.find(b => b.type === "text")?.text ?? "" });
@@ -277,7 +277,7 @@ app.post("/api/parent/child/:id/overall-analysis", requireAuth("parent"), async 
     const response = await anthropic.messages.create({
       model: currentModel,
       max_tokens: 800,
-      system: "Ты составляешь когнитивный портрет ученика на основе занятий с ИИ-репетитором по математике. Напиши отчёт для взрослого (6-8 предложений, без markdown, без заголовков). Включи: общий уровень и динамику, когнитивный стиль, сильные стороны, зоны роста, вовлечённость, мягкие наблюдения о внимании или настойчивости (без диагнозов), рекомендации. Пиши как опытный педагог-психолог, тепло и конструктивно.",
+      system: "Ты составляешь когнитивный портрет ученика на основе занятий с ИИ-репетитором по математике. Напиши отчёт для родителя (6-8 предложений, без markdown, без заголовков). Включи: общий уровень и динамику, когнитивный стиль, сильные стороны, зоны роста, вовлечённость, мягкие наблюдения о внимании или настойчивости (без диагнозов), рекомендации. Пиши как опытный педагог-психолог, тепло и конструктивно.",
       messages: [{ role: "user", content: `Ученик: ${child.name}${child.grade ? ", " + child.grade + " класс" : ""}\nТем начато: ${sessions.length}, завершено: ${done}\n\n${statsText}` }]
     });
     res.json({ analysis: response.content.find(b => b.type === "text")?.text ?? "" });
@@ -306,7 +306,7 @@ app.post("/api/parent/session/:id/summary", requireAuth("parent"), async (req, r
     const response = await anthropic.messages.create({
       model: currentModel,
       max_tokens: 400,
-      system: "Ты анализируешь диалог ученика с ИИ-репетитором по математике. Напиши краткий отчёт для взрослого (4-5 предложений): понял ли ученик тему, где были трудности, насколько был вовлечён, что стоит повторить. Пиши тепло, без markdown.",
+      system: "Ты анализируешь диалог ученика с ИИ-репетитором по математике. Напиши краткий отчёт для родителя (4-5 предложений): понял ли ученик тему, где были трудности, насколько был вовлечён, что стоит повторить. Пиши тепло, без markdown.",
       messages: [{ role: "user", content: `Тема: ${session.topic_label}\n\n${dialogText}` }]
     });
 
@@ -929,6 +929,200 @@ app.post("/api/admin/model", requireAuth("admin"), (req, res) => {
   console.log("[ADMIN] Model switched to:", currentModel);
   res.json({ ok: true, model: currentModel });
 });
+
+// ── Tutor auth ───────────────────────────────────────────────────────────────
+
+app.post("/api/auth/tutor-login", async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: "Email и пароль обязательны" });
+  try {
+    const { data, error } = await supabase
+      .from("tutors")
+      .select("id, email, name, password_hash, token_balance")
+      .eq("email", email.toLowerCase().trim())
+      .single();
+    if (error || !data) return res.status(401).json({ error: "Неверный email или пароль" });
+    const valid = await bcrypt.compare(password, data.password_hash);
+    if (!valid) return res.status(401).json({ error: "Неверный email или пароль" });
+    const token = jwt.sign({ role: "tutor", id: data.id, email: data.email, name: data.name }, JWT_SECRET, { expiresIn: "30d" });
+    res.json({ token, user: { id: data.id, email: data.email, name: data.name, tokenBalance: data.token_balance } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// ── Tutor cabinet ─────────────────────────────────────────────────────────────
+
+app.get("/api/tutor/me", requireAuth("tutor"), async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("tutors")
+      .select("id, name, email, token_balance")
+      .eq("id", req.user.id)
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Создать родителя (под репетитором)
+app.post("/api/tutor/parents", requireAuth("tutor"), async (req, res) => {
+  const { email, password, name } = req.body;
+  if (!email || !password) return res.status(400).json({ error: "Email и пароль обязательны" });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const { data, error } = await supabase
+      .from("parents")
+      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name, token_balance: 0, tutor_id: req.user.id })
+      .select("id, email, name, token_balance")
+      .single();
+    if (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "Email уже зарегистрирован" });
+      throw error;
+    }
+    res.json({ ...data, password });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Получить всех родителей репетитора с учениками
+app.get("/api/tutor/parents", requireAuth("tutor"), async (req, res) => {
+  try {
+    const { data: parents, error } = await supabase
+      .from("parents")
+      .select("id, name, email, token_balance")
+      .eq("tutor_id", req.user.id)
+      .order("name");
+    if (error) throw error;
+    const parentIds = parents.map(p => p.id);
+    const { data: children } = parentIds.length
+      ? await supabase.from("children").select("id, name, grade, current_grade, parent_id").in("parent_id", parentIds)
+      : { data: [] };
+    const result = parents.map(p => ({
+      ...p,
+      children: (children || []).filter(c => c.parent_id === p.id)
+    }));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Создать ученика под родителем (репетитор)
+app.post("/api/tutor/parents/:parentId/children", requireAuth("tutor"), async (req, res) => {
+  const { name, password, grade, currentGrade, currentQuarter } = req.body;
+  if (!name || !password) return res.status(400).json({ error: "Имя и пароль обязательны" });
+  try {
+    const { data: parent } = await supabase.from("parents").select("id").eq("id", req.params.parentId).eq("tutor_id", req.user.id).single();
+    if (!parent) return res.status(403).json({ error: "Нет доступа к этому родителю" });
+    const hash = await bcrypt.hash(password, 10);
+    const { data, error } = await supabase
+      .from("children")
+      .insert({ parent_id: req.params.parentId, name: name.trim(), password_hash: hash, grade: grade || null, current_grade: currentGrade || grade || 1, current_quarter: currentQuarter || 1 })
+      .select("id, name, grade, current_grade")
+      .single();
+    if (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "Ученик с таким именем уже существует" });
+      throw error;
+    }
+    res.json({ ...data, password });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Пополнить баланс родителя (из баланса репетитора)
+app.post("/api/tutor/parents/:parentId/credits", requireAuth("tutor"), async (req, res) => {
+  const { amount } = req.body;
+  if (typeof amount !== "number" || amount <= 0) return res.status(400).json({ error: "Укажите amount > 0" });
+  try {
+    const { data: tutor } = await supabase.from("tutors").select("token_balance").eq("id", req.user.id).single();
+    if (!tutor || tutor.token_balance < amount) return res.status(400).json({ error: "Недостаточно токенов" });
+    const { data: parent } = await supabase.from("parents").select("id, token_balance").eq("id", req.params.parentId).eq("tutor_id", req.user.id).single();
+    if (!parent) return res.status(403).json({ error: "Нет доступа к этому родителю" });
+    await supabase.from("tutors").update({ token_balance: tutor.token_balance - amount }).eq("id", req.user.id);
+    await supabase.from("parents").update({ token_balance: parent.token_balance + amount }).eq("id", req.params.parentId);
+    res.json({ ok: true, tutorBalance: tutor.token_balance - amount, parentBalance: parent.token_balance + amount });
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Полные логи занятий ученика
+app.get("/api/tutor/children/:childId/sessions", requireAuth("tutor"), async (req, res) => {
+  try {
+    const { data: child } = await supabase.from("children").select("id, name, parent_id").eq("id", req.params.childId).single();
+    if (!child) return res.status(404).json({ error: "Ученик не найден" });
+    const { data: parent } = await supabase.from("parents").select("id").eq("id", child.parent_id).eq("tutor_id", req.user.id).single();
+    if (!parent) return res.status(403).json({ error: "Нет доступа" });
+    const { data: sessions, error } = await supabase
+      .from("topic_sessions")
+      .select("id, topic_id, topic_label, phase, messages, created_at, updated_at")
+      .eq("child_id", req.params.childId)
+      .order("updated_at", { ascending: false });
+    if (error) throw error;
+    res.json(sessions || []);
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// ── Admin: tutor management ───────────────────────────────────────────────────
+
+app.get("/api/admin/tutors", requireAuth("admin"), async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("tutors")
+      .select("id, email, name, token_balance, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+app.post("/api/admin/tutors", requireAuth("admin"), async (req, res) => {
+  const { email, password, name } = req.body;
+  if (!email || !password) return res.status(400).json({ error: "Email и пароль обязательны" });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const { data, error } = await supabase
+      .from("tutors")
+      .insert({ email: email.toLowerCase().trim(), password_hash: hash, name, token_balance: 0 })
+      .select("id, email, name, token_balance")
+      .single();
+    if (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "Email уже зарегистрирован" });
+      throw error;
+    }
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+app.post("/api/admin/tutors/:id/credits", requireAuth("admin"), async (req, res) => {
+  const { amount } = req.body;
+  if (typeof amount !== "number") return res.status(400).json({ error: "amount required" });
+  try {
+    const { data: tutor } = await supabase.from("tutors").select("token_balance").eq("id", req.params.id).single();
+    if (!tutor) return res.status(404).json({ error: "Репетитор не найден" });
+    const newBalance = Math.max(0, tutor.token_balance + amount);
+    await supabase.from("tutors").update({ token_balance: newBalance }).eq("id", req.params.id);
+    res.json({ ok: true, newBalance });
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+app.get("/tutor", (req, res) => res.sendFile("tutor.html", { root: "public" }));
 
 // ── Feedback & leads ──────────────────────────────────────────────────────────
 
