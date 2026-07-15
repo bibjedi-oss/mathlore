@@ -290,7 +290,23 @@
     }
   }
 
-  const STATUS_LABELS = { inactive: "Не занимается", behind: "Отстаёт", on_track: "По плану", ahead: "Опережает" };
+  function childStatusLabel(c) {
+    if (c.status === "inactive") return "Не занимается";
+    if (c.status === "behind") return "Отстаёт от плана";
+    if (c.status === "ahead") return `Опережает (+${c.aheadCount} тем вне плана)`;
+    return "По плану";
+  }
+  function childStatusBadge(c) {
+    if (c.status === "inactive") return "🔴 Не занимается";
+    if (c.status === "behind") return "🟡 Отстаёт от плана";
+    if (c.status === "ahead") return `🔵 Опережает (+${c.aheadCount} ${plural(c.aheadCount, "тема", "темы", "тем")} вне плана)`;
+    return "🟢 По плану";
+  }
+  function plural(n, one, few, many) {
+    if (n % 10 === 1 && n % 100 !== 11) return one;
+    if ([2,3,4].includes(n % 10) && ![12,13,14].includes(n % 100)) return few;
+    return many;
+  }
 
   function renderSidebar() {
     const list = document.getElementById("parentsList");
@@ -304,7 +320,7 @@
         </div>
         <div class="parent-children">
           ${(p.children || []).map(c => `
-            <div class="child-item${activeChild?.id === c.id ? " active" : ""}" onclick="selectChild('${c.id}', '${p.id}')" title="${STATUS_LABELS[c.status] || ""}">
+            <div class="child-item${activeChild?.id === c.id ? " active" : ""}" onclick="selectChild('${c.id}', '${p.id}')" title="${childStatusLabel(c)}">
               <span>${c.name}</span>
               <span class="child-grade">${c.grade ? c.grade + " кл" : ""}</span>
               <span class="status-dot ${c.status || 'on_track'}"></span>
@@ -342,8 +358,7 @@
     const planData = planRes.ok ? await planRes.json() : { items: [], inactivity_days: 3 };
 
     const child = activeChild;
-    const childStatus = parentsData.find(p => p.id === activeParentId)?.children?.find(c => c.id === child.id)?.status || "on_track";
-    const statusLabels = { inactive: "🔴 Не занимается", behind: "🟡 Отстаёт от плана", on_track: "🟢 По плану", ahead: "🔵 Опережает" };
+    const childData = parentsData.find(p => p.id === activeParentId)?.children?.find(c => c.id === child.id) || {};
 
     const creditsHtml = `
       <div class="section-title">Баланс родителя</div>
@@ -405,7 +420,7 @@
       <div class="student-header">
         <div class="student-name">${child.name}</div>
         ${child.grade ? `<div class="student-grade">${child.grade} класс</div>` : ""}
-        <div style="font-size:14px">${statusLabels[childStatus] || ""}</div>
+        <div style="font-size:14px">${childStatusBadge(childData)}</div>
       </div>
       ${creditsHtml}
       ${planHtml}

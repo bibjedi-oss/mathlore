@@ -1027,25 +1027,30 @@ app.get("/api/tutor/parents", requireAuth("tutor"), async (req, res) => {
 
     function computeStatus(childId) {
       const inactivityDays = (settings || []).find(s => s.child_id === childId)?.inactivity_days ?? 3;
-      const sessions = (lastSessions || []).filter(s => s.child_id === childId);
-      const last = sessions[0];
+      const last = (lastSessions || []).find(s => s.child_id === childId);
       const daysInactive = last ? (now - new Date(last.updated_at)) / 86400000 : Infinity;
-      if (daysInactive >= inactivityDays) return "inactive";
+      if (daysInactive >= inactivityDays) return { status: "inactive", aheadCount: 0 };
 
       const items = (planItems || []).filter(p => p.child_id === childId);
-      if (!items.length) return "on_track";
-
       const completed = new Set((doneSessions || []).filter(s => s.child_id === childId).map(s => s.topic_id));
-      const overdue = items.filter(p => new Date(p.deadline) < now && !completed.has(p.topic_id));
-      if (overdue.length) return "behind";
-      const ahead = items.filter(p => new Date(p.deadline) >= now && completed.has(p.topic_id));
-      if (ahead.length) return "ahead";
-      return "on_track";
+
+      if (items.length) {
+        const overdue = items.filter(p => new Date(p.deadline) < now && !completed.has(p.topic_id));
+        if (overdue.length) return { status: "behind", aheadCount: 0 };
+      }
+
+      const planTopicIds = new Set(items.map(p => p.topic_id));
+      const aheadCount = [...completed].filter(tid => !planTopicIds.has(tid)).length;
+      if (aheadCount > 0) return { status: "ahead", aheadCount };
+      return { status: "on_track", aheadCount: 0 };
     }
 
     const result = parents.map(p => ({
       ...p,
-      children: (children || []).filter(c => c.parent_id === p.id).map(c => ({ ...c, status: computeStatus(c.id) }))
+      children: (children || []).filter(c => c.parent_id === p.id).map(c => {
+        const { status, aheadCount } = computeStatus(c.id);
+        return { ...c, status, aheadCount };
+      })
     }));
     res.json(result);
   } catch (err) {
