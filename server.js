@@ -1003,9 +1003,49 @@ app.get("/api/tutor/parents", requireAuth("tutor"), async (req, res) => {
     const { data: children } = parentIds.length
       ? await supabase.from("children").select("id, name, grade, current_grade, parent_id").in("parent_id", parentIds)
       : { data: [] };
+
+    // Load status data for all children in batch
+    const childIds = (children || []).map(c => c.id);
+    const [{ data: lastSessions }, { data: planItems }, { data: settings }] = await Promise.all([
+      childIds.length
+        ? supabase.from("topic_sessions").select("child_id, updated_at").in("child_id", childIds).order("updated_at", { ascending: false })
+        : { data: [] },
+      childIds.length
+        ? supabase.from("tutor_plan_items").select("child_id, topic_id, deadline").in("child_id", childIds)
+        : { data: [] },
+      childIds.length
+        ? supabase.from("tutor_student_settings").select("child_id, inactivity_days").in("child_id", childIds)
+        : { data: [] },
+    ]);
+
+    // Find completed topics per child
+    const { data: doneSessions } = childIds.length
+      ? await supabase.from("topic_sessions").select("child_id, topic_id").eq("phase", "done").in("child_id", childIds)
+      : { data: [] };
+
+    const now = new Date();
+
+    function computeStatus(childId) {
+      const inactivityDays = (settings || []).find(s => s.child_id === childId)?.inactivity_days ?? 3;
+      const sessions = (lastSessions || []).filter(s => s.child_id === childId);
+      const last = sessions[0];
+      const daysInactive = last ? (now - new Date(last.updated_at)) / 86400000 : Infinity;
+      if (daysInactive >= inactivityDays) return "inactive";
+
+      const items = (planItems || []).filter(p => p.child_id === childId);
+      if (!items.length) return "on_track";
+
+      const completed = new Set((doneSessions || []).filter(s => s.child_id === childId).map(s => s.topic_id));
+      const overdue = items.filter(p => new Date(p.deadline) < now && !completed.has(p.topic_id));
+      if (overdue.length) return "behind";
+      const ahead = items.filter(p => new Date(p.deadline) >= now && completed.has(p.topic_id));
+      if (ahead.length) return "ahead";
+      return "on_track";
+    }
+
     const result = parents.map(p => ({
       ...p,
-      children: (children || []).filter(c => c.parent_id === p.id)
+      children: (children || []).filter(c => c.parent_id === p.id).map(c => ({ ...c, status: computeStatus(c.id) }))
     }));
     res.json(result);
   } catch (err) {
@@ -1068,6 +1108,87 @@ app.get("/api/tutor/children/:childId/sessions", requireAuth("tutor"), async (re
       .order("updated_at", { ascending: false });
     if (error) throw error;
     res.json(sessions || []);
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// ── Tutor: plan & settings ───────────────────────────────────────────────────
+
+// Получить план ученика + настройки
+app.get("/api/tutor/children/:childId/plan", requireAuth("tutor"), async (req, res) => {
+  try {
+    const { data: child } = await supabase.from("children").select("id, parent_id").eq("id", req.params.childId).single();
+    if (!child) return res.status(404).json({ error: "Ученик не найден" });
+    const { data: parent } = await supabase.from("parents").select("id").eq("id", child.parent_id).eq("tutor_id", req.user.id).single();
+    if (!parent) return res.status(403).json({ error: "Нет доступа" });
+
+    const [{ data: items }, { data: settings }, { data: done }] = await Promise.all([
+      supabase.from("tutor_plan_items").select("id, topic_id, topic_label, deadline").eq("child_id", req.params.childId).order("deadline"),
+      supabase.from("tutor_student_settings").select("inactivity_days").eq("child_id", req.params.childId).single(),
+      supabase.from("topic_sessions").select("topic_id").eq("child_id", req.params.childId).eq("phase", "done"),
+    ]);
+
+    const completedTopics = new Set((done || []).map(s => s.topic_id));
+    const now = new Date();
+    const enriched = (items || []).map(item => {
+      const dl = new Date(item.deadline);
+      const isDone = completedTopics.has(item.topic_id);
+      let status = isDone ? (dl > now ? "ahead" : "done") : (dl < now ? "overdue" : "pending");
+      return { ...item, isDone, status };
+    });
+
+    res.json({ items: enriched, inactivity_days: settings?.inactivity_days ?? 3 });
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Добавить пункт плана
+app.post("/api/tutor/children/:childId/plan", requireAuth("tutor"), async (req, res) => {
+  const { topic_id, topic_label, deadline } = req.body;
+  if (!topic_id || !deadline) return res.status(400).json({ error: "topic_id и deadline обязательны" });
+  try {
+    const { data: child } = await supabase.from("children").select("id, parent_id").eq("id", req.params.childId).single();
+    if (!child) return res.status(404).json({ error: "Ученик не найден" });
+    const { data: parent } = await supabase.from("parents").select("id").eq("id", child.parent_id).eq("tutor_id", req.user.id).single();
+    if (!parent) return res.status(403).json({ error: "Нет доступа" });
+
+    const { data, error } = await supabase.from("tutor_plan_items")
+      .insert({ child_id: req.params.childId, tutor_id: req.user.id, topic_id, topic_label, deadline })
+      .select("id, topic_id, topic_label, deadline").single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Удалить пункт плана
+app.delete("/api/tutor/plan-items/:itemId", requireAuth("tutor"), async (req, res) => {
+  try {
+    const { data: item } = await supabase.from("tutor_plan_items").select("id").eq("id", req.params.itemId).eq("tutor_id", req.user.id).single();
+    if (!item) return res.status(404).json({ error: "Не найдено" });
+    await supabase.from("tutor_plan_items").delete().eq("id", req.params.itemId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// Обновить настройки ученика (порог неактивности)
+app.put("/api/tutor/children/:childId/settings", requireAuth("tutor"), async (req, res) => {
+  const { inactivity_days } = req.body;
+  if (typeof inactivity_days !== "number" || inactivity_days < 1) return res.status(400).json({ error: "inactivity_days должно быть ≥ 1" });
+  try {
+    const { data: child } = await supabase.from("children").select("id, parent_id").eq("id", req.params.childId).single();
+    if (!child) return res.status(404).json({ error: "Ученик не найден" });
+    const { data: parent } = await supabase.from("parents").select("id").eq("id", child.parent_id).eq("tutor_id", req.user.id).single();
+    if (!parent) return res.status(403).json({ error: "Нет доступа" });
+
+    await supabase.from("tutor_student_settings")
+      .upsert({ child_id: req.params.childId, tutor_id: req.user.id, inactivity_days }, { onConflict: "child_id" });
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Ошибка сервера" });
   }

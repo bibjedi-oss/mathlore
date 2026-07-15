@@ -48,6 +48,39 @@
     .child-item { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; }
     .child-item:hover { background: #f4f1eb; }
     .child-item.active { background: #fff3e0; font-weight: 600; }
+
+    /* Status dots */
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-left: auto; }
+    .status-dot.inactive { background: #e74c3c; }
+    .status-dot.behind   { background: #f39c12; }
+    .status-dot.on_track { background: #27ae60; }
+    .status-dot.ahead    { background: #2980b9; }
+
+    /* Plan section */
+    .plan-section { background: #fff; border: 1px solid #e8e0d5; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .plan-settings-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .plan-settings-label { font-size: 14px; color: #4a2c08; }
+    .plan-days-input { width: 64px; padding: 6px 10px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; text-align: center; }
+    .plan-settings-btn { padding: 7px 14px; background: #4a2c08; color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .plan-settings-ok { color: #27ae60; font-size: 13px; }
+
+    .plan-add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: flex-end; }
+    .plan-topic-select { flex: 1; min-width: 180px; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 13px; }
+    .plan-date-input { padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 13px; width: 150px; }
+    .plan-add-btn { padding: 8px 16px; background: #c8860a; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+    .plan-list { display: flex; flex-direction: column; gap: 6px; }
+    .plan-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: #faf7f2; font-size: 13px; }
+    .plan-item.ahead    { border-left: 3px solid #2980b9; }
+    .plan-item.done     { border-left: 3px solid #27ae60; opacity: 0.7; }
+    .plan-item.overdue  { border-left: 3px solid #e74c3c; }
+    .plan-item.pending  { border-left: 3px solid #ccc; }
+    .plan-item-label { flex: 1; }
+    .plan-item-deadline { color: #888; font-size: 12px; white-space: nowrap; }
+    .plan-item-status { font-size: 12px; white-space: nowrap; }
+    .plan-item-delete { background: none; border: none; color: #ccc; cursor: pointer; font-size: 16px; padding: 0 2px; }
+    .plan-item-delete:hover { color: #e74c3c; }
+    .plan-empty { color: #bbb; font-size: 13px; text-align: center; padding: 12px 0; }
     .child-grade { font-size: 11px; color: #aaa; }
     .add-child-btn { width: 100%; padding: 7px; background: none; border: 1px dashed #ccc; border-radius: 8px; color: #aaa; font-size: 13px; cursor: pointer; margin-top: 6px; }
     .add-child-btn:hover { border-color: #c8860a; color: #8b5e1a; }
@@ -203,6 +236,7 @@
   </div>
 </div>
 
+<script src="curriculum.js?v=5"></script>
 <script>
   let token = localStorage.getItem("tutor_token");
   let tutorData = null;
@@ -256,6 +290,8 @@
     }
   }
 
+  const STATUS_LABELS = { inactive: "Не занимается", behind: "Отстаёт", on_track: "По плану", ahead: "Опережает" };
+
   function renderSidebar() {
     const list = document.getElementById("parentsList");
     if (!parentsData.length) { list.innerHTML = '<div style="color:#bbb;font-size:13px;text-align:center;padding:16px">Пока нет родителей</div>'; return; }
@@ -268,9 +304,10 @@
         </div>
         <div class="parent-children">
           ${(p.children || []).map(c => `
-            <div class="child-item${activeChild?.id === c.id ? " active" : ""}" onclick="selectChild('${c.id}', '${p.id}')">
+            <div class="child-item${activeChild?.id === c.id ? " active" : ""}" onclick="selectChild('${c.id}', '${p.id}')" title="${STATUS_LABELS[c.status] || ""}">
               <span>${c.name}</span>
               <span class="child-grade">${c.grade ? c.grade + " кл" : ""}</span>
+              <span class="status-dot ${c.status || 'on_track'}"></span>
             </div>
           `).join("")}
           <button class="add-child-btn" onclick="showAddChildModal('${p.id}')">+ Добавить ученика</button>
@@ -297,8 +334,16 @@
     const parent = parentsData.find(p => p.id === activeParentId);
     content.innerHTML = `<div style="color:#aaa;text-align:center;padding:40px">Загрузка...</div>`;
 
-    const sessRes = await api(`/api/tutor/children/${activeChild.id}/sessions`);
+    const [sessRes, planRes] = await Promise.all([
+      api(`/api/tutor/children/${activeChild.id}/sessions`),
+      api(`/api/tutor/children/${activeChild.id}/plan`),
+    ]);
     const sessions = sessRes.ok ? await sessRes.json() : [];
+    const planData = planRes.ok ? await planRes.json() : { items: [], inactivity_days: 3 };
+
+    const child = activeChild;
+    const childStatus = parentsData.find(p => p.id === activeParentId)?.children?.find(c => c.id === child.id)?.status || "on_track";
+    const statusLabels = { inactive: "🔴 Не занимается", behind: "🟡 Отстаёт от плана", on_track: "🟢 По плану", ahead: "🔵 Опережает" };
 
     const creditsHtml = `
       <div class="section-title">Баланс родителя</div>
@@ -308,6 +353,38 @@
         <input class="credits-input" type="number" id="creditsAmount" placeholder="+ токенов" min="1000" step="10000" />
         <button class="credits-btn" onclick="addCredits('${activeParentId}')">Пополнить</button>
         <span id="creditsOk" class="credits-ok hidden">✓ Готово</span>
+      </div>
+    `;
+
+    // Build topic options from curriculum
+    const topicOptions = buildTopicOptions(child.grade);
+
+    const planItemsHtml = planData.items.length ? planData.items.map(item => {
+      const statusIcon = { ahead: "🔵 Опережает", done: "✅ Выполнено", overdue: "🔴 Просрочено", pending: "⏳ Ожидает" }[item.status] || "";
+      return `<div class="plan-item ${item.status}">
+        <span class="plan-item-label">${item.topic_label || item.topic_id}</span>
+        <span class="plan-item-deadline">до ${formatDateShort(item.deadline)}</span>
+        <span class="plan-item-status">${statusIcon}</span>
+        <button class="plan-item-delete" onclick="deletePlanItem('${item.id}')" title="Удалить">×</button>
+      </div>`;
+    }).join("") : `<div class="plan-empty">Пунктов плана пока нет</div>`;
+
+    const planHtml = `
+      <div class="section-title">План ученика</div>
+      <div class="plan-section">
+        <div class="plan-settings-row">
+          <span class="plan-settings-label">Тревога после</span>
+          <input class="plan-days-input" type="number" id="inactivityDays" value="${planData.inactivity_days}" min="1" max="30" />
+          <span class="plan-settings-label">дней без занятий</span>
+          <button class="plan-settings-btn" onclick="saveInactivityDays()">Сохранить</button>
+          <span id="inactivityOk" class="plan-settings-ok hidden">✓</span>
+        </div>
+        <div class="plan-add-row">
+          <select class="plan-topic-select" id="planTopicSelect">${topicOptions}</select>
+          <input class="plan-date-input" type="date" id="planDeadline" />
+          <button class="plan-add-btn" onclick="addPlanItem()">+ В план</button>
+        </div>
+        <div class="plan-list" id="planList">${planItemsHtml}</div>
       </div>
     `;
 
@@ -326,13 +403,63 @@
 
     content.innerHTML = `
       <div class="student-header">
-        <div class="student-name">${activeChild.name}</div>
-        ${activeChild.grade ? `<div class="student-grade">${activeChild.grade} класс</div>` : ""}
+        <div class="student-name">${child.name}</div>
+        ${child.grade ? `<div class="student-grade">${child.grade} класс</div>` : ""}
+        <div style="font-size:14px">${statusLabels[childStatus] || ""}</div>
       </div>
       ${creditsHtml}
+      ${planHtml}
       <div class="section-title">История занятий</div>
       <div class="sessions-list">${sessionsHtml}</div>
     `;
+  }
+
+  function buildTopicOptions(grade) {
+    const gradeData = typeof curriculum !== "undefined"
+      ? curriculum.find(g => g.grade === (grade || activeChild?.grade))
+      : null;
+    if (!gradeData) return `<option value="">— выберите тему —</option>`;
+    const opts = [`<option value="">— выберите тему —</option>`];
+    for (const subj of gradeData.subjects || []) {
+      for (const ch of subj.chapters || []) {
+        opts.push(`<optgroup label="${subj.label}: ${ch.label}">`);
+        for (const t of ch.topics || []) {
+          opts.push(`<option value="${t.id}" data-label="${escHtml(t.label)}">${t.label}</option>`);
+        }
+        opts.push(`</optgroup>`);
+      }
+    }
+    return opts.join("");
+  }
+
+  async function addPlanItem() {
+    const sel = document.getElementById("planTopicSelect");
+    const topic_id = sel.value;
+    const topic_label = sel.options[sel.selectedIndex]?.text || topic_id;
+    const deadline = document.getElementById("planDeadline").value;
+    if (!topic_id || !deadline) return;
+    const res = await api(`/api/tutor/children/${activeChild.id}/plan`, {
+      method: "POST", body: JSON.stringify({ topic_id, topic_label, deadline })
+    });
+    if (res.ok) await renderChildContent();
+  }
+
+  async function deletePlanItem(itemId) {
+    const res = await api(`/api/tutor/plan-items/${itemId}`, { method: "DELETE" });
+    if (res.ok) await renderChildContent();
+  }
+
+  async function saveInactivityDays() {
+    const days = parseInt(document.getElementById("inactivityDays").value);
+    if (!days || days < 1) return;
+    const res = await api(`/api/tutor/children/${activeChild.id}/settings`, {
+      method: "PUT", body: JSON.stringify({ inactivity_days: days })
+    });
+    if (res.ok) {
+      const ok = document.getElementById("inactivityOk");
+      ok.classList.remove("hidden");
+      setTimeout(() => ok.classList.add("hidden"), 2000);
+    }
   }
 
   async function addCredits(parentId) {
@@ -431,6 +558,11 @@
 
   // ── Utils ──
   function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function formatDateShort(iso) {
+    if (!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+  }
   function formatDate(iso) {
     if (!iso) return "";
     const d = new Date(iso);
