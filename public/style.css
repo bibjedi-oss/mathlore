@@ -908,6 +908,27 @@ header {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes startPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 200, 60, 0.0); border-color: rgba(255, 200, 60, 0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(255, 200, 60, 0.25); border-color: rgba(255, 200, 60, 0.9); }
+}
+.topic-btn-start {
+  animation: startPulse 1.8s ease-in-out infinite !important;
+  position: relative;
+}
+.topic-btn-start::after {
+  content: "👆 Начни здесь";
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #ffd080;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
 .message.bot {
   background: rgba(15, 8, 2, 0.78);
   color: #ffe8b0;

@@ -1532,6 +1532,25 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
     }
   });
 
+  // Подсказка "Начни здесь" для новичков (ни одной пройденной темы)
+  if (doneTopics === 0) {
+    const firstBtn = lobbyScreen.querySelector(".topic-btn:not(.locked):not(.done)");
+    if (firstBtn) {
+      firstBtn.classList.add("topic-btn-start");
+      // Раскрываем главу и параграф с этой кнопкой
+      const theme = firstBtn.closest(".cave-theme");
+      const chapter = firstBtn.closest(".cave-chapter");
+      if (theme && !theme.classList.contains("open")) {
+        theme.classList.add("open");
+        const a = theme.querySelector(".cave-theme-arrow"); if (a) a.textContent = "▲";
+      }
+      if (chapter && !chapter.classList.contains("open")) {
+        chapter.classList.add("open");
+        const a = chapter.querySelector(".cave-chapter-arrow"); if (a) a.textContent = "▲";
+      }
+    }
+  }
+
   lobbyScreen.querySelectorAll(".cave-chapter:not(.locked) .cave-chapter-header").forEach(h => {
     h.addEventListener("click", () => {
       const ch = h.closest(".cave-chapter");
