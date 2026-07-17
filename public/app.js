@@ -1823,6 +1823,7 @@ async function startDifficulty(level) {
   currentPhase = level;
   currentTasks = [];
   currentTasksDone = 0;
+  if (ttsEnabled) { ttsEnabled = false; ttsToggle.textContent = "🔇"; ttsToggle.classList.remove("active"); if (currentAudio) { currentAudio.pause(); currentAudio = null; } }
   updatePhaseUI();
   if (!isReplayMode) await saveSession(level);
   try {
