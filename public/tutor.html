@@ -95,6 +95,11 @@
     .student-grade { font-size: 14px; color: #8b5e1a; background: #f0e8d8; padding: 4px 12px; border-radius: 20px; }
 
     .section-title { font-size: 13px; font-weight: 700; color: #8b5e1a; text-transform: uppercase; letter-spacing: 0.7px; margin: 24px 0 12px; }
+    .section-title-toggle { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; }
+    .section-title-toggle:hover { opacity: 0.75; }
+    .sessions-arrow { font-size: 11px; transition: transform 0.2s; }
+    .sessions-collapsible { overflow: hidden; }
+    .sessions-collapsible.hidden { display: none; }
 
     /* Sessions list */
     .sessions-list { display: flex; flex-direction: column; gap: 8px; }
@@ -425,8 +430,10 @@
       </div>
       ${creditsHtml}
       ${planHtml}
-      <div class="section-title">История занятий</div>
-      <div class="sessions-list">${sessionsHtml}</div>
+      <div class="section-title section-title-toggle" onclick="toggleSessions(this)">
+        История занятий <span class="sessions-arrow">▼</span>
+      </div>
+      <div class="sessions-list sessions-collapsible hidden">${sessionsHtml}</div>
     `;
   }
 
@@ -516,6 +523,14 @@
   }
 
   function closeLog() { document.getElementById("logOverlay").classList.add("hidden"); }
+
+  function toggleSessions(titleEl) {
+    const list = titleEl.nextElementSibling;
+    const arrow = titleEl.querySelector(".sessions-arrow");
+    const isOpen = !list.classList.contains("hidden");
+    list.classList.toggle("hidden", isOpen);
+    arrow.textContent = isOpen ? "▼" : "▲";
+  }
 
   function downloadSessionLog(idx) {
     const s = (window._tutorSessions || [])[idx];
