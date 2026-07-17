@@ -1959,16 +1959,6 @@ input.addEventListener("input", () => {
   input.style.height = "auto";
   input.style.height = Math.min(input.scrollHeight, 140) + "px";
 });
-// TEMP TEST: кнопка для симуляции освоения всех концептов
-(function() {
-  const btn = document.createElement("button");
-  btn.textContent = "🧪";
-  btn.title = "Симулировать освоение всех концептов";
-  btn.style.cssText = "position:fixed;bottom:90px;right:12px;z-index:9999;background:#facc15;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3);";
-  btn.onclick = () => { currentConcepts.forEach(c => masteredConceptsSet.add(c)); renderConceptBar(); };
-  document.body.appendChild(btn);
-})();
-
 input.addEventListener("keydown", e => {
   if (e.key !== "Enter" || e.shiftKey) return;
   const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
