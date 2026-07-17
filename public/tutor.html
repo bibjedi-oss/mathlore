@@ -312,7 +312,7 @@
     const list = document.getElementById("parentsList");
     if (!parentsData.length) { list.innerHTML = '<div style="color:#bbb;font-size:13px;text-align:center;padding:16px">Пока нет родителей</div>'; return; }
     list.innerHTML = parentsData.map(p => `
-      <div class="parent-item" id="parent-${p.id}">
+      <div class="parent-item open" id="parent-${p.id}">
         <div class="parent-header" onclick="toggleParent('${p.id}')">
           <span class="parent-name">${p.name || p.email}</span>
           <span class="parent-balance">🪙 ${Math.round((p.token_balance || 0) / 1000)}к</span>
