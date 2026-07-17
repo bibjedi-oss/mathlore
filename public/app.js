@@ -1299,29 +1299,15 @@ async function renderSpecialCourseTopics(courseId) {
     });
   }
 
-  // Восстанавливаем или авто-раскрываем параграф спецкурса
-  if (_lobbyOpenThemes.size > 0) {
-    lobbyScreen.querySelectorAll(".cave-theme").forEach(th => {
-      const qi = th.dataset.qi;
-      if (qi !== undefined && _lobbyOpenThemes.has(qi)) {
-        th.classList.add("open");
-        const arrow = th.querySelector(".cave-theme-arrow");
-        if (arrow) arrow.textContent = "▲";
-      }
-    });
-  } else {
-    const nextBtn = lobbyScreen.querySelector(".topic-btn.resume, .topic-btn:not(.locked):not(.done):not(.resume)");
-    if (nextBtn) {
-      const theme = nextBtn.closest(".cave-theme");
-      if (theme) {
-        theme.classList.add("open");
-        const arrow = theme.querySelector(".cave-theme-arrow");
-        if (arrow) arrow.textContent = "▲";
-        const qi = theme.dataset.qi;
-        if (qi !== undefined) _lobbyOpenThemes.add(qi);
-      }
+  // Восстанавливаем открытые параграфы спецкурса
+  lobbyScreen.querySelectorAll(".cave-theme").forEach(th => {
+    const qi = th.dataset.qi;
+    if (qi !== undefined && _lobbyOpenThemes.has(qi)) {
+      th.classList.add("open");
+      const arrow = th.querySelector(".cave-theme-arrow");
+      if (arrow) arrow.textContent = "▲";
     }
-  }
+  });
 
   lobbyScreen.querySelectorAll(".cave-theme .cave-theme-header").forEach(h => {
     h.addEventListener("click", () => {
@@ -1528,47 +1514,23 @@ function renderThemeMap(gradeData, subjectData, progress, credits = null) {
     renderSubjectSelect(selectedGrade);
   });
 
-  // Восстанавливаем состояние аккордеона или авто-раскрываем активную главу
-  if (_lobbyOpenChapters.size > 0 || _lobbyOpenThemes.size > 0) {
-    // Возврат из темы — восстанавливаем сохранённое
-    lobbyScreen.querySelectorAll(".cave-chapter:not(.locked)").forEach(ch => {
-      const title = ch.querySelector(".cave-chapter-title")?.textContent;
-      if (title && _lobbyOpenChapters.has(title)) {
-        ch.classList.add("open");
-        const arrow = ch.querySelector(".cave-chapter-arrow");
-        if (arrow) arrow.textContent = "▲";
-      }
-    });
-    lobbyScreen.querySelectorAll(".cave-theme:not(.locked)").forEach(th => {
-      const qi = th.dataset.qi;
-      if (qi !== undefined && _lobbyOpenThemes.has(qi)) {
-        th.classList.add("open");
-        const arrow = th.querySelector(".cave-theme-arrow");
-        if (arrow) arrow.textContent = "▲";
-      }
-    });
-  } else {
-    // Первое открытие — раскрываем главу и параграф с текущей/следующей темой
-    const nextBtn = lobbyScreen.querySelector(".topic-btn.resume, .topic-btn:not(.locked):not(.done):not(.resume)");
-    if (nextBtn) {
-      const theme = nextBtn.closest(".cave-theme");
-      if (theme) {
-        theme.classList.add("open");
-        const tArrow = theme.querySelector(".cave-theme-arrow");
-        if (tArrow) tArrow.textContent = "▲";
-        const qi = theme.dataset.qi;
-        if (qi !== undefined) _lobbyOpenThemes.add(qi);
-      }
-      const chapter = nextBtn.closest(".cave-chapter");
-      if (chapter) {
-        chapter.classList.add("open");
-        const cArrow = chapter.querySelector(".cave-chapter-arrow");
-        if (cArrow) cArrow.textContent = "▲";
-        const title = chapter.querySelector(".cave-chapter-title")?.textContent;
-        if (title) _lobbyOpenChapters.add(title);
-      }
+  // Восстанавливаем открытые главы и параграфы
+  lobbyScreen.querySelectorAll(".cave-chapter:not(.locked)").forEach(ch => {
+    const title = ch.querySelector(".cave-chapter-title")?.textContent;
+    if (title && _lobbyOpenChapters.has(title)) {
+      ch.classList.add("open");
+      const arrow = ch.querySelector(".cave-chapter-arrow");
+      if (arrow) arrow.textContent = "▲";
     }
-  }
+  });
+  lobbyScreen.querySelectorAll(".cave-theme:not(.locked)").forEach(th => {
+    const qi = th.dataset.qi;
+    if (qi !== undefined && _lobbyOpenThemes.has(qi)) {
+      th.classList.add("open");
+      const arrow = th.querySelector(".cave-theme-arrow");
+      if (arrow) arrow.textContent = "▲";
+    }
+  });
 
   lobbyScreen.querySelectorAll(".cave-chapter:not(.locked) .cave-chapter-header").forEach(h => {
     h.addEventListener("click", () => {
