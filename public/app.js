@@ -1933,6 +1933,14 @@ function addMessage(role, text) {
   }
 
   chat.appendChild(div);
+
+  if (window.renderMathInElement) {
+    renderMathInElement(div, {
+      delimiters: [{ left: "$", right: "$", display: false }],
+      throwOnError: false
+    });
+  }
+
   chat.scrollTop = chat.scrollHeight;
 }
 function showTyping() {

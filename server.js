@@ -1357,15 +1357,26 @@ app.post("/api/tts", async (req, res) => {
 async function seedTasks() {
   try {
     const seed = JSON.parse(readFileSync(join(__dirname, "tasks-seed.json"), "utf8"));
+    const P1_TOPICS = new Set(["7a1-1", "7a1-2", "7a1-3", "7a1-4"]);
     const topicIds = [...new Set(seed.map(t => t.topic_id))];
     for (const topicId of topicIds) {
       const { count } = await supabase
         .from("tasks").select("*", { count: "exact", head: true }).eq("topic_id", topicId);
+      const tasks = seed.filter(t => t.topic_id === topicId);
       if (!count) {
-        const tasks = seed.filter(t => t.topic_id === topicId);
         const { error } = await supabase.from("tasks").insert(tasks);
         if (error) console.error(`Seed error [${topicId}]:`, error.message);
         else console.log(`Seeded ${tasks.length} tasks for ${topicId}`);
+      } else if (P1_TOPICS.has(topicId)) {
+        // Обновляем §1 если задачи ещё без LaTeX (одноразово)
+        const { data: sample } = await supabase
+          .from("tasks").select("task_text").eq("topic_id", topicId).limit(1);
+        if (sample && sample[0] && !sample[0].task_text.includes("$")) {
+          await supabase.from("tasks").delete().eq("topic_id", topicId);
+          const { error } = await supabase.from("tasks").insert(tasks);
+          if (error) console.error(`Reseed error [${topicId}]:`, error.message);
+          else console.log(`Reseeded ${tasks.length} tasks for ${topicId} (LaTeX)`);
+        }
       }
     }
   } catch (e) {
