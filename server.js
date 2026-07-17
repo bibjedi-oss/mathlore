@@ -484,7 +484,8 @@ app.post("/api/sessions", requireAuth("child"), async (req, res) => {
         topic_label: topicLabel || topicId,
         messages: messages || [],
         phase: phase || "theory",
-        completed_at: phase === "done" ? new Date().toISOString() : null
+        completed_at: phase === "done" ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString()
       }, { onConflict: "child_id,topic_id" })
       .select("id").single();
     if (error) throw error;
