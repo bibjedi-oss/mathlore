@@ -44,6 +44,7 @@ let notebookConfirmed = false;
 let isWaiting = false;
 let ttsEnabled = true;
 let currentAudio = null;
+let isSpeaking = false;
 let isRecording = false;
 let transcript = "";
 let currentUser = null; // { role, id, name, grade, ... }
@@ -367,7 +368,7 @@ function renderConceptBar() {
     const msg = `Отлично! Все концепты темы открыты 🌟\n\nВот их формальные определения — запиши в тетрадь:\n${defsList}\n\nКогда запишешь — пришли фото тетради, я проверю конспект.`;
     addMessage("bot", msg);
     messages.push({ role: "assistant", content: msg });
-    const speakWhenReady = () => { if (currentAudio) setTimeout(speakWhenReady, 300); else speak(msg); };
+    const speakWhenReady = () => { if (isSpeaking || currentAudio) setTimeout(speakWhenReady, 300); else speak(msg); };
     speakWhenReady();
   }
 }
@@ -1618,6 +1619,7 @@ const ttsLoading = document.getElementById("ttsLoading");
 async function speak(text) {
   if (!ttsEnabled) return;
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  isSpeaking = true;
   const chunks = splitIntoChunks(text, 200);
   ttsLoading.classList.remove("hidden");
   let pendingFetch = fetchAudio(chunks[0]);
@@ -1630,6 +1632,7 @@ async function speak(text) {
     await playAudio(url);
   }
   ttsLoading.classList.add("hidden");
+  isSpeaking = false;
 }
 
 // ── Voice input ───────────────────────────────────────────────────────────────
