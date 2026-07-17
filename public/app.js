@@ -623,7 +623,10 @@ document.getElementById("childAuthBtn").addEventListener("click", async () => {
   }
 });
 
-logoutBtn.addEventListener("click", () => { clearToken(); currentUser = null; showAuth(); });
+logoutBtn.addEventListener("click", () => {
+  if (!confirm("Выйти из профиля?")) return;
+  clearToken(); currentUser = null; showAuth();
+});
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function closeDashMenu() {
