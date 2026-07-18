@@ -1634,6 +1634,16 @@ window.addEventListener("popstate", async () => {
   }
 });
 
+document.getElementById("debugSkipBtn").addEventListener("click", () => {
+  if (currentPhase === "theory" || ["easy", "medium", "hard"].includes(currentPhase)) {
+    showDifficultySelector();
+  } else if (currentPhase === "test") {
+    currentPhase = "done";
+    if (currentTopicId) markCompleted(currentTopicId);
+    showFinishBtn();
+  }
+});
+
 doneBtn.addEventListener("click", async () => {
   if (currentPhase === "theory") {
     if (currentTopicType === "theory-only") {
