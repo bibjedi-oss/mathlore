@@ -1634,7 +1634,7 @@ window.addEventListener("popstate", async () => {
   }
 });
 
-document.getElementById("debugSkipBtn").addEventListener("click", () => {
+document.getElementById("debugSkipBtn").addEventListener("click", async () => {
   if (currentPhase === "theory" || currentPhase === "easy" || currentPhase === "medium") {
     showDifficultySelector();
   } else if (currentPhase === "hard") {
@@ -1644,7 +1644,7 @@ document.getElementById("debugSkipBtn").addEventListener("click", () => {
     sendToAPI();
   } else if (currentPhase === "test") {
     currentPhase = "done";
-    if (currentTopicId) markCompleted(currentTopicId);
+    if (currentTopicId) await markCompleted(currentTopicId);
     showFinishBtn();
   }
 });
