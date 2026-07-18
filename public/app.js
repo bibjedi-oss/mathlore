@@ -29,6 +29,7 @@ const PAYMENT_CONTACT_URL = "https://t.me/bibikin";
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let messages = [];
+let _theoryMessages = [];
 let topic = "";
 let currentTopicId = null;
 let currentPhase = "theory"; // theory | easy | medium | hard | test | done
@@ -186,7 +187,7 @@ async function saveSession(phase) {
     const res = await fetch("/api/sessions", {
       method: "POST",
       headers: apiHeaders(),
-      body: JSON.stringify({ topicId: currentTopicId, topicLabel: topic, messages: stripImages(messages), phase })
+      body: JSON.stringify({ topicId: currentTopicId, topicLabel: topic, messages: stripImages([..._theoryMessages, ...messages]), phase })
     });
     if (!res.ok) console.error("saveSession HTTP error:", res.status, await res.text());
     else console.log("saveSession OK:", phase, currentTopicId);
@@ -291,6 +292,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
   currentTopicId = topicIdArg;
   currentPhase = "theory";
   messages = [];
+  _theoryMessages = [];
   chat.innerHTML = "";
   currentTopicType = null;
   currentConcepts = [];
@@ -1933,6 +1935,7 @@ async function startDifficulty(level) {
     setTimeout(() => showDifficultySelector(), 500);
     return;
   }
+  if (currentPhase === "theory" || _theoryMessages.length === 0) _theoryMessages = [...messages];
   messages = [{ role: "user", content: `Начинаем задания ${levelLabel} уровня.` }];
   sendToAPI();
 }
