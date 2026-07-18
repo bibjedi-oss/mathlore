@@ -2004,7 +2004,10 @@ function addMessage(role, text) {
       }
     });
   } else {
-    div.textContent = text;
+    const processed = role === "bot"
+      ? text.replace(/;\s*([а-яёА-ЯЁ]\))/g, '\n$1')
+      : text;
+    div.textContent = processed;
   }
 
   chat.appendChild(div);
