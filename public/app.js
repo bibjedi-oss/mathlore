@@ -1635,8 +1635,13 @@ window.addEventListener("popstate", async () => {
 });
 
 document.getElementById("debugSkipBtn").addEventListener("click", () => {
-  if (currentPhase === "theory" || ["easy", "medium", "hard"].includes(currentPhase)) {
+  if (currentPhase === "theory" || currentPhase === "easy" || currentPhase === "medium") {
     showDifficultySelector();
+  } else if (currentPhase === "hard") {
+    currentPhase = "test";
+    updatePhaseUI();
+    messages = [{ role: "user", content: "Начинаем финальный тест." }];
+    sendToAPI();
   } else if (currentPhase === "test") {
     currentPhase = "done";
     if (currentTopicId) markCompleted(currentTopicId);
