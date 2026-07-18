@@ -1372,7 +1372,11 @@ async function seedTasks() {
         // Обновляем §1 если задачи ещё без LaTeX (одноразово)
         const { data: sample } = await supabase
           .from("tasks").select("task_text").eq("topic_id", topicId).limit(1);
-        if (sample && sample[0] && !sample[0].task_text.includes("$")) {
+        const needsReseed = sample && sample[0] && (
+          !sample[0].task_text.includes("$") ||
+          (!sample[0].task_text.includes("\n") && sample[0].task_text.includes("; б)"))
+        );
+        if (needsReseed) {
           await supabase.from("tasks").delete().eq("topic_id", topicId);
           const { error } = await supabase.from("tasks").insert(tasks);
           if (error) console.error(`Reseed error [${topicId}]:`, error.message);
