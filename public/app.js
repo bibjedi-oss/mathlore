@@ -514,6 +514,7 @@ let parentMode = "login";
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
   if (window.location.pathname === "/logic") { selectedSpecialCourse = "logic"; }
+  if (window.location.pathname === "/9") { selectedGrade = 9; }
 
   if (window.location.hash === "#demo") { showAuth(); return; }
 
