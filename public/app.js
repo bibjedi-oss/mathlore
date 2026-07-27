@@ -945,17 +945,20 @@ function renderLobby() {
 }
 
 function isGradeUnlocked(gradeNum) {
+  if (gradeNum === selectedGrade) return true;
   const cg = currentUser?.currentGrade ?? 11;
   return gradeNum <= cg;
 }
 
 function isThemeUnlocked(gradeNum) {
+  if (gradeNum === selectedGrade) return true;
   const cg = currentUser?.currentGrade ?? 11;
   return gradeNum <= cg;
 }
 
 function isTopicUnlocked(topics, topicIndex, progress, gradeNum) {
   if (gradeNum !== undefined && (currentUser?.currentGrade ?? 1) > gradeNum) return true;
+  if (gradeNum !== undefined && gradeNum === selectedGrade) return true;
   const topic = topics[topicIndex];
   if (topicIndex === 0) {
     if (!topic.requires || topic.requires.length === 0) return true;
@@ -1269,7 +1272,7 @@ async function renderSpecialCourseTopics(courseId) {
                 ${items.map((t, ti) => {
                   const done = progress.completed.has(t.id);
                   const resume = !done && progress.inProgress.has(t.id);
-                  const unlocked = isTopicUnlocked(items, ti, progress);
+                  const unlocked = isTopicUnlocked(items, ti, progress, gradeData?.grade);
                   const optBadge = t.optional ? ` <span class="optional-badge">★ необязательно</span>` : "";
                   if (!unlocked) return `<button class="topic-btn locked" disabled>🔒 ${t.label}${optBadge}</button>`;
                   if (done) return `<button class="topic-btn done" data-topic-id="${t.id}" data-topic-label="${t.label}">✓ ${t.label}${optBadge}</button>`;
