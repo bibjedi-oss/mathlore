@@ -804,10 +804,6 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       messages,
     });
 
-    if (currentModel.startsWith("kimi-")) {
-      console.log("[KIMI DEBUG] stop_reason:", response.stop_reason, "blocks:", response.content?.map(b => b.type), "usage:", response.usage);
-    }
-
     let totalTokens = response.usage.input_tokens + response.usage.output_tokens;
 
     // Если в сообщениях есть изображение — получаем его текстовое описание,
