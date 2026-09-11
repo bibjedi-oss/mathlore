@@ -19,6 +19,22 @@ const anthropic = new Anthropic({
   ...(process.env.ANTHROPIC_BASE_URL ? { baseURL: process.env.ANTHROPIC_BASE_URL } : {})
 });
 
+// Kimi (Moonshot AI) отдаёт Anthropic-совместимый эндпоинт, поэтому используем тот же SDK
+const kimi = process.env.MOONSHOT_API_KEY
+  ? new Anthropic({ apiKey: process.env.MOONSHOT_API_KEY, baseURL: "https://api.moonshot.ai/anthropic" })
+  : null;
+
+// Реестр моделей: какой клиент обслуживает каждую модель, и подпись для кабинета админа
+const MODELS = {
+  "claude-haiku-4-5-20251001": { client: anthropic, label: "Haiku 4.5 ⚡" },
+  "claude-sonnet-5":           { client: anthropic, label: "Sonnet 5" },
+  "claude-opus-5":             { client: anthropic, label: "Opus 5 ★" },
+  "claude-fable-5-1":          { client: anthropic, label: "Fable 5.1" },
+  "kimi-k2.6":                 { client: kimi, label: "Kimi K2.6" },
+  "kimi-k2.7-code":            { client: kimi, label: "Kimi K2.7 Code" },
+  "kimi-k3":                   { client: kimi, label: "Kimi K3" }
+};
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
@@ -28,6 +44,12 @@ const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const APP_URL = process.env.APP_URL || "https://mathlore.ru";
 
 let currentModel = process.env.DEFAULT_MODEL || "claude-opus-5";
+
+function getClient() {
+  const client = MODELS[currentModel]?.client;
+  if (!client) throw new Error(`Нет доступного клиента для модели "${currentModel}" (проверь MOONSHOT_API_KEY, если это модель Kimi)`);
+  return client;
+}
 
 (async () => {
   try {
@@ -250,7 +272,7 @@ app.post("/api/parent/child/:id/quarter-analysis", requireAuth("parent"), async 
       return `[Тема: ${s.topic_label || s.topic_id} | Стадия: ${s.phase} | Реплик ученика: ${userCount}]\n${dialog}`;
     }).join("\n\n---\n\n");
 
-    const response = await anthropic.messages.create({
+    const response = await getClient().messages.create({
       model: currentModel,
       max_tokens: 600,
       system: "Ты анализируешь успехи ученика за учебную четверть по математике. Изучи диалоги с ИИ-репетитором и напиши отчёт для родителя (5-6 предложений, без markdown, без заголовков). Охвати: общий прогресс, сильные стороны, трудности, вовлечённость, рекомендации. Пиши тепло, как опытный педагог.",
@@ -283,7 +305,7 @@ app.post("/api/parent/child/:id/overall-analysis", requireAuth("parent"), async 
       return `[${s.topic_label || s.topic_id} | ${s.phase} | реплик: ${userCount}]\n${dialog}`;
     }).join("\n\n---\n\n");
 
-    const response = await anthropic.messages.create({
+    const response = await getClient().messages.create({
       model: currentModel,
       max_tokens: 800,
       system: "Ты составляешь когнитивный портрет ученика на основе занятий с ИИ-репетитором по математике. Напиши отчёт для родителя (6-8 предложений, без markdown, без заголовков). Включи: общий уровень и динамику, когнитивный стиль, сильные стороны, зоны роста, вовлечённость, мягкие наблюдения о внимании или настойчивости (без диагнозов), рекомендации. Пиши как опытный педагог-психолог, тепло и конструктивно.",
@@ -312,7 +334,7 @@ app.post("/api/parent/session/:id/summary", requireAuth("parent"), async (req, r
       .map(m => `${m.role === "user" ? "Ученик" : "Архи"}: ${m.content}`)
       .join("\n");
 
-    const response = await anthropic.messages.create({
+    const response = await getClient().messages.create({
       model: currentModel,
       max_tokens: 400,
       system: "Ты анализируешь диалог ученика с ИИ-репетитором по математике. Напиши краткий отчёт для родителя (4-5 предложений): понял ли ученик тему, где были трудности, насколько был вовлечён, что стоит повторить. Пиши тепло, без markdown.",
@@ -373,7 +395,7 @@ app.post("/api/child/oge-diagnostic", requireAuth("child"), async (req, res) => 
     }
   ];
   try {
-    const response = await anthropic.messages.create({ model: currentModel, max_tokens: 400, messages: [{ role: "user", content }] });
+    const response = await getClient().messages.create({ model: currentModel, max_tokens: 400, messages: [{ role: "user", content }] });
     const text = response.content.find(b => b.type === "text")?.text ?? "{}";
     let weakCategories = [];
     try { weakCategories = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}").weak ?? []; } catch {}
@@ -708,7 +730,7 @@ app.post("/api/demo", async (req, res) => {
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages required" });
   if (messages.length > 20) return res.status(400).json({ error: "demo limit reached" });
   try {
-    const response = await anthropic.messages.create({
+    const response = await getClient().messages.create({
       model: currentModel,
       max_tokens: 512,
       system: DEMO_SYSTEM,
@@ -768,7 +790,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       return res.status(402).json({ error: "trial_ended", tokenBalance: 0 });
     }
 
-    const response = await anthropic.messages.create({
+    const response = await getClient().messages.create({
       model: currentModel,
       max_tokens: 1024,
       system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested),
@@ -785,7 +807,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     );
     if (imageMsg) {
       const imageBlock = imageMsg.content.find(c => c.type === "image");
-      const descResponse = await anthropic.messages.create({
+      const descResponse = await getClient().messages.create({
         model: currentModel,
         max_tokens: 500,
         messages: [{
@@ -930,13 +952,17 @@ app.post("/api/admin/users/:id/notes", requireAuth("admin"), async (req, res) =>
 });
 
 app.get("/api/admin/model", requireAuth("admin"), (req, res) => {
-  res.json({ model: currentModel });
+  const available = Object.entries(MODELS)
+    .filter(([, v]) => v.client)
+    .map(([id, v]) => ({ id, label: v.label }));
+  res.json({ model: currentModel, available });
 });
 
 app.post("/api/admin/model", requireAuth("admin"), async (req, res) => {
-  const ALLOWED = ["claude-haiku-4-5-20251001", "claude-sonnet-5", "claude-opus-5", "claude-fable-5-1"];
+  const ALLOWED = Object.keys(MODELS);
   const { model } = req.body;
   if (!ALLOWED.includes(model)) return res.status(400).json({ error: "Недопустимая модель" });
+  if (!MODELS[model].client) return res.status(400).json({ error: "Для этой модели не настроен ключ провайдера (MOONSHOT_API_KEY)" });
   currentModel = model;
   console.log("[ADMIN] Model switched to:", currentModel);
   try {
