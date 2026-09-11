@@ -51,6 +51,13 @@ function getClient() {
   return client;
 }
 
+// У моделей Kimi "мышление" включено по умолчанию и может съесть весь max_tokens
+// на рассуждения, не оставив места под сам ответ — отключаем его явно.
+function chatCreate(params) {
+  const extra = currentModel.startsWith("kimi-") ? { thinking: { type: "disabled" } } : {};
+  return getClient().messages.create({ ...params, ...extra });
+}
+
 (async () => {
   try {
     const { data } = await supabase.from("app_settings").select("value").eq("key", "chat_model").maybeSingle();
@@ -272,7 +279,7 @@ app.post("/api/parent/child/:id/quarter-analysis", requireAuth("parent"), async 
       return `[Тема: ${s.topic_label || s.topic_id} | Стадия: ${s.phase} | Реплик ученика: ${userCount}]\n${dialog}`;
     }).join("\n\n---\n\n");
 
-    const response = await getClient().messages.create({
+    const response = await chatCreate({
       model: currentModel,
       max_tokens: 600,
       system: "Ты анализируешь успехи ученика за учебную четверть по математике. Изучи диалоги с ИИ-репетитором и напиши отчёт для родителя (5-6 предложений, без markdown, без заголовков). Охвати: общий прогресс, сильные стороны, трудности, вовлечённость, рекомендации. Пиши тепло, как опытный педагог.",
@@ -305,7 +312,7 @@ app.post("/api/parent/child/:id/overall-analysis", requireAuth("parent"), async 
       return `[${s.topic_label || s.topic_id} | ${s.phase} | реплик: ${userCount}]\n${dialog}`;
     }).join("\n\n---\n\n");
 
-    const response = await getClient().messages.create({
+    const response = await chatCreate({
       model: currentModel,
       max_tokens: 800,
       system: "Ты составляешь когнитивный портрет ученика на основе занятий с ИИ-репетитором по математике. Напиши отчёт для родителя (6-8 предложений, без markdown, без заголовков). Включи: общий уровень и динамику, когнитивный стиль, сильные стороны, зоны роста, вовлечённость, мягкие наблюдения о внимании или настойчивости (без диагнозов), рекомендации. Пиши как опытный педагог-психолог, тепло и конструктивно.",
@@ -334,7 +341,7 @@ app.post("/api/parent/session/:id/summary", requireAuth("parent"), async (req, r
       .map(m => `${m.role === "user" ? "Ученик" : "Архи"}: ${m.content}`)
       .join("\n");
 
-    const response = await getClient().messages.create({
+    const response = await chatCreate({
       model: currentModel,
       max_tokens: 400,
       system: "Ты анализируешь диалог ученика с ИИ-репетитором по математике. Напиши краткий отчёт для родителя (4-5 предложений): понял ли ученик тему, где были трудности, насколько был вовлечён, что стоит повторить. Пиши тепло, без markdown.",
@@ -395,7 +402,7 @@ app.post("/api/child/oge-diagnostic", requireAuth("child"), async (req, res) => 
     }
   ];
   try {
-    const response = await getClient().messages.create({ model: currentModel, max_tokens: 400, messages: [{ role: "user", content }] });
+    const response = await chatCreate({ model: currentModel, max_tokens: 400, messages: [{ role: "user", content }] });
     const text = response.content.find(b => b.type === "text")?.text ?? "{}";
     let weakCategories = [];
     try { weakCategories = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}").weak ?? []; } catch {}
@@ -730,7 +737,7 @@ app.post("/api/demo", async (req, res) => {
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages required" });
   if (messages.length > 20) return res.status(400).json({ error: "demo limit reached" });
   try {
-    const response = await getClient().messages.create({
+    const response = await chatCreate({
       model: currentModel,
       max_tokens: 512,
       system: DEMO_SYSTEM,
@@ -790,7 +797,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       return res.status(402).json({ error: "trial_ended", tokenBalance: 0 });
     }
 
-    const response = await getClient().messages.create({
+    const response = await chatCreate({
       model: currentModel,
       max_tokens: 1024,
       system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested),
@@ -811,7 +818,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     );
     if (imageMsg) {
       const imageBlock = imageMsg.content.find(c => c.type === "image");
-      const descResponse = await getClient().messages.create({
+      const descResponse = await chatCreate({
         model: currentModel,
         max_tokens: 500,
         messages: [{
