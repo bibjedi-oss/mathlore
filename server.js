@@ -27,7 +27,16 @@ const supabase = createClient(
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const APP_URL = process.env.APP_URL || "https://mathlore.ru";
 
-let currentModel = process.env.DEFAULT_MODEL || "claude-opus-4-6";
+let currentModel = process.env.DEFAULT_MODEL || "claude-opus-5";
+
+(async () => {
+  try {
+    const { data } = await supabase.from("app_settings").select("value").eq("key", "chat_model").maybeSingle();
+    if (data?.value) currentModel = data.value;
+  } catch (err) {
+    console.error("Не удалось загрузить сохранённую модель из БД:", err);
+  }
+})();
 
 // Курс токенов: 1 токен = TOKEN_RATE ₽ (блендированный, Opus ×2 при 90₽/$)
 const TOKEN_RATE = 200 / 300_000; // ₽ за 1 токен (300к ≈ 200₽)
@@ -924,12 +933,17 @@ app.get("/api/admin/model", requireAuth("admin"), (req, res) => {
   res.json({ model: currentModel });
 });
 
-app.post("/api/admin/model", requireAuth("admin"), (req, res) => {
-  const ALLOWED = ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-6", "claude-opus-4-7"];
+app.post("/api/admin/model", requireAuth("admin"), async (req, res) => {
+  const ALLOWED = ["claude-haiku-4-5-20251001", "claude-sonnet-5", "claude-opus-5", "claude-fable-5-1"];
   const { model } = req.body;
   if (!ALLOWED.includes(model)) return res.status(400).json({ error: "Недопустимая модель" });
   currentModel = model;
   console.log("[ADMIN] Model switched to:", currentModel);
+  try {
+    await supabase.from("app_settings").upsert({ key: "chat_model", value: model, updated_at: new Date().toISOString() });
+  } catch (err) {
+    console.error("Не удалось сохранить выбор модели в БД:", err);
+  }
   res.json({ ok: true, model: currentModel });
 });
 
