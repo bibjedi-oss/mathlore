@@ -352,7 +352,7 @@ function showChat(topicLabelArg, topicIdArg, resumeData = null) {
 }
 
 function renderTaskBar() {
-  conceptBar.innerHTML = Array.from({ length: 4 }, (_, i) =>
+  conceptBar.innerHTML = Array.from({ length: 1 }, (_, i) =>
     `<span class="concept-chip${i < currentTasksDone ? " mastered" : ""}">${i < currentTasksDone ? "★" : "☆"}</span>`
   ).join("");
   conceptBar.classList.remove("hidden");
@@ -1827,7 +1827,7 @@ async function sendToAPI() {
         renderConceptBar();
       }
       if (data.taskDone) {
-        currentTasksDone = Math.min(currentTasksDone + 1, 4);
+        currentTasksDone = Math.min(currentTasksDone + 1, 1);
         renderTaskBar();
       }
       if (data.notebookAccepted) {
@@ -1941,7 +1941,7 @@ async function startDifficulty(level) {
       const data = await res.json();
       currentTasks = data.tasks || data;
       const total = data.total ?? currentTasks.length;
-      if (total > 0) localStorage.setItem(offsetKey, String((offset + 4) % total));
+      if (total > 0) localStorage.setItem(offsetKey, String((offset + 1) % total));
     }
   } catch {}
   const levelLabel = { easy: "лёгкого", medium: "среднего", hard: "сложного" }[level];

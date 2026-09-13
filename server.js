@@ -786,8 +786,7 @@ app.get("/api/tasks/:topicId/:difficulty", requireAuth("child"), async (req, res
     const all = data || [];
     const total = all.length;
     if (total === 0) return res.json({ tasks: [], total: 0 });
-    const tasks = [];
-    for (let i = 0; i < 4; i++) tasks.push(all[(offset + i) % total].task_text);
+    const tasks = [all[offset % total].task_text];
     res.json({ tasks, total });
   } catch (err) {
     console.error(err);
