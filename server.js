@@ -14,9 +14,11 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static("public"));
 
+// Прямое подключение к Anthropic недоступно — модели Claude идут через
+// прокси Polza AI (тот же Anthropic-совместимый протокол, авторизация Bearer)
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  ...(process.env.ANTHROPIC_BASE_URL ? { baseURL: process.env.ANTHROPIC_BASE_URL } : {})
+  baseURL: "https://polza.ai/api",
+  authToken: process.env.POLZA_API_KEY
 });
 
 // Kimi (Moonshot AI) отдаёт Anthropic-совместимый эндпоинт, поэтому используем тот же SDK
