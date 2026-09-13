@@ -18,6 +18,7 @@ app.use(express.static("public"));
 // прокси Polza AI (тот же Anthropic-совместимый протокол, авторизация Bearer)
 const anthropic = new Anthropic({
   baseURL: "https://polza.ai/api",
+  apiKey: null, // без этого SDK молча подхватывает старый ANTHROPIC_API_KEY из окружения и шлёт его вторым заголовком x-api-key
   authToken: process.env.POLZA_API_KEY
 });
 
