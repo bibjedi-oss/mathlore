@@ -48,17 +48,23 @@ const APP_URL = process.env.APP_URL || "https://mathlore.ru";
 
 let currentModel = process.env.DEFAULT_MODEL || "claude-opus-5";
 
-function getClient() {
-  const client = MODELS[currentModel]?.client;
-  if (!client) throw new Error(`Нет доступного клиента для модели "${currentModel}" (проверь MOONSHOT_API_KEY, если это модель Kimi)`);
+// Распознавание фото всегда идёт через эту модель, независимо от currentModel —
+// у Kimi нет/слабая поддержка изображений, а качество распознавания не должно
+// зависеть от того, какую модель выбрали для самого диалога
+const VISION_MODEL = "claude-sonnet-5";
+
+function getClient(model) {
+  const client = MODELS[model]?.client;
+  if (!client) throw new Error(`Нет доступного клиента для модели "${model}" (проверь MOONSHOT_API_KEY, если это модель Kimi)`);
   return client;
 }
 
 // У моделей Kimi "мышление" включено по умолчанию и может съесть весь max_tokens
 // на рассуждения, не оставив места под сам ответ — отключаем его явно.
 function chatCreate(params) {
-  const extra = currentModel.startsWith("kimi-") ? { thinking: { type: "disabled" } } : {};
-  return getClient().messages.create({ ...params, ...extra });
+  const model = params.model || currentModel;
+  const extra = model.startsWith("kimi-") ? { thinking: { type: "disabled" } } : {};
+  return getClient(model).messages.create({ ...params, model, ...extra });
 }
 
 (async () => {
@@ -805,25 +811,17 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       return res.status(402).json({ error: "trial_ended", tokenBalance: 0 });
     }
 
-    const response = await chatCreate({
-      model: currentModel,
-      max_tokens: 1024,
-      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested),
-      messages,
-    });
-
-    let totalTokens = response.usage.input_tokens + response.usage.output_tokens;
-
-    // Если в сообщениях есть изображение — получаем его текстовое описание,
-    // чтобы клиент заменил картинку текстом и не тащил её в каждый следующий запрос
+    // Если в последнем сообщении есть фото — сначала распознаём его через VISION_MODEL
+    // (фиксированная модель, не currentModel), и в модель диалога уходит уже готовый
+    // текст, а не сырая картинка
     let imageDescription = null;
-    const imageMsg = [...messages].reverse().find(m =>
-      Array.isArray(m.content) && m.content.some(c => c.type === "image")
-    );
-    if (imageMsg) {
-      const imageBlock = imageMsg.content.find(c => c.type === "image");
+    let totalTokens = 0;
+    let effectiveMessages = messages;
+    const lastUserMsg0 = [...messages].reverse().find(m => m.role === "user");
+    const imageBlock = Array.isArray(lastUserMsg0?.content) && lastUserMsg0.content.find(c => c.type === "image");
+    if (imageBlock) {
       const descResponse = await chatCreate({
-        model: currentModel,
+        model: VISION_MODEL,
         max_tokens: 500,
         messages: [{
           role: "user",
@@ -833,9 +831,19 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
           ]
         }]
       });
-      imageDescription = descResponse.content[0]?.text ?? null;
+      imageDescription = descResponse.content.find(b => b.type === "text")?.text ?? null;
       totalTokens += descResponse.usage.input_tokens + descResponse.usage.output_tokens;
+      effectiveMessages = messages.map(m => m === lastUserMsg0 ? { role: "user", content: `[Фото задачи: ${imageDescription}]` } : m);
     }
+
+    const response = await chatCreate({
+      model: currentModel,
+      max_tokens: 1024,
+      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested),
+      messages: effectiveMessages,
+    });
+
+    totalTokens += response.usage.input_tokens + response.usage.output_tokens;
 
     const newBalance = Math.max(0, (parent.token_balance || 0) - totalTokens);
     await supabase.from("parents").update({ token_balance: newBalance }).eq("id", req.user.parentId);
@@ -844,9 +852,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const testPassed = text.includes("[ТЕСТ_ПРОЙДЕН]");
     const levelPassed = text.includes("[УРОВЕНЬ_ПРОЙДЕН]");
     const taskDone = text.includes("[ЗАДАНИЕ_ВЫПОЛНЕНО]");
-    const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
-    const lastMsgHasPhoto = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some(c => c.type === "image");
-    const notebookAccepted = text.includes("[КОНСПЕКТ_ПРИНЯТ]") && lastMsgHasPhoto;
+    const notebookAccepted = text.includes("[КОНСПЕКТ_ПРИНЯТ]") && !!imageBlock;
     const masteredConcepts = [];
     const conceptMatches = [...text.matchAll(/\[КОНЦЕПТ_ОСВОЕН:\s*([^\]]+)\]/g)];
     conceptMatches.forEach(m => masteredConcepts.push(m[1].trim()));
