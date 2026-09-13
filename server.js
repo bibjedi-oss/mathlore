@@ -575,7 +575,7 @@ function buildMotivationalPrompt() {
 - Никогда не говоришь "неправильно"`;
 }
 
-function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = [], concepts = [], theoryImages = [], notebookRequested = false) {
+function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = [], concepts = [], theoryImages = [], notebookRequested = false, isLastTask = false) {
   if (topic === "Зачем мне логика?") return buildMotivationalPrompt();
   const isConsolidation = topic.startsWith("Закрепление");
   const isGeometry = /геометр|треугольник|окружност|угол|прямоугольник|параллелограмм|трапеци|ромб|теорем|теорема|вектор|координат|площадь|периметр|конус|цилиндр|пирамид|сфер|куб|призм/i.test(topic);
@@ -609,18 +609,18 @@ function buildSystemPrompt(topic, phase, grade = 7, noTextbook = false, tasks = 
 
   if (phase === "easy" || phase === "medium" || phase === "hard") {
     const levelName = { easy: "лёгкого", medium: "среднего", hard: "сложного" }[phase];
-    const tasksList = `Задания для этого уровня — давай строго по очереди:\n${tasks.map((t, i) => `${i + 1}. ${t}`).join("\n")}`;
+    const currentTask = tasks[0] || "";
+    const doneMarkers = isLastTask ? "[ЗАДАНИЕ_ВЫПОЛНЕНО] и [УРОВЕНЬ_ПРОЙДЕН]" : "[ЗАДАНИЕ_ВЫПОЛНЕНО]";
     return `Ты — Архи, проводишь задания ${levelName} уровня по теме: ${topic} (${grade} класс).
 
-${tasksList}
+Текущее задание — дай его прямо сейчас, без вступлений:
+${currentTask}
 
 ПРАВИЛА — соблюдай строго:
-1. Начни с первого задания прямо сейчас — без вступлений
-2. Верный ответ → добавь [ЗАДАНИЕ_ВЫПОЛНЕНО] в конец ответа → коротко похвали (1 предложение) → дай следующее задание
-3. Ошибка на 1-2 попытке → мягко укажи где, дай подсказку уровня ${grade} класса, жди повтора. Не решай сам. Не предлагай угадывать.
-   Ошибка на 3-й попытке подряд по одному заданию → разбери это задание сам пошагово, покажи решение целиком, затем дай следующее задание (не повторяй то же самое) — ученик не должен застрять навсегда
-4. После верного ответа на последнее (4-е) задание — напиши короткую похвалу и добавь [ЗАДАНИЕ_ВЫПОЛНЕНО] и [УРОВЕНЬ_ПРОЙДЕН] в самый конец
-5. ВАЖНО: текст каждого задания выводи ДОСЛОВНО как написано выше — не перефразируй и не переводи математику: знаки $, команды \frac, \overline, \cdot и т.д. копируй без изменений
+1. Верный ответ → добавь ${doneMarkers} в конец ответа → коротко похвали (1 предложение). Следующее задание не давай сам — оно придёт отдельным сообщением.
+2. Ошибка на 1-2 попытке → мягко укажи где, дай подсказку уровня ${grade} класса, жди повтора. Не решай сам. Не предлагай угадывать.
+   Ошибка на 3-й попытке подряд → разбери это задание сам пошагово, покажи решение целиком, добавь ${doneMarkers} в конец — считается пройденным, дальше не застревай
+3. ВАЖНО: текст задания выводи ДОСЛОВНО как написано выше — не перефразируй и не переводи математику: знаки $, команды \frac, \overline, \cdot и т.д. копируй без изменений
 
 ${base}`;
   }
@@ -798,7 +798,7 @@ app.get("/api/tasks/:topicId/:difficulty", requireAuth("child"), async (req, res
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
 app.post("/api/chat", requireAuth("child"), async (req, res) => {
-  const { messages, topic, phase, noTextbook, tasks, concepts, theoryImages, notebookRequested = false } = req.body;
+  const { messages, topic, phase, noTextbook, tasks, concepts, theoryImages, notebookRequested = false, isLastTask = false } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages required" });
   try {
     const { data: parent } = await supabase
@@ -839,7 +839,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const response = await chatCreate({
       model: currentModel,
       max_tokens: 1024,
-      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested),
+      system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested, !!isLastTask),
       messages: effectiveMessages,
     });
 

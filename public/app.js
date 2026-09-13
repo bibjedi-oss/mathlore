@@ -1791,9 +1791,15 @@ function setControls(enabled) {
 async function sendToAPI() {
   setControls(false); isWaiting = true; showTyping();
   try {
+    const isExercisePhase = currentPhase === "easy" || currentPhase === "medium" || currentPhase === "hard";
     const res = await fetch("/api/chat", {
       method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId), tasks: currentTasks, concepts: currentConcepts, theoryImages: currentTheoryImages, notebookRequested })
+      body: JSON.stringify({
+        messages, topic, phase: currentPhase, noTextbook: isSpecialCourseTopic(currentTopicId),
+        tasks: isExercisePhase ? [currentTasks[currentTasksDone]] : currentTasks,
+        isLastTask: isExercisePhase && currentTasksDone === currentTasks.length - 1,
+        concepts: currentConcepts, theoryImages: currentTheoryImages, notebookRequested
+      })
     });
 
     if (res.status === 402) {
@@ -1848,13 +1854,18 @@ async function sendToAPI() {
         if (currentTopicId) await markCompleted(currentTopicId);
         showAchievement("🏆", "Тема завершена!");
         showFinishBtn();
-      } else if (!isReplayMode) {
-        saveSession(currentPhase);
+      } else {
+        if (!isReplayMode) saveSession(currentPhase);
       }
       updateHeaderBalance(data.tokenBalance);
       if (data.tokenBalance <= 0) {
         showTrialEndedModal();
         return;
+      }
+      if (data.taskDone && isExercisePhase && !data.levelPassed) {
+        // задание решено, но уровень ещё не пройден — подгружаем следующее отдельным сообщением
+        messages.push({ role: "user", content: "Готов к следующему заданию." });
+        return sendToAPI();
       }
     } else {
       addMessage("bot", "Что-то пошло не так. Попробуй ещё раз.");
