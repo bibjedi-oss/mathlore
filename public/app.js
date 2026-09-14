@@ -232,10 +232,6 @@ const PHASE_TRIGGERS = [
   "Начни историю прямо сейчас, с первого предложения. Без вступлений."
 ];
 
-const TOKEN_RATE = 200 / 300_000; // ₽ за 1 токен (300к ≈ 200₽)
-
-function tokensToRubles(tokens) { return Math.round(tokens * TOKEN_RATE); }
-
 function updateHeaderBalance(tokens) {
   if (tokens === null || tokens === undefined) { headerCredits.classList.add("hidden"); return; }
   headerCredits.classList.remove("hidden");
@@ -549,8 +545,6 @@ let parentMode = "login";
 })();
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
-document.getElementById("authPricingBtn").addEventListener("click", () => showPricingModal());
-
 document.getElementById("parentToggleBtn").addEventListener("click", () => {
   const isParent = authTab === "parent";
   authTab = isParent ? "child" : "parent";
@@ -688,11 +682,10 @@ async function renderDashboard() {
     const me = meRes.ok ? await meRes.json() : null;
 
     const balance = me?.token_balance ?? null;
-    const balanceRub = balance !== null ? tokensToRubles(balance) : null;
     const balanceCls = balance === null ? "" : balance <= 0 ? "dash-balance-zero" : balance < 75000 ? "dash-balance-low" : "dash-balance-ok";
     const balanceLabel = balance === null ? "" : balance <= 0
       ? `<span class="${balanceCls}">Токены закончились — <a href="#" id="buyCreditsLink">пополнить</a></span>`
-      : `<span class="${balanceCls}">Токены: <b>${balance.toLocaleString("ru")}</b> <span style="color:#999;font-weight:400">(≈ ₽${balanceRub})</span></span> <a href="#" id="pricingInfoLink" class="dash-pricing-link">Как считается?</a>`;
+      : `<span class="${balanceCls}">Токены: <b>${balance.toLocaleString("ru")}</b></span>`;
 
     const balanceBar = balanceLabel
       ? `<div class="dash-balance-bar">${balanceLabel}</div>`
@@ -705,7 +698,6 @@ async function renderDashboard() {
         <div class="dash-add-wrap">${addChildForm()}</div>`;
       setupAddChildForm();
       setupBuyCreditsLink(container);
-      setupPricingInfoLink(container);
       return;
     }
 
@@ -724,7 +716,6 @@ async function renderDashboard() {
 
     setupAddChildForm();
     setupBuyCreditsLink(container);
-    setupPricingInfoLink(container);
 
     container.querySelectorAll(".dash-progress-btn").forEach(btn => {
       btn.addEventListener("click", () => loadChildProgress(btn.dataset.id, children.find(c => c.id === btn.dataset.id)?.name));
@@ -756,16 +747,6 @@ function setupBuyCreditsLink(container) {
   const link = container.querySelector("#buyCreditsLink");
   if (!link) return;
   link.addEventListener("click", e => { e.preventDefault(); showPaymentModal(); });
-}
-
-function setupPricingInfoLink(container) {
-  const link = container.querySelector("#pricingInfoLink");
-  if (!link) return;
-  link.addEventListener("click", e => { e.preventDefault(); showPricingModal(); });
-}
-
-function showPricingModal() {
-  document.getElementById("pricingModal").classList.remove("hidden");
 }
 
 function showIphoneModal() {
@@ -1152,7 +1133,6 @@ async function renderOgePrepScreen() {
   }
 
   const weakSet = new Set(ogeWeakTopics);
-  const remaining = ogeWeakTopics.filter(id => !progress.completed.has(id));
 
   let gradesHtml = "";
   for (const gradeData of curriculum.filter(g => g.grade >= 7 && g.grade <= 9)) {
@@ -1186,10 +1166,6 @@ async function renderOgePrepScreen() {
         <span>✓ пройдено</span>
       </div>
       <div class="oge-prep-topics">${gradesHtml}</div>
-      <div class="oge-prep-cost">
-        Примерная стоимость курса:<br>
-        <b>${remaining.length} тем × ~200 ₽ ≈ ${remaining.length * 200} ₽</b>
-      </div>
       <button class="auth-btn auth-btn-secondary oge-refresh-btn" id="ogeRefreshBtn">↺ Обновить диагностику</button>
     </div>`;
 

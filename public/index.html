@@ -53,7 +53,6 @@
         </div>
 
         <button id="parentToggleBtn" class="auth-parent-link">Вход для родителей</button>
-        <button id="authPricingBtn" class="auth-pricing-link">Стоимость →</button>
       </div>
     </div>
 
@@ -62,7 +61,7 @@
       <div class="dash-header">
         <div class="dash-title">Кабинет родителя</div>
         <div class="dash-header-actions">
-          <button id="dashPricingBtn" class="dash-feedback-btn" onclick="showPricingModal()">₽ Стоимость</button>
+          <button id="dashPricingBtn" class="dash-feedback-btn" onclick="showPaymentModal()">Пополнить баланс</button>
           <button id="dashAndroidBtn" class="dash-feedback-btn" onclick="showAndroidModal()">🤖 Android</button>
           <button id="dashIphoneBtn" class="dash-feedback-btn" onclick="showIphoneModal()">🍎 iPhone</button>
           <button id="dashFeedbackBtn" class="dash-feedback-btn">💬 Отзыв</button>
@@ -71,7 +70,7 @@
         <button id="dashMenuBtn" class="dash-menu-btn" aria-label="Меню">☰</button>
       </div>
       <div id="dashMenu" class="dash-menu hidden">
-        <button class="dash-menu-item" onclick="showPricingModal();closeDashMenu()">₽ Стоимость</button>
+        <button class="dash-menu-item" onclick="showPaymentModal();closeDashMenu()">Пополнить баланс</button>
         <button class="dash-menu-item" onclick="showAndroidModal();closeDashMenu()">🤖 Android</button>
         <button class="dash-menu-item" onclick="showIphoneModal();closeDashMenu()">🍎 iPhone</button>
         <button class="dash-menu-item" id="dashFeedbackBtnMobile">💬 Отзыв</button>
@@ -168,69 +167,10 @@
     <div class="modal-box" id="trialModalBox"></div>
   </div>
 
-  <!-- ── Модалка с ценами ── -->
-  <div id="pricingModal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-    <div class="pricing-box">
-      <div class="pricing-title">Стоимость ArchiMath</div>
-      <div class="pricing-section">
-        <div class="pricing-section-title">💡 Из чего состоит стоимость</div>
-        <div class="pricing-desc" style="font-size:14px;line-height:1.7">
-          Стоимость складывается из двух частей:<br>
-          <b>1. Месячная подписка</b> — фиксированный доступ к сервису.<br>
-          <b>2. Токены</b> — расходуются на каждый ответ Архи. Пополняются отдельно по мере использования.
-        </div>
-      </div>
-      <div class="pricing-section">
-        <div class="pricing-section-title">📅 Месячная подписка</div>
-        <div class="pricing-table">
-          <div class="pricing-row pricing-row-beta">
-            <span>Первые 100 участников тестирования</span>
-            <span class="pricing-price">298 ₽/мес</span>
-          </div>
-          <div class="pricing-row">
-            <span>Учебный год</span>
-            <span class="pricing-price">998 ₽/мес</span>
-          </div>
-          <div class="pricing-row pricing-row-summer">
-            <span>Лето (июнь–август)</span>
-            <span class="pricing-price">498 ₽/мес</span>
-          </div>
-        </div>
-      </div>
-      <div class="pricing-section">
-        <div class="pricing-section-title">🤖 Как считается</div>
-        <div class="pricing-desc">
-          <div class="pricing-row" style="font-size:13px;padding:4px 0">
-            <span>1 000 токенов</span><b>= 67 копеек</b>
-          </div>
-          <div class="pricing-row" style="font-size:13px;padding:4px 0">
-            <span>1 сообщение Архи</span><b>≈ 7 500 токенов ≈ 5 ₽</b>
-          </div>
-          <div class="pricing-row" style="font-size:13px;padding:4px 0">
-            <span>Сообщений в уроке</span><b>30–50 шт</b>
-          </div>
-          <div class="pricing-row" style="font-size:13px;padding:4px 0;border-top:1px solid rgba(255,255,255,0.1);margin-top:4px;padding-top:8px">
-            <span>Итого за урок</span><b>150–250 ₽</b>
-          </div>
-          <div style="font-size:11px;opacity:0.55;margin-top:8px;line-height:1.5">
-            1 урок = 1 тема. В Алгебре и Геометрии<br>≈ 20 тем в год у каждой.
-          </div>
-        </div>
-      </div>
-      <div class="pricing-section">
-        <div class="pricing-section-title">🎁 При регистрации</div>
-        <div class="pricing-desc">200 ₽ на баланс — попробуйте первый урок бесплатно.</div>
-      </div>
-
-      <button class="auth-btn" onclick="document.getElementById('pricingModal').classList.add('hidden');showPaymentModal()">Оплатить</button>
-      <button class="auth-btn auth-btn-secondary" style="margin-top:8px" onclick="document.getElementById('pricingModal').classList.add('hidden')">Закрыть</button>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   <script src="curriculum.js?v=6"></script>
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=22"></script>
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js");
