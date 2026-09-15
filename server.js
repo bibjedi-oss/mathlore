@@ -67,6 +67,34 @@ function chatCreate(params) {
   return getClient(model).messages.create({ ...params, model, ...extra });
 }
 
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Иногда провайдер отдаёт 200 OK с пустым text-блоком (см. историю с Kimi thinking)
+// или падает временной ошибкой сети/апстрима — прежде чем показывать пользователю
+// "Что-то пошло не так", тихо пробуем ещё пару раз с паузой в 1 секунду.
+async function chatCreateWithRetry(params, retries = 2, delayMs = 1000) {
+  let lastResponse = null;
+  let lastErr = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await chatCreate(params);
+      const text = response.content.find(b => b.type === "text")?.text ?? "";
+      if (text.trim()) return response;
+      lastResponse = response;
+      lastErr = null;
+      console.warn(`[RETRY ${attempt + 1}/${retries + 1}] пустой ответ модели`, {
+        model: params.model, stop_reason: response.stop_reason, blocks: response.content?.map(b => b.type)
+      });
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[RETRY ${attempt + 1}/${retries + 1}] ошибка запроса:`, err.message);
+    }
+    if (attempt < retries) await sleep(delayMs);
+  }
+  if (lastErr) throw lastErr;
+  return lastResponse; // все попытки дали пустой текст — возвращаем как есть, дальше решит вызывающий код
+}
+
 (async () => {
   try {
     const { data } = await supabase.from("app_settings").select("value").eq("key", "chat_model").maybeSingle();
@@ -819,7 +847,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const lastUserMsg0 = [...messages].reverse().find(m => m.role === "user");
     const imageBlock = Array.isArray(lastUserMsg0?.content) && lastUserMsg0.content.find(c => c.type === "image");
     if (imageBlock) {
-      const descResponse = await chatCreate({
+      const descResponse = await chatCreateWithRetry({
         model: VISION_MODEL,
         max_tokens: 500,
         messages: [{
@@ -835,7 +863,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
       effectiveMessages = messages.map(m => m === lastUserMsg0 ? { role: "user", content: `[Фото задачи: ${imageDescription}]` } : m);
     }
 
-    const response = await chatCreate({
+    const response = await chatCreateWithRetry({
       model: currentModel,
       max_tokens: 1024,
       system: buildSystemPrompt(topic || "математика", phase || "theory", req.user.currentGrade ?? 11, !!noTextbook, Array.isArray(tasks) ? tasks : [], Array.isArray(concepts) ? concepts : [], Array.isArray(theoryImages) ? theoryImages : [], !!notebookRequested, !!isLastTask),
