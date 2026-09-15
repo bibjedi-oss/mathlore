@@ -848,6 +848,7 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     await supabase.from("parents").update({ token_balance: newBalance }).eq("id", req.user.parentId);
 
     let text = response.content.find(b => b.type === "text")?.text ?? "";
+    const rawText = text;
     const testPassed = text.includes("[ТЕСТ_ПРОЙДЕН]");
     const levelPassed = text.includes("[УРОВЕНЬ_ПРОЙДЕН]");
     const taskDone = text.includes("[ЗАДАНИЕ_ВЫПОЛНЕНО]");
@@ -859,6 +860,16 @@ app.post("/api/chat", requireAuth("child"), async (req, res) => {
     const isFiction = text.startsWith("[ВЫМЫСЕЛ]");
     text = text.replace(/^\[ВЫМЫСЕЛ\]\s*/g, "");
     if (isFiction) text = "(Выдуманная история, но она хорошо объясняет тему)\n\n" + text;
+    if (!text) {
+      console.warn("[EMPTY REPLY]", {
+        model: currentModel, phase, topic,
+        stop_reason: response.stop_reason,
+        blocks: response.content?.map(b => b.type),
+        rawTextLength: rawText.length,
+        rawTextPreview: rawText.slice(0, 300),
+        usage: response.usage
+      });
+    }
     res.json({ reply: text, testPassed, levelPassed, taskDone, masteredConcepts, notebookAccepted, tokenBalance: newBalance, imageDescription });
   } catch (err) {
     console.error(err);
